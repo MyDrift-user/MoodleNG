@@ -1,0 +1,86 @@
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.content-container {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.module-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s;
+}
+
+.module-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+}
+
+.hidden-module {
+  opacity: 0.6;
+}
+
+.module-summary {
+  max-height: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 10px;
+}
+
+.last-access {
+  font-size: 0.9em;
+  color: rgba(0, 0, 0, 0.6);
+  margin-top: auto;
+}
+
+mat-card-actions {
+  margin-top: auto;
+  padding: 8px;
+}
+
+.loading-container, .error-container, .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+}
+
+.empty-state mat-icon {
+  font-size: 48px;
+  height: 48px;
+  width: 48px;
+  margin-bottom: 16px;
+  color: rgba(0, 0, 0, 0.4);
+}

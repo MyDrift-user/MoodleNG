@@ -1,0 +1,53 @@
+<div class="login-container">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <mat-card-title>MoodleNG Login</mat-card-title>
+      <mat-card-subtitle>Access your Moodle courses</mat-card-subtitle>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="form-field">
+          <mat-form-field appearance="outline">
+            <mat-label>Moodle Domain</mat-label>
+            <input matInput formControlName="domain" placeholder="your-school.moodle.com" required>
+            <mat-error *ngIf="loginForm.get('domain')?.errors?.['required']">
+              Domain is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+        
+        <div class="form-field">
+          <mat-form-field appearance="outline">
+            <mat-label>Username</mat-label>
+            <input matInput formControlName="username" required>
+            <mat-error *ngIf="loginForm.get('username')?.errors?.['required']">
+              Username is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+        
+        <div class="form-field">
+          <mat-form-field appearance="outline">
+            <mat-label>Password</mat-label>
+            <input matInput formControlName="password" type="password" required>
+            <mat-error *ngIf="loginForm.get('password')?.errors?.['required']">
+              Password is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+        
+        <div *ngIf="error" class="error-message">
+          {{ error }}
+        </div>
+        
+        <div class="button-container">
+          <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid || loading">
+            <span *ngIf="!loading">Login</span>
+            <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

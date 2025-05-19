@@ -1,0 +1,133 @@
+<div class="module-details-container">
+  <mat-toolbar color="primary" class="toolbar">
+    <button mat-icon-button routerLink="/dashboard" aria-label="Back to dashboard">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span class="module-title">{{moduleName}}</span>
+    <span class="spacer"></span>
+    <button mat-icon-button (click)="loadModuleContents()" [disabled]="loading" aria-label="Refresh content">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </mat-toolbar>
+
+  <div class="content-container">
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading content...</p>
+    </div>
+
+    <div *ngIf="error" class="error-container">
+      <p>{{error}}</p>
+      <button mat-raised-button color="primary" (click)="loadModuleContents()">Try Again</button>
+    </div>
+
+    <div *ngIf="!loading && !error && contents.length === 0" class="empty-state">
+      <mat-icon>school</mat-icon>
+      <p>This module has no content</p>
+      <button mat-raised-button color="primary" routerLink="/dashboard">Back to Dashboard</button>
+    </div>
+
+    <div *ngIf="!loading && !error && contents.length > 0" class="contents-list">
+      <mat-card *ngFor="let content of contents" class="content-card">
+        <ng-container [ngSwitch]="content.type">
+          <!-- Section Header -->
+          <div *ngSwitchCase="'section'" class="section-header">
+            <h2>{{content.name}}</h2>
+            <div *ngIf="content.content" [innerHTML]="sanitizeHtml(content.content)"></div>
+            <mat-divider></mat-divider>
+          </div>
+
+          <!-- Text Content -->
+          <div *ngSwitchCase="'text'" class="text-content">
+            <h3>
+              <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+              {{content.name}}
+            </h3>
+            <div *ngIf="content.content" [innerHTML]="sanitizeHtml(content.content)"></div>
+          </div>
+
+          <!-- URL Content -->
+          <div *ngSwitchCase="'url'" class="url-content">
+            <h3>
+              <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+              {{content.name}}
+            </h3>
+            <a [href]="content.fileUrl" target="_blank" mat-button color="primary">
+              <mat-icon>open_in_new</mat-icon> Open Link
+            </a>
+          </div>
+
+          <!-- Image Content -->
+          <div *ngSwitchCase="'image'" class="image-content">
+            <h3>
+              <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+              {{content.name}}
+            </h3>
+            <div class="image-container">
+              <img *ngIf="content.fileUrl" [src]="content.fileUrl" [alt]="content.name" />
+            </div>
+            <button mat-button color="primary" (click)="downloadFile(content.fileUrl)">
+              <mat-icon>download</mat-icon> Download Image
+            </button>
+          </div>
+
+          <!-- Video Content -->
+          <div *ngSwitchCase="'video'" class="video-content">
+            <h3>
+              <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+              {{content.name}}
+            </h3>
+            <div class="video-container">
+              <video *ngIf="content.fileUrl" controls>
+                <source [src]="content.fileUrl" type="{{content.mimeType}}">
+                Your browser does not support the video tag.
+              </video>
+            </div>
+            <button mat-button color="primary" (click)="downloadFile(content.fileUrl)">
+              <mat-icon>download</mat-icon> Download Video
+            </button>
+          </div>
+
+          <!-- Audio Content -->
+          <div *ngSwitchCase="'audio'" class="audio-content">
+            <h3>
+              <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+              {{content.name}}
+            </h3>
+            <audio *ngIf="content.fileUrl" controls>
+              <source [src]="content.fileUrl" type="{{content.mimeType}}">
+              Your browser does not support the audio tag.
+            </audio>
+            <button mat-button color="primary" (click)="downloadFile(content.fileUrl)">
+              <mat-icon>download</mat-icon> Download Audio
+            </button>
+          </div>
+
+          <!-- File Content -->
+          <div *ngSwitchCase="'file'" class="file-content">
+            <h3>
+              <mat-icon>{{getFileIcon(content.mimeType)}}</mat-icon>
+              {{content.name}}
+            </h3>
+            <p *ngIf="content.mimeType" class="mime-type">Type: {{content.mimeType}}</p>
+            <button mat-raised-button color="primary" (click)="downloadFile(content.fileUrl)">
+              <mat-icon>download</mat-icon> Download File
+            </button>
+          </div>
+
+          <!-- Default Content Type -->
+          <div *ngSwitchDefault class="default-content">
+            <h3>
+              <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+              {{content.name}} ({{content.type}})
+            </h3>
+            <div *ngIf="content.content" [innerHTML]="sanitizeHtml(content.content)"></div>
+            <button *ngIf="content.fileUrl" mat-button color="primary" (click)="downloadFile(content.fileUrl)">
+              <mat-icon>open_in_new</mat-icon> Open Content
+            </button>
+          </div>
+        </ng-container>
+      </mat-card>
+    </div>
+  </div>
+</div>

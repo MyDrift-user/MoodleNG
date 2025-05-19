@@ -1,59 +1,87 @@
 # MoodleNG
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.4.
+A custom Angular frontend for Moodle Learning Management System that provides a simplified and modern interface for students to access their courses and learning materials.
 
-## Development server
+## Features
 
-To start a local development server, run:
+- **Custom Login**: Connect to any Moodle instance by specifying the domain and your credentials
+- **Course Dashboard**: View all your enrolled courses sorted by last accessed
+- **Content Viewer**: Access course materials including text, files, images, and videos
+- **Responsive Design**: Works on desktop and mobile devices
+- **Material Design**: Modern and intuitive user interface
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v20+)
+- npm (v10+)
+- A valid Moodle instance with API access enabled
+
+### Prerequisites
+
+- Node.js (v20+)
+- npm (v10+)
+- A valid Moodle instance with API access enabled
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/MoodleNG.git
+   cd MoodleNG
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm start
+   ```
+   
+   Alternatively, use the proxy configuration to avoid CORS issues:
+   ```bash
+   npm run start:proxy
+   ```
+   Note: You'll need to update the `proxy.conf.json` file with your Moodle instance URL.
+
+4. Open your browser and navigate to `http://localhost:4200`
+
+## Building for Production
+
+To create a production build:
 
 ```bash
-ng serve
+npm run build
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+The build artifacts will be stored in the `dist/` directory.
 
-## Code scaffolding
+## Moodle API Requirements
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+This application requires the following Moodle Web Service APIs to be enabled on the target Moodle instance:
 
-```bash
-ng generate component component-name
-```
+- `core_webservice_get_site_info`: To retrieve user and site information
+- `core_enrol_get_users_courses`: To get the user's enrolled courses
+- `core_course_get_contents`: To fetch course content
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Make sure your Moodle administrator has enabled these services and has set up the mobile app service correctly.
 
-```bash
-ng generate --help
-```
+## Architecture
 
-## Building
+The application follows a modular architecture with the following components:
 
-To build the project run:
+- **Login Component**: Handles authentication with Moodle instances
+- **Dashboard Component**: Lists all courses/modules sorted by last accessed
+- **Module Details Component**: Displays module contents with specialized viewers for different content types
 
-```bash
-ng build
-```
+## Contributing
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Running unit tests
+## License
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+This project is licensed under the MIT License - see the LICENSE file for details.
