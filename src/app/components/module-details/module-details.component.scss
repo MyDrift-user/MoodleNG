@@ -26,7 +26,7 @@
 }
 
 .content-container {
-  padding: 24px;
+  padding: 16px; // Reduced from 24px
   overflow-y: auto;
   flex: 1;
 }
@@ -53,39 +53,85 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 250px;
+  min-height: 200px; // Reduced from 250px
   text-align: center;
   color: rgba(255, 255, 255, 0.7);
-  margin: 32px 0;
+  margin: 16px 0; // Reduced from 32px
   
   p {
-    margin: 16px 0;
+    margin: 12px 0; // Reduced from 16px
     font-size: 16px;
   }
   
   button {
-    margin-top: 16px;
+    margin-top: 12px; // Reduced from 16px
   }
 }
 
 .contents-list {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px; // Reduced from 24px
 }
 
 .content-card {
-  padding: 24px;
+  padding: 10px; // Reduced from 12px
   border-radius: 8px;
   background-color: #424242;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12); // Lighter shadow
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 4px; // Reduced from 6px
+  min-height: 24px; // Ensure minimum height for all cards
+  display: flex;
+  flex-direction: column;
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
   }
+  
+  &.label-card {
+    padding: 8px 10px; // Even more compact for labels
+    background-color: rgba(66, 66, 66, 0.5); // Lighter background
+    box-shadow: none; // No shadow for label cards
+    
+    &:hover {
+      transform: none; // No hover effect for label cards
+      box-shadow: none;
+    }
+  }
+  
+  &.resource-card {
+    background-color: rgba(66, 66, 66, 0.8); // Slightly different background
+  }
+}
+
+/* Ensure all content types have consistent heights */
+.content-card > div {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Empty action containers should still take up space */
+.actions-container:empty {
+  min-width: 28px;
+  margin-left: 8px;
+}
+
+/* Force text content to have the same base height */
+.text-content, .url-content, .image-content, 
+.video-content, .audio-content, .file-content, 
+.default-content, .resource-content {
+  min-height: 36px; /* Ensure minimum height for all content types */
+}
+
+/* Make buttons consistently positioned in the vertical center */
+.content-header button, 
+.content-header a[mat-icon-button] {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .section-header {
@@ -93,36 +139,62 @@
   cursor: pointer;
   
   h2 {
-    margin-top: 0;
+    margin: 0; // Remove top margin
     color: #7986CB;
-    font-size: 22px;
+    font-size: 20px; // Reduced from 22px
     font-weight: 500;
   }
   
   mat-divider {
-    margin: 16px 0;
+    margin: 12px 0 8px; // Reduced from 16px 0
     background-color: rgba(255, 255, 255, 0.12);
   }
+}
+
+.section-summary {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 6px 0 0;
+  padding: 0 8px;
 }
 
 .section-title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 4px; // Reduced from 8px
   
   h2 {
-    font-size: 24px;
+    font-size: 20px; // Reduced from 24px
     font-weight: 500;
-    margin: 16px 0;
-    color: #90CAF9; /* Brighter blue color */
+    margin: 12px 0; // Reduced from 16px
+    color: #90CAF9; 
   }
   
-  .expand-icon {
-    font-size: 28px;
-    width: 28px;
-    height: 28px;
-    color: #7986CB;
+  .section-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px; // Reduced from 8px
+    
+    button {
+      background-color: rgba(90, 139, 214, 0.1);
+      transition: background-color 0.3s ease;
+      
+      &:hover {
+        background-color: rgba(90, 139, 214, 0.2);
+      }
+      
+      mat-icon {
+        color: #90CAF9;
+      }
+    }
+    
+    .expand-icon {
+      font-size: 24px; // Reduced from 28px
+      width: 24px; // Reduced from 28px
+      height: 24px; // Reduced from 28px
+      color: #7986CB;
+    }
   }
 }
 
@@ -135,7 +207,7 @@
 }
 
 .section-container {
-  margin-bottom: 32px;
+  margin-bottom: 24px; // Reduced from 32px
   animation: fadeIn 0.3s ease-in-out forwards;
   opacity: 0;
 }
@@ -143,44 +215,65 @@
 .section-card {
   border-radius: 8px;
   background-color: #424242;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  margin-bottom: 16px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15); // Reduced shadow
+  margin-bottom: 8px; // Reduced from 16px
   overflow: hidden;
   transition: all 0.3s ease;
-  padding: 16px;
+  padding: 12px; // Reduced from 16px
   
   &:hover {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); // Reduced shadow on hover
   }
 }
 
 .section-contents {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin: 8px 0 24px 24px;
+  gap: 6px; // Reduced from 8px
+  margin: 2px 0 12px 12px; // Reduced from 4px 0 16px 16px
   overflow: hidden;
-  padding-right: 8px; 
+  padding-right: 4px; // Reduced from 8px
 }
 
 .text-content, .url-content, .image-content, 
-.video-content, .audio-content, .file-content, .default-content {
+.video-content, .audio-content, .file-content, .default-content, .resource-content {
   h3 {
     display: flex;
     align-items: center;
-    font-size: 18px;
+    font-size: 14px; // Reduced from 15px
     color: rgba(255, 255, 255, 0.87);
-    margin-top: 0;
+    margin: 0 0 3px 0; // Reduced from 0 0 4px 0
+    line-height: 1.3;
+    min-height: 24px; // Ensure consistent height
     
     mat-icon {
-      margin-right: 12px;
+      margin-right: 6px;
       color: #7986CB;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      line-height: 18px;
+      flex-shrink: 0; // Prevent icon from shrinking
+    }
+    
+    .content-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .expand-icon {
+      flex-shrink: 0; // Prevent icon from shrinking
     }
   }
   
   ::ng-deep {
     p, div, span, li {
       color: rgba(255, 255, 255, 0.7);
+      margin: 3px 0; // Reduced from 4px
+      line-height: 1.3; // Reduced from 1.4
+      font-size: 13px; // Added smaller font size
     }
     
     a {
@@ -196,31 +289,31 @@
 
 .image-container, .video-container {
   max-width: 100%;
-  margin: 24px 0;
+  margin: 8px 0; // Reduced from 12px
   
   img, video {
     max-width: 100%;
     height: auto;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-radius: 6px; // Reduced from 8px
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3); // Reduced shadow
   }
 }
 
 .mime-type {
-  font-size: 0.9em;
+  font-size: 0.85em; // Reduced from 0.9em
   color: rgba(255, 255, 255, 0.5);
-  margin: 8px 0;
+  margin: 6px 0; // Reduced from 8px
 }
 
 audio {
   width: 100%;
-  margin: 24px 0;
+  margin: 8px 0; // Reduced from 12px
   border-radius: 4px;
 }
 
 .file-content {
   button {
-    margin-top: 16px;
+    margin-top: 12px; // Reduced from 16px
   }
 }
 
@@ -242,20 +335,21 @@ audio {
   }
 }
 
-/* New styles for label and resource content types */
+/* Styles for label and resource content types */
 .label-content {
-  margin: 16px 0;
+  margin: 8px 0; // Reduced from 16px
   
   ::ng-deep {
     p, div, span, li {
       color: rgba(255, 255, 255, 0.9);
-      font-size: 16px;
+      font-size: 14px; // Reduced from 16px
     }
     
     h1, h2, h3, h4, h5, h6 {
       color: rgba(255, 255, 255, 1);
-      margin-top: 0;
+      margin: 6px 0 3px; // Reduced top margin
       font-weight: 500;
+      font-size: 15px; // Smaller font size for headings
     }
     
     a {
@@ -271,7 +365,7 @@ audio {
       max-width: 100%;
       height: auto;
       border-radius: 4px;
-      margin: 8px 0;
+      margin: 6px 0; // Reduced from 8px
     }
   }
 }
@@ -280,63 +374,98 @@ audio {
   h3 {
     display: flex;
     align-items: center;
-    font-size: 18px;
+    font-size: 14px; // Reduced from 18px
     color: rgba(255, 255, 255, 0.87);
     margin-top: 0;
     
     mat-icon {
-      margin-right: 12px;
+      margin-right: 8px; // Reduced from 12px
       color: #7986CB;
     }
   }
   
   .text-container {
-    margin-bottom: 16px;
+    margin-bottom: 12px; // Reduced from 16px
   }
   
   .image-container, .video-container, .audio-container {
-    margin: 16px 0;
+    margin: 12px 0; // Reduced from 16px
   }
   
   .image-container img {
     max-width: 100%;
     height: auto;
-    border-radius: 8px;
+    border-radius: 6px; // Reduced from 8px
   }
   
   button {
-    margin-top: 8px;
+    margin-top: 6px; // Reduced from 8px
   }
 }
 
-/* Responsive adjustments */
-@media (max-width: 600px) {
-  .content-container {
-    padding: 16px;
+/* Styles for content headers with inline download buttons */
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px; // Reduced from 6px
+  min-height: 36px; // Add fixed minimum height for all headers
+  
+  h3 {
+    margin: 0;
+    flex: 1;
+    line-height: 1.2;
+    font-size: 14px; // Reduced from 15px
+    display: flex;
+    align-items: center;
+    
+    &.clickable {
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 4px;
+      transition: background-color 0.2s ease;
+      
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+    }
+    
+    mat-icon {
+      margin-right: 6px;
+      font-size: 16px; // Reduced from 18px
+      width: 16px; // Reduced from 18px
+      height: 16px; // Reduced from 18px
+      line-height: 16px; // Reduced from 18px
+      flex-shrink: 0; // Prevent icon from shrinking
+    }
   }
   
-  .content-card {
-    padding: 16px;
+  .actions-container {
+    display: flex;
+    align-items: center;
+    gap: 2px; // Small gap between buttons
+    margin-left: 8px; // Keep some distance from the title
   }
   
-  .section-header h2 {
-    font-size: 20px;
-  }
-  
-  .text-content h3, 
-  .url-content h3, 
-  .image-content h3, 
-  .video-content h3, 
-  .audio-content h3, 
-  .file-content h3, 
-  .default-content h3 {
-    font-size: 16px;
+  button, a[mat-icon-button] {
+    flex-shrink: 0;
+    width: 28px; // Reduced from 30px
+    height: 28px; // Reduced from 30px
+    line-height: 28px; // Reduced from 30px
+    padding: 0; // Ensure no extra padding
+    
+    mat-icon {
+      font-size: 16px; // Reduced from 18px
+      width: 16px; // Reduced from 18px
+      height: 16px; // Reduced from 18px
+      line-height: 16px; // Reduced from 18px
+    }
   }
 }
 
 .text-container {
-  padding: 8px 0;
-  margin-bottom: 16px;
+  padding: 3px 0; // Reduced from 4px
+  margin-bottom: 8px; // Reduced from 12px
   
   ::ng-deep {
     a {
@@ -352,21 +481,24 @@ audio {
       max-width: 100%;
       height: auto;
       border-radius: 4px;
-      margin: 8px 0;
+      margin: 6px 0; // Reduced from 8px
     }
     
     p, li, span, div {
       color: rgba(255, 255, 255, 0.7);
+      margin: 4px 0; // Reduced from 6px
+      font-size: 13px; // Smaller font size
     }
     
     table {
       border-collapse: collapse;
       width: 100%;
-      margin: 16px 0;
+      margin: 8px 0; // Reduced from 12px
+      font-size: 13px; // Smaller font size
       
       th, td {
         border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 8px;
+        padding: 4px; // Reduced from 6px
       }
       
       th {
@@ -377,8 +509,9 @@ audio {
 }
 
 .url-description {
-  margin-bottom: 16px;
+  margin-bottom: 12px; // Reduced from 16px
   color: rgba(255, 255, 255, 0.7);
+  font-size: 13px; // Added smaller font size
 }
 
 .clickable-media {
@@ -393,11 +526,10 @@ audio {
 .collapsible-header {
   cursor: pointer;
   transition: background-color 0.3s ease;
-  padding: 8px;
+  padding: 4px; // Reduced from 8px
   border-radius: 4px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
@@ -405,11 +537,36 @@ audio {
   
   .expand-icon {
     transition: transform 0.3s ease;
-    margin-left: 8px;
+    margin-left: 6px; // Reduced from 8px
     
     &.expanded {
       transform: rotate(180deg);
     }
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .content-container {
+    padding: 12px; // Reduced from 16px
+  }
+  
+  .content-card {
+    padding: 12px; // Reduced from 16px
+  }
+  
+  .section-header h2 {
+    font-size: 18px; // Reduced from 20px
+  }
+  
+  .text-content h3, 
+  .url-content h3, 
+  .image-content h3, 
+  .video-content h3, 
+  .audio-content h3, 
+  .file-content h3, 
+  .default-content h3 {
+    font-size: 14px; // Reduced from 16px
   }
 }
 

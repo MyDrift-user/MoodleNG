@@ -38,147 +38,177 @@
           <div class="section-header" (click)="toggleSection(section.id)">
             <div class="section-title-row">
               <h2>{{section.name}}</h2>
-              <mat-icon class="expand-icon" [class.expanded]="isSectionExpanded(section.id)">
-                {{ isSectionExpanded(section.id) ? 'expand_less' : 'expand_more' }}
-              </mat-icon>
+              <div class="section-actions">
+                <button mat-icon-button color="accent" (click)="downloadSectionContents(section.id, $event)" matTooltip="Download All Files">
+                  <mat-icon>folder_zip</mat-icon>
+                </button>
+                <mat-icon class="expand-icon" [class.expanded]="isSectionExpanded(section.id)">
+                  {{ isSectionExpanded(section.id) ? 'expand_less' : 'expand_more' }}
+                </mat-icon>
+              </div>
             </div>
-            <div *ngIf="section.content" [innerHTML]="sanitizeHtml(section.content)"></div>
+            <div *ngIf="section.content" class="section-summary" [innerHTML]="sanitizeHtml(section.content)"></div>
             <mat-divider></mat-divider>
           </div>
         </mat-card>
           <!-- Section Contents - Collapsible -->
         <div *ngIf="groupedContents[section.id]" [@expandCollapse]="isSectionExpanded(section.id) ? 'expanded' : 'collapsed'" class="section-contents">
           <mat-card *ngFor="let content of groupedContents[section.id]; let j = index" class="content-card fade-in"
-                   [style.animation-delay]="(i * 0.05 + j * 0.02) + 's'">
+                   [style.animation-delay]="(i * 0.05 + j * 0.02) + 's'"
+                   [ngClass]="{'label-card': content.type === 'label', 'resource-card': content.type === 'resource'}">
             <ng-container [ngSwitch]="content.type">
+              
               <!-- Label (rendered directly without header) -->
               <div *ngSwitchCase="'label'" class="label-content">
                 <div *ngIf="content.content" [innerHTML]="sanitizeHtml(content.content)"></div>
               </div>
-
-              <!-- Text Content -->
+                <!-- Text Content -->
               <div *ngSwitchCase="'text'" class="text-content">
-                <h3>
-                  <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
-                  {{content.name}}
-                </h3>
+                <div class="content-header">
+                  <h3>
+                    <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+                    <span class="content-title">{{content.name}}</span>
+                  </h3>
+                  <div class="actions-container">
+                    <!-- Action buttons would go here if needed -->
+                  </div>
+                </div>
                 <div *ngIf="content.content" class="text-container" [innerHTML]="sanitizeHtml(content.content)"></div>
-              </div>
-
-              <!-- URL Content -->
+              </div><!-- URL Content -->
               <div *ngSwitchCase="'url'" class="url-content">
-                <h3>
-                  <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
-                  {{content.name}}
-                </h3>
+                <div class="content-header">
+                  <h3>
+                    <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+                    <span class="content-title">{{content.name}}</span>
+                  </h3>
+                  <div class="actions-container">
+                    <a [href]="content.fileUrl" target="_blank" mat-icon-button color="accent" matTooltip="Open Link">
+                      <mat-icon>open_in_new</mat-icon>
+                    </a>
+                  </div>
+                </div>
                 <p *ngIf="content.content" class="url-description" [innerHTML]="sanitizeHtml(content.content)"></p>
-                <a [href]="content.fileUrl" target="_blank" mat-raised-button color="accent">
-                  <mat-icon>open_in_new</mat-icon> Open Link
-                </a>
-              </div>
-
-              <!-- Image Content -->
+              </div>              <!-- Image Content -->
               <div *ngSwitchCase="'image'" class="image-content">
-                <h3>
-                  <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
-                  {{content.name}}
-                </h3>
+                <div class="content-header">
+                  <h3>
+                    <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+                    <span class="content-title">{{content.name}}</span>
+                  </h3>
+                  <div class="actions-container">
+                    <button mat-icon-button color="accent" (click)="downloadFile(content.fileUrl)" matTooltip="Download Image">
+                      <mat-icon>download</mat-icon>
+                    </button>
+                  </div>
+                </div>
                 <div class="image-container">
                   <img *ngIf="content.fileUrl" [src]="content.fileUrl" [alt]="content.name" (click)="openInNewTab(content.fileUrl)" class="clickable-media" />
                 </div>
-                <button mat-button color="accent" (click)="downloadFile(content.fileUrl)">
-                  <mat-icon>download</mat-icon> Download Image
-                </button>
-              </div>
-
-              <!-- Video Content - Collapsible -->
+              </div>              <!-- Video Content - Collapsible -->
               <div *ngSwitchCase="'video'" class="video-content">
-                <h3 (click)="toggleVideo(content.id)" class="collapsible-header">
-                  <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
-                  {{content.name}}
-                  <span class="spacer"></span>
-                  <mat-icon class="expand-icon" [class.expanded]="isVideoExpanded(content.id)">
-                    {{ isVideoExpanded(content.id) ? 'expand_less' : 'expand_more' }}
-                  </mat-icon>
-                </h3>                <div [@expandCollapse]="isVideoExpanded(content.id) ? 'expanded' : 'collapsed'" class="video-container">
+                <div class="content-header">
+                  <h3 (click)="toggleVideo(content.id)" class="collapsible-header clickable">
+                    <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+                    <span class="content-title">{{content.name}}</span>
+                    <mat-icon class="expand-icon" [class.expanded]="isVideoExpanded(content.id)">
+                      {{ isVideoExpanded(content.id) ? 'expand_less' : 'expand_more' }}
+                    </mat-icon>
+                  </h3>
+                  <div class="actions-container">
+                    <button mat-icon-button color="accent" (click)="downloadFile(content.fileUrl)" matTooltip="Download Video">
+                      <mat-icon>download</mat-icon>
+                    </button>
+                  </div>
+                </div>
+                <div [@expandCollapse]="isVideoExpanded(content.id) ? 'expanded' : 'collapsed'" class="video-container">
                   <video *ngIf="content.fileUrl" controls>
                     <source [src]="content.fileUrl" type="{{content.mimeType}}">
                     Your browser does not support the video tag.
                   </video>
-                  <button mat-button color="accent" (click)="downloadFile(content.fileUrl)">
-                    <mat-icon>download</mat-icon> Download Video
-                  </button>
                 </div>
-              </div>
-
-              <!-- Audio Content -->
+              </div>              <!-- Audio Content -->
               <div *ngSwitchCase="'audio'" class="audio-content">
-                <h3>
-                  <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
-                  {{content.name}}
-                </h3>
+                <div class="content-header">
+                  <h3>
+                    <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+                    <span class="content-title">{{content.name}}</span>
+                  </h3>
+                  <div class="actions-container">
+                    <button mat-icon-button color="accent" (click)="downloadFile(content.fileUrl)" matTooltip="Download Audio">
+                      <mat-icon>download</mat-icon>
+                    </button>
+                  </div>
+                </div>
                 <audio *ngIf="content.fileUrl" controls>
                   <source [src]="content.fileUrl" type="{{content.mimeType}}">
                   Your browser does not support the audio tag.
                 </audio>
-                <button mat-button color="accent" (click)="downloadFile(content.fileUrl)">
-                  <mat-icon>download</mat-icon> Download Audio
-                </button>
-              </div>
-              
-              <!-- File Content -->
+              </div>              <!-- File Content -->
               <div *ngSwitchCase="'file'" class="file-content">
-                <h3>
-                  <mat-icon>{{getFileIcon(content.mimeType)}}</mat-icon>
-                  {{content.name}}
-                </h3>
+                <div class="content-header">
+                  <h3>
+                    <mat-icon>{{getFileIcon(content.mimeType)}}</mat-icon>
+                    <span class="content-title">{{content.name}}</span>
+                  </h3>
+                  <div class="actions-container">
+                    <button mat-icon-button color="accent" (click)="downloadFile(content.fileUrl)" matTooltip="Download File">
+                      <mat-icon>download</mat-icon>
+                    </button>
+                  </div>
+                </div>
                 <div *ngIf="content.content" class="text-container" [innerHTML]="sanitizeHtml(content.content)"></div>
-                <button mat-raised-button color="accent" (click)="downloadFile(content.fileUrl)">
-                  <mat-icon>download</mat-icon> Download File
-                </button>
-              </div>
-
-              <!-- Resource Content - Combined view of resource modules -->
+              </div>              <!-- Resource Content - Combined view of resource modules -->
               <div *ngSwitchCase="'resource'" class="resource-content">
-                <h3 (click)="content.mimeType?.startsWith('video/') && toggleVideo(content.id)" 
-                    [class.collapsible-header]="content.mimeType?.startsWith('video/')">
-                  <mat-icon>{{getFileIcon(content.mimeType)}}</mat-icon>
-                  {{content.name}}
-                  <span *ngIf="content.mimeType?.startsWith('video/')" class="spacer"></span>
-                  <mat-icon *ngIf="content.mimeType?.startsWith('video/')" class="expand-icon" [class.expanded]="isVideoExpanded(content.id)">
-                    {{ isVideoExpanded(content.id) ? 'expand_less' : 'expand_more' }}
-                  </mat-icon>
-                </h3>
+                <div class="content-header">
+                  <h3 (click)="content.mimeType?.startsWith('video/') && toggleVideo(content.id)" 
+                      [class.collapsible-header]="content.mimeType?.startsWith('video/')"
+                      [class.clickable]="content.mimeType?.startsWith('video/')">
+                    <mat-icon>{{getFileIcon(content.mimeType)}}</mat-icon>
+                    <span class="content-title">{{content.name}}</span>
+                    <mat-icon *ngIf="content.mimeType?.startsWith('video/')" class="expand-icon" [class.expanded]="isVideoExpanded(content.id)">
+                      {{ isVideoExpanded(content.id) ? 'expand_less' : 'expand_more' }}
+                    </mat-icon>
+                  </h3>
+                  <div class="actions-container">
+                    <button mat-icon-button color="accent" (click)="downloadFile(content.fileUrl)" matTooltip="Download {{getResourceTypeLabel(content.mimeType)}}">
+                      <mat-icon>download</mat-icon>
+                    </button>
+                  </div>
+                </div>
+                
                 <div *ngIf="content.content" class="text-container" [innerHTML]="sanitizeHtml(content.content)"></div>
+                
                 <div *ngIf="content.mimeType?.startsWith('image/')" class="image-container">
                   <img *ngIf="content.fileUrl" [src]="content.fileUrl" [alt]="content.name" (click)="openInNewTab(content.fileUrl)" class="clickable-media" />
-                </div>                <div *ngIf="content.mimeType?.startsWith('video/')" [@expandCollapse]="isVideoExpanded(content.id) ? 'expanded' : 'collapsed'" class="video-container">
+                </div>
+                
+                <div *ngIf="content.mimeType?.startsWith('video/')" [@expandCollapse]="isVideoExpanded(content.id) ? 'expanded' : 'collapsed'" class="video-container">
                   <video *ngIf="content.fileUrl" controls>
                     <source [src]="content.fileUrl" type="{{content.mimeType}}">
                     Your browser does not support the video tag.
                   </video>
                 </div>
+                
                 <div *ngIf="content.mimeType?.startsWith('audio/')" class="audio-container">
                   <audio *ngIf="content.fileUrl" controls>
                     <source [src]="content.fileUrl" type="{{content.mimeType}}">
                     Your browser does not support the audio tag.
                   </audio>
                 </div>
-                <button mat-raised-button color="accent" (click)="downloadFile(content.fileUrl)">
-                  <mat-icon>download</mat-icon> Download {{getResourceTypeLabel(content.mimeType)}}
-                </button>
-              </div>
-
-              <!-- Default Content Type -->
+              </div>              <!-- Default Content Type -->
               <div *ngSwitchDefault class="default-content">
-                <h3>
-                  <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
-                  {{content.name}} ({{content.type}})
-                </h3>
+                <div class="content-header">
+                  <h3>
+                    <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
+                    <span class="content-title">{{content.name}} ({{content.type}})</span>
+                  </h3>
+                  <div class="actions-container">
+                    <button *ngIf="content.fileUrl" mat-icon-button color="accent" (click)="downloadFile(content.fileUrl)" matTooltip="Open Content">
+                      <mat-icon>open_in_new</mat-icon>
+                    </button>
+                  </div>
+                </div>
                 <div *ngIf="content.content" [innerHTML]="sanitizeHtml(content.content)"></div>
-                <button *ngIf="content.fileUrl" mat-button color="accent" (click)="downloadFile(content.fileUrl)">
-                  <mat-icon>open_in_new</mat-icon> Open Content
-                </button>
               </div>
             </ng-container>
           </mat-card>

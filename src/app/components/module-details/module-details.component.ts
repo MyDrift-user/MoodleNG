@@ -14,6 +14,7 @@ import { MoodleContent, MoodleModule } from '../../models/moodle.models';
 import { MoodleService } from '../../services/moodle.service';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { animate, state, style, transition, trigger } from '@angular/animations';
+import JSZip from 'jszip';
 
 @Component({
   selector: 'app-module-details',
@@ -117,10 +118,10 @@ export class ModuleDetailsComponent implements OnInit {
                 this.groupedContents[currentSectionId] = [];                // Initialize as expanded (sections should be expanded by default)
                 this.expandedSections[currentSectionId] = true;
               } else if (currentSectionId >= 0) {
-                this.groupedContents[currentSectionId].push(content);                // Initialize videos as expanded
+                this.groupedContents[currentSectionId].push(content);                // Initialize videos as collapsed by default
                 if (content.type === 'video' || 
                     (content.type === 'resource' && content.mimeType?.startsWith('video/'))) {
-                  this.expandedVideos[content.id] = true; // Default to expanded
+                  this.expandedVideos[content.id] = false; // Default to collapsed
                 }
               }
             }
@@ -259,5 +260,95 @@ export class ModuleDetailsComponent implements OnInit {
   // Check if a video is expanded
   isVideoExpanded(contentId: number): boolean {
     return this.expandedVideos[contentId] === true; // Default to collapsed
+  }
+    // Download all content files from a section
+  async downloadSectionContents(sectionId: number, event: Event): Promise<void> {
+    // Prevent the click from toggling the section
+    event.stopPropagation();
+    
+    if (!this.groupedContents[sectionId] || this.groupedContents[sectionId].length === 0) {
+      return;
+    }
+    
+    // Get all downloadable files in this section
+    const downloadableContents = this.groupedContents[sectionId].filter(content => 
+      content.fileUrl && 
+      content.type !== 'label' && 
+      content.type !== 'url'
+    );
+    
+    if (downloadableContents.length === 0) {
+      console.log('No downloadable files in this section');
+      return;
+    }
+    
+    // Get section name for the zip file
+    const sectionName = this.sections.find(s => s.id === sectionId)?.name || 'section';
+    const zip = new JSZip();
+    
+    // Simple loading indicator using console (could be replaced with a proper UI indicator)
+    console.log(`Preparing ${downloadableContents.length} files for download...`);
+    
+    try {
+      // Add files to the zip
+      const downloadPromises = downloadableContents.map(async (content) => {
+        if (!content.fileUrl) return;
+        
+        try {
+          // Get the file name from the URL
+          const fileName = this.getFileNameFromUrl(content.fileUrl);
+          // Fetch the file
+          const response = await fetch(content.fileUrl);
+          const blob = await response.blob();
+          // Add to zip with a sanitized filename
+          zip.file(this.sanitizeFileName(`${content.name || fileName}`), blob);
+        } catch (error) {
+          console.error(`Error downloading file: ${content.name}`, error);
+        }
+      });
+      
+      await Promise.all(downloadPromises);
+      
+      // Generate the zip file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Create download link
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(zipBlob);
+      downloadLink.download = this.sanitizeFileName(`${sectionName}.zip`);
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      console.log('Download complete!');
+    } catch (error) {
+      console.error('Error creating zip file:', error);
+    }
+  }
+  
+  // Helper method to get filename from URL
+  private getFileNameFromUrl(url: string): string {
+    try {
+      // Try to extract the filename from the URL path
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/');
+      const lastPart = pathParts[pathParts.length - 1];
+      
+      // If we found a reasonable filename, return it
+      if (lastPart && lastPart.length > 0 && lastPart.indexOf('.') > 0) {
+        return decodeURIComponent(lastPart);
+      }
+      
+      // Fall back to a generic name
+      return 'file';
+    } catch (e) {
+      return 'file';
+    }
+  }
+  
+  // Helper method to sanitize filenames
+  private sanitizeFileName(name: string): string {
+    // Remove any characters that aren't safe for filenames
+    return name.replace(/[\\/:*?"<>|]/g, '_').substring(0, 200);
   }
 }
