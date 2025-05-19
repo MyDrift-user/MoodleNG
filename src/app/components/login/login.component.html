@@ -10,7 +10,7 @@
         <div class="form-field">
           <mat-form-field appearance="outline">
             <mat-label>Moodle Domain</mat-label>
-            <input matInput formControlName="domain" placeholder="your-school.moodle.com" required>
+            <input matInput formControlName="domain" placeholder="moodle.yourschoolcom" required>
             <mat-icon matPrefix>language</mat-icon>
             <mat-error *ngIf="loginForm.get('domain')?.errors?.['required']">
               Domain is required

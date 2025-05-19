@@ -84,6 +84,64 @@ html, body {
   }
 }
 
+/* File preview dialog styles */
+.file-preview-dialog {
+  /* Make sure the dialog container is as wide as possible */
+  .cdk-overlay-pane {
+    max-width: 98vw !important;
+    width: 98vw !important;
+    right: auto !important;
+    left: 1vw !important;
+  }
+  
+  mat-dialog-container, 
+  .mat-mdc-dialog-container,
+  .mdc-dialog__container,
+  .mdc-dialog__surface {
+    padding: 0 !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    max-width: 98vw !important;
+    max-height: 95vh !important;
+    width: 98vw !important;
+  }
+  
+  .mat-mdc-dialog-container {
+    width: 100% !important;
+    height: 100% !important;
+  }
+    
+  .mdc-dialog__surface {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100% !important;
+  }
+  
+  .mat-mdc-dialog-content,
+  mat-dialog-content {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  /* Make sure buttons are fully clickable */
+  .button-container {
+    position: relative;
+    z-index: 10;
+  }
+  
+  button.mat-icon-button {
+    margin-left: 4px !important;
+    margin-right: 0 !important;
+  }
+}
+
 /* Rich text content from Moodle */
 .moodle-content {
   color: theme.$text-color-dark;

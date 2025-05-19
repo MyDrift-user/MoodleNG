@@ -15,6 +15,7 @@ import { MoodleService } from '../../services/moodle.service';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import JSZip from 'jszip';
+import { FilePreviewService } from '../../services/file-preview.service';
 
 @Component({
   selector: 'app-module-details',
@@ -75,7 +76,8 @@ export class ModuleDetailsComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private moodleService: MoodleService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private filePreviewService: FilePreviewService
   ) {}
   
   ngOnInit(): void {
@@ -450,5 +452,41 @@ export class ModuleDetailsComponent implements OnInit {
     } catch (error) {
       console.error('Error creating module zip file:', error);
     }
+  }
+
+  // File previewing methods
+  previewFile(content: MoodleContent): void {
+    if (!content.fileUrl) return;
+    
+    const fileType = this.filePreviewService.detectFileType(content.mimeType || '');
+    
+    this.filePreviewService.openPreview({
+      url: content.fileUrl,
+      name: content.name || 'File',
+      mimeType: content.mimeType || '',
+      fileType: fileType
+    });
+  }
+  
+  // Check if a file can be previewed
+  canPreviewFile(content: MoodleContent): boolean {
+    if (!content.fileUrl) return false;
+    
+    const mimeType = content.mimeType || '';
+    
+    // File types that can be previewed
+    return (
+      mimeType.includes('pdf') || 
+      mimeType.includes('text/') || 
+      mimeType.includes('application/json') ||
+      mimeType.includes('text/markdown') ||
+      mimeType.endsWith('.md') ||
+      mimeType.includes('word') || 
+      mimeType.includes('excel') || 
+      mimeType.includes('powerpoint') ||
+      mimeType.includes('officedocument') ||
+      mimeType.includes('opendocument') ||
+      mimeType.startsWith('image/')
+    );
   }
 }

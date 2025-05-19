@@ -99,13 +99,16 @@
                     <span class="content-title">{{content.name}}</span>
                   </h3>
                   <div class="actions-container">
+                    <button mat-icon-button color="accent" (click)="previewFile(content)" matTooltip="Preview Image">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
                     <button mat-icon-button color="accent" (click)="downloadFile(content.fileUrl)" matTooltip="Download Image">
                       <mat-icon>download</mat-icon>
                     </button>
                   </div>
                 </div>
                 <div class="image-container">
-                  <img *ngIf="content.fileUrl" [src]="content.fileUrl" [alt]="content.name" (click)="openInNewTab(content.fileUrl)" class="clickable-media" />
+                  <img *ngIf="content.fileUrl" [src]="content.fileUrl" [alt]="content.name" (click)="previewFile(content)" class="clickable-media" />
                 </div>
               </div>              <!-- Video Content - Collapsible -->
               <div *ngSwitchCase="'video'" class="video-content">
@@ -154,6 +157,9 @@
                     <span class="content-title">{{content.name}}</span>
                   </h3>
                   <div class="actions-container">
+                    <button *ngIf="canPreviewFile(content)" mat-icon-button color="accent" (click)="previewFile(content)" matTooltip="Preview File">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
                     <button mat-icon-button color="accent" (click)="downloadFile(content.fileUrl)" matTooltip="Download File">
                       <mat-icon>download</mat-icon>
                     </button>
@@ -173,6 +179,12 @@
                     </mat-icon>
                   </h3>
                   <div class="actions-container">
+                    <button *ngIf="canPreviewFile(content) && !content.mimeType?.startsWith('video/')" 
+                            mat-icon-button color="accent" 
+                            (click)="previewFile(content)" 
+                            matTooltip="Preview {{getResourceTypeLabel(content.mimeType)}}">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
                     <button mat-icon-button color="accent" (click)="downloadFile(content.fileUrl)" matTooltip="Download {{getResourceTypeLabel(content.mimeType)}}">
                       <mat-icon>download</mat-icon>
                     </button>
@@ -182,7 +194,7 @@
                 <div *ngIf="content.content" class="text-container" [innerHTML]="sanitizeHtml(content.content)"></div>
                 
                 <div *ngIf="content.mimeType?.startsWith('image/')" class="image-container">
-                  <img *ngIf="content.fileUrl" [src]="content.fileUrl" [alt]="content.name" (click)="openInNewTab(content.fileUrl)" class="clickable-media" />
+                  <img *ngIf="content.fileUrl" [src]="content.fileUrl" [alt]="content.name" (click)="previewFile(content)" class="clickable-media" />
                 </div>
                 
                 <div *ngIf="content.mimeType?.startsWith('video/')" [@expandCollapse]="isVideoExpanded(content.id) ? 'expanded' : 'collapsed'" class="video-container">
