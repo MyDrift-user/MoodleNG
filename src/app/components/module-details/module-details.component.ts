@@ -9,14 +9,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MoodleContent, MoodleModule } from '../../models/moodle.models';
 import { MoodleService } from '../../services/moodle.service';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-module-details',
-  standalone: true,
-  imports: [
+  standalone: true,  imports: [
     CommonModule,
     RouterModule,
     MatToolbarModule,
@@ -26,7 +26,8 @@ import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-brows
     MatProgressSpinnerModule,
     MatExpansionModule,
     MatDividerModule,
-    MatListModule
+    MatListModule,
+    MatTooltipModule
   ],
   templateUrl: './module-details.component.html',
   styleUrl: './module-details.component.scss'
@@ -87,14 +88,20 @@ export class ModuleDetailsComponent implements OnInit {
       }
     });
   }
-  
-  // Helper methods for content display
+    // Helper methods for content display
   sanitizeHtml(html: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(html);
   }
   
   sanitizeUrl(url: string): SafeResourceUrl {
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
+  
+  // Opens a URL in a new browser tab
+  openInNewTab(url?: string): void {
+    if (url) {
+      window.open(url, '_blank');
+    }
   }
   
   getFileIcon(mimeType?: string): string {

@@ -7,14 +7,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MoodleModule } from '../../models/moodle.models';
 import { MoodleService } from '../../services/moodle.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
-  imports: [
+  standalone: true,  imports: [
     CommonModule,
     RouterModule,
     MatCardModule,
@@ -22,7 +23,8 @@ import { AuthService } from '../../services/auth.service';
     MatIconModule,
     MatToolbarModule,
     MatProgressSpinnerModule,
-    MatDividerModule
+    MatDividerModule,
+    MatTooltipModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -32,20 +34,32 @@ export class DashboardComponent implements OnInit {
   loading = true;
   error = '';
   siteName = '';
+  userName = '';
 
   constructor(
     private moodleService: MoodleService,
-    private authService: AuthService
+    private authService: AuthService,
+    private sanitizer: DomSanitizer
   ) {}
-
   ngOnInit(): void {
     this.loadModules();
     
-    // Get site name
+    // Get site name and user info
     const site = this.moodleService.getCurrentSite();
     if (site) {
       this.siteName = site.sitename || site.domain;
     }
+    
+    const user = this.moodleService.getCurrentUser();
+    if (user) {
+      this.userName = user.fullname || user.username;
+    }
+  }
+  
+  // Sanitize HTML content from Moodle
+  sanitizeHtml(html: string | undefined): SafeHtml {
+    if (!html) return '';
+    return this.sanitizer.bypassSecurityTrustHtml(html);
   }
 
   loadModules(): void {

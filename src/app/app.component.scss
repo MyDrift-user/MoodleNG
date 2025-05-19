@@ -2,4 +2,32 @@
   height: 100vh;
   width: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: #303030;
+  color: rgba(255, 255, 255, 0.87);
+  position: relative;
+}
+
+::ng-deep {
+  // Fix for Material form field contrast
+  .mat-mdc-form-field-focus-overlay {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  // Fix for card actions
+  .mat-mdc-card-actions {
+    padding: 8px 16px 16px !important;
+    margin: 0 !important;
+  }
+  
+  // Ensure form field text is visible
+  .mdc-text-field:not(.mdc-text-field--disabled) .mdc-floating-label {
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  // Fix divider color
+  .mat-divider {
+    border-top-color: rgba(255, 255, 255, 0.12);
+  }
 }

@@ -1,0 +1,81 @@
+@use 'sass:map';
+
+// Custom theme variables
+$primary-palette: (
+  50: #e8eaf6,
+  100: #c5cae9,
+  200: #9fa8da,
+  300: #7986cb,
+  400: #5c6bc0,
+  500: #3f51b5,
+  600: #3949ab,
+  700: #303f9f,
+  800: #283593,
+  900: #1a237e,
+  contrast: (
+    50: rgba(0,0,0,0.87),
+    100: rgba(0,0,0,0.87),
+    200: rgba(0,0,0,0.87),
+    300: white,
+    400: white,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+  )
+);
+
+$accent-palette: (
+  50: #fce4ec,
+  100: #f8bbd0,
+  200: #f48fb1,
+  300: #f06292,
+  400: #ec407a,
+  500: #ff4081,
+  600: #d81b60,
+  700: #c2185b,
+  800: #ad1457,
+  900: #880e4f,
+  A100: #ff80ab,
+  A200: #ff4081,
+  A400: #f50057,
+  A700: #c51162,
+  contrast: (
+    50: rgba(0,0,0,0.87),
+    100: rgba(0,0,0,0.87),
+    200: rgba(0,0,0,0.87),
+    300: rgba(0,0,0,0.87),
+    400: rgba(0,0,0,0.87),
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: rgba(0,0,0,0.87),
+    A200: white,
+    A400: white,
+    A700: white,
+  )
+);
+
+// Theme variables
+$primary-color: map.get($primary-palette, 500);
+$primary-light: map.get($primary-palette, 300);
+$primary-dark: map.get($primary-palette, 700);
+
+$accent-color: map.get($accent-palette, A200);
+$accent-light: map.get($accent-palette, A100);
+$accent-dark: map.get($accent-palette, A400);
+
+$warn-color: #f44336;
+
+// Background colors
+$background-dark: #303030;
+$card-color-dark: #424242;
+$dark-elevated: #484848;
+
+// Text colors
+$text-color-dark: rgba(255, 255, 255, 0.87);
+$text-secondary-dark: rgba(255, 255, 255, 0.6);
+$text-hint-dark: rgba(255, 255, 255, 0.38);

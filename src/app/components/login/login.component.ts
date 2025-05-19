@@ -5,20 +5,21 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
-  standalone: true,
-  imports: [
+  standalone: true,  imports: [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
     MatInputModule,
     MatButtonModule,
     MatCardModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatIconModule
   ],
   templateUrl: './login.component.html',  styleUrl: './login.component.scss'
 })
@@ -27,7 +28,7 @@ export class LoginComponent implements OnInit {
   loading = false;
   error = '';
   returnUrl = '/dashboard';
-  
+  hidePassword = true;
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,

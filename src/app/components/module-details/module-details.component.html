@@ -1,11 +1,11 @@
 <div class="module-details-container">
   <mat-toolbar color="primary" class="toolbar">
-    <button mat-icon-button routerLink="/dashboard" aria-label="Back to dashboard">
+    <button mat-icon-button routerLink="/dashboard" aria-label="Back to dashboard" matTooltip="Back to Dashboard">
       <mat-icon>arrow_back</mat-icon>
     </button>
     <span class="module-title">{{moduleName}}</span>
     <span class="spacer"></span>
-    <button mat-icon-button (click)="loadModuleContents()" [disabled]="loading" aria-label="Refresh content">
+    <button mat-icon-button (click)="loadModuleContents()" [disabled]="loading" aria-label="Refresh content" matTooltip="Refresh Content">
       <mat-icon>refresh</mat-icon>
     </button>
   </mat-toolbar>
@@ -17,6 +17,7 @@
     </div>
 
     <div *ngIf="error" class="error-container">
+      <mat-icon>error_outline</mat-icon>
       <p>{{error}}</p>
       <button mat-raised-button color="primary" (click)="loadModuleContents()">Try Again</button>
     </div>
@@ -26,9 +27,9 @@
       <p>This module has no content</p>
       <button mat-raised-button color="primary" routerLink="/dashboard">Back to Dashboard</button>
     </div>
-
-    <div *ngIf="!loading && !error && contents.length > 0" class="contents-list">
-      <mat-card *ngFor="let content of contents" class="content-card">
+      <div *ngIf="!loading && !error && contents.length > 0" class="contents-list">
+      <mat-card *ngFor="let content of contents; let i = index" class="content-card fade-in"
+                [style.animation-delay]="i * 0.05 + 's'">
         <ng-container [ngSwitch]="content.type">
           <!-- Section Header -->
           <div *ngSwitchCase="'section'" class="section-header">
@@ -43,7 +44,7 @@
               <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
               {{content.name}}
             </h3>
-            <div *ngIf="content.content" [innerHTML]="sanitizeHtml(content.content)"></div>
+            <div *ngIf="content.content" class="text-container" [innerHTML]="sanitizeHtml(content.content)"></div>
           </div>
 
           <!-- URL Content -->
@@ -52,7 +53,8 @@
               <mat-icon>{{getIconForContentType(content.type)}}</mat-icon>
               {{content.name}}
             </h3>
-            <a [href]="content.fileUrl" target="_blank" mat-button color="primary">
+            <p *ngIf="content.content" class="url-description" [innerHTML]="sanitizeHtml(content.content)"></p>
+            <a [href]="content.fileUrl" target="_blank" mat-raised-button color="accent">
               <mat-icon>open_in_new</mat-icon> Open Link
             </a>
           </div>
@@ -64,9 +66,9 @@
               {{content.name}}
             </h3>
             <div class="image-container">
-              <img *ngIf="content.fileUrl" [src]="content.fileUrl" [alt]="content.name" />
+              <img *ngIf="content.fileUrl" [src]="content.fileUrl" [alt]="content.name" (click)="openInNewTab(content.fileUrl)" class="clickable-media" />
             </div>
-            <button mat-button color="primary" (click)="downloadFile(content.fileUrl)">
+            <button mat-button color="accent" (click)="downloadFile(content.fileUrl)">
               <mat-icon>download</mat-icon> Download Image
             </button>
           </div>
@@ -83,7 +85,7 @@
                 Your browser does not support the video tag.
               </video>
             </div>
-            <button mat-button color="primary" (click)="downloadFile(content.fileUrl)">
+            <button mat-button color="accent" (click)="downloadFile(content.fileUrl)">
               <mat-icon>download</mat-icon> Download Video
             </button>
           </div>
@@ -98,7 +100,7 @@
               <source [src]="content.fileUrl" type="{{content.mimeType}}">
               Your browser does not support the audio tag.
             </audio>
-            <button mat-button color="primary" (click)="downloadFile(content.fileUrl)">
+            <button mat-button color="accent" (click)="downloadFile(content.fileUrl)">
               <mat-icon>download</mat-icon> Download Audio
             </button>
           </div>
@@ -110,7 +112,7 @@
               {{content.name}}
             </h3>
             <p *ngIf="content.mimeType" class="mime-type">Type: {{content.mimeType}}</p>
-            <button mat-raised-button color="primary" (click)="downloadFile(content.fileUrl)">
+            <button mat-raised-button color="accent" (click)="downloadFile(content.fileUrl)">
               <mat-icon>download</mat-icon> Download File
             </button>
           </div>
@@ -122,7 +124,7 @@
               {{content.name}} ({{content.type}})
             </h3>
             <div *ngIf="content.content" [innerHTML]="sanitizeHtml(content.content)"></div>
-            <button *ngIf="content.fileUrl" mat-button color="primary" (click)="downloadFile(content.fileUrl)">
+            <button *ngIf="content.fileUrl" mat-button color="accent" (click)="downloadFile(content.fileUrl)">
               <mat-icon>open_in_new</mat-icon> Open Content
             </button>
           </div>
