@@ -4,6 +4,15 @@
   height: 100vh;
   overflow: hidden;
   background-color: #303030;
+  
+  // Hide all images in the dashboard
+  ::ng-deep {
+    img, 
+    [class*="image"],
+    [class*="img"] {
+      display: none !important;
+    }
+  }
 }
 
 .toolbar {
@@ -11,6 +20,12 @@
   top: 0;
   z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  
+  .app-title {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
 }
 
 .site-name {
@@ -34,29 +49,55 @@
   }
 }
 
-.content-container {
-  padding: 24px;
+.spacer {
+  flex: 1 1 auto;
+}
+
+.content-wrapper {
+  display: flex;
+  justify-content: center;
   overflow-y: auto;
   flex: 1;
   background-color: #303030;
+  padding: 0 16px;
+}
+
+.content-container {
+  width: 100%;
+  max-width: 1200px;
+  padding: 32px 24px;
+  background-color: rgba(66, 66, 66, 0.3);
+  border-radius: 0 0 8px 8px;
+  margin: 0 auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
   
-  h1 {
-    font-size: 28px;
-    font-weight: 400;
-    margin: 0;
-    color: rgba(255, 255, 255, 0.87);
+  .title-section {
+    h1 {
+      font-size: 28px;
+      font-weight: 500;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.92);
+    }
+    
+    .subtitle {
+      margin: 4px 0 0 0;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 15px;
+    }
   }
   
-  button {
+  .refresh-button {
     height: 42px;
     min-width: 110px;
+    border-radius: 21px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     
     mat-icon {
       margin-right: 8px;
@@ -64,9 +105,26 @@
   }
 }
 
+// Animation for cards
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
 .modules-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 24px;
 }
 
@@ -75,14 +133,30 @@
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   background-color: #424242;
-}
-
-.module-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    
+    .card-decoration {
+      height: 8px;
+    }
+  }
+  
+  .card-decoration {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(to right, #3f51b5, #7986cb);
+    transition: height 0.3s ease;
+  }
 }
 
 .hidden-module {
@@ -90,7 +164,7 @@
 }
 
 mat-card-header {
-  padding: 16px 16px 0 16px;
+  padding: 20px 16px 0 16px;
   
   ::ng-deep .mat-mdc-card-header-text {
     width: 100%;
@@ -101,19 +175,23 @@ mat-card-title {
   font-size: 18px !important;
   font-weight: 500 !important;
   margin-bottom: 8px !important;
-  color: rgba(255, 255, 255, 0.87) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding-top: 6px;
 }
 
 mat-card-subtitle {
   color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 14px !important;
 }
 
 mat-card-content {
-  padding: 0 16px;
+  padding: 8px 16px 16px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .module-summary {
@@ -123,6 +201,11 @@ mat-card-content {
   margin-bottom: 12px;
   color: rgba(255, 255, 255, 0.7);
   position: relative;
+  font-size: 14px;
+  line-height: 1.5;
+  border-left: 3px solid rgba(121, 134, 203, 0.4);
+  padding-left: 10px;
+  font-style: italic;
   
   &::after {
     content: '';
@@ -130,23 +213,73 @@ mat-card-content {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 20px;
+    height: 24px;
     background: linear-gradient(to top, #424242, transparent);
+  }
+  
+  ::ng-deep {
+    img {
+      display: none !important;
+    }
+    
+    // Add placeholder for removed images
+    img[src]:before {
+      content: 'Image Removed';
+      display: inline-block;
+      font-style: italic;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    // Improve text display
+    p {
+      margin: 0 0 8px 0;
+    }
+    
+    a {
+      color: #90CAF9;
+      text-decoration: none;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 }
 
-.last-access {
-  font-size: 0.9em;
-  color: rgba(255, 255, 255, 0.5);
+.access-info {
+  display: flex;
+  align-items: center;
   margin-top: auto;
   margin-bottom: 8px;
+  
+  .access-icon {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-right: 6px;
+  }
+  
+  .last-access {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+mat-divider {
+  margin: 0 16px;
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 mat-card-actions {
-  margin-top: auto;
-  padding: 8px 16px 16px;
+  padding: 12px 16px;
   
-  button {
+  .view-button {
+    margin: 0;
+    border-radius: 18px;
+    padding: 0 16px;
+    
     mat-icon {
       margin-right: 4px;
       font-size: 18px;
@@ -161,9 +294,13 @@ mat-card-actions {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 250px;
+  min-height: 200px;
   text-align: center;
   color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  background-color: rgba(66, 66, 66, 0.5);
+  padding: 32px;
+  margin: 24px 0;
   
   p {
     margin: 16px 0;
@@ -181,9 +318,14 @@ mat-card-actions {
 
 .error-container {
   background-color: rgba(244, 67, 54, 0.1);
-  border-radius: 8px;
-  padding: 24px;
-  margin: 20px 0;
+  
+  .error-icon {
+    font-size: 48px;
+    height: 48px;
+    width: 48px;
+    color: #f44336;
+    margin-bottom: 16px;
+  }
   
   p {
     color: #f44336;
@@ -196,13 +338,41 @@ mat-card-actions {
 
 /* Responsive adjustments */
 @media (max-width: 600px) {
+  .content-container {
+    padding: 16px;
+  }
+  
   .header {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+    margin-bottom: 24px;
   }
   
   .modules-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .module-card {
+    border-radius: 8px;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+  .modules-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .modules-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1201px) {
+  .modules-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }

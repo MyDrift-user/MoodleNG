@@ -1,6 +1,6 @@
 <div class="dashboard-container">
   <mat-toolbar color="primary" class="toolbar">
-    <span>MoodleNG</span>
+    <span class="app-title">MoodleNG</span>
     <span *ngIf="siteName" class="site-name">{{siteName}}</span>
     <span class="spacer"></span>
     <span class="user-info" *ngIf="userName">
@@ -12,49 +12,61 @@
     </button>
   </mat-toolbar>
 
-  <div class="content-container">
-    <div class="header">
-      <h1>My Courses</h1>
-      <button mat-raised-button color="primary" (click)="loadModules()" [disabled]="loading">
-        <mat-icon>refresh</mat-icon> Refresh
-      </button>
-    </div>
+  <div class="content-wrapper">
+    <div class="content-container">
+      <div class="header">
+        <div class="title-section">
+          <h1>My Courses</h1>
+          <p class="subtitle">Access your enrolled courses</p>
+        </div>
+        <button mat-raised-button color="primary" (click)="loadModules()" [disabled]="loading" class="refresh-button">
+          <mat-icon>refresh</mat-icon> Refresh
+        </button>
+      </div>
 
-    <div *ngIf="loading" class="loading-container">
-      <mat-spinner diameter="40"></mat-spinner>
-      <p>Loading your courses...</p>
-    </div>
+      <div *ngIf="loading" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading your courses...</p>
+      </div>
 
-    <div *ngIf="error" class="error-container">
-      <p>{{error}}</p>
-      <button mat-raised-button color="primary" (click)="loadModules()">Try Again</button>
-    </div>
+      <div *ngIf="error" class="error-container">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <p>{{error}}</p>
+        <button mat-raised-button color="primary" (click)="loadModules()">Try Again</button>
+      </div>
 
-    <div *ngIf="!loading && !error && modules.length === 0" class="empty-state">
-      <mat-icon>school</mat-icon>
-      <p>You are not enrolled in any courses</p>
-    </div>    <div *ngIf="!loading && !error && modules.length > 0" class="modules-grid">
-      <mat-card *ngFor="let module of modules; let i = index" class="module-card fade-in" 
-                [class.hidden-module]="!module.visible"
-                [style.animation-delay]="i * 0.05 + 's'">
-        <mat-card-header>
-          <mat-card-title [matTooltip]="module.name">{{module.name}}</mat-card-title>
-          <mat-card-subtitle *ngIf="module.courseName">{{module.courseName}}</mat-card-subtitle>
-        </mat-card-header>
-        
-        <mat-card-content>
-          <p *ngIf="module.summary" class="module-summary" [innerHTML]="sanitizeHtml(module.summary)"></p>
-          <p class="last-access">Last accessed: {{formatLastAccess(module.lastAccess)}}</p>
-        </mat-card-content>
-        
-        <mat-divider></mat-divider>
-        
-        <mat-card-actions align="end">
-          <button mat-button color="accent" [routerLink]="['/modules', module.id]">
-            <mat-icon>visibility</mat-icon> View Contents
-          </button>
-        </mat-card-actions>
-      </mat-card>
+      <div *ngIf="!loading && !error && modules.length === 0" class="empty-state">
+        <mat-icon>school</mat-icon>
+        <p>You are not enrolled in any courses</p>
+      </div>
+      
+      <div *ngIf="!loading && !error && modules.length > 0" class="modules-grid">
+        <mat-card *ngFor="let module of modules; let i = index" class="module-card fade-in" 
+                  [class.hidden-module]="!module.visible"
+                  [style.animation-delay]="i * 0.05 + 's'">
+          <div class="card-decoration"></div>
+          <mat-card-header>
+            <mat-card-title [matTooltip]="module.name">{{module.name}}</mat-card-title>
+            <mat-card-subtitle *ngIf="module.courseName">{{module.courseName}}</mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <p *ngIf="module.summary" class="module-summary" [innerHTML]="sanitizeHtml(module.summary)"></p>
+            <div class="access-info">
+              <mat-icon class="access-icon">access_time</mat-icon>
+              <span class="last-access">{{formatLastAccess(module.lastAccess)}}</span>
+            </div>
+          </mat-card-content>
+          
+          <mat-divider></mat-divider>
+          
+          <mat-card-actions align="end">
+            <button mat-button color="accent" [routerLink]="['/modules', module.id]" class="view-button">
+              <mat-icon>visibility</mat-icon> View Contents
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
     </div>
   </div>
 </div>

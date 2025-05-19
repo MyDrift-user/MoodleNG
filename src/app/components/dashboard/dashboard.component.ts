@@ -59,7 +59,11 @@ export class DashboardComponent implements OnInit {
   // Sanitize HTML content from Moodle
   sanitizeHtml(html: string | undefined): SafeHtml {
     if (!html) return '';
-    return this.sanitizer.bypassSecurityTrustHtml(html);
+    
+    // Remove img tags before sanitizing
+    const imgRemoved = html.replace(/<img[^>]*>/g, '');
+    
+    return this.sanitizer.bypassSecurityTrustHtml(imgRemoved);
   }
 
   loadModules(): void {
