@@ -150,9 +150,7 @@ export class MoodleService {
     return this.http.get<any[]>(webServiceUrl, { params }).pipe(
       map(sections => {
         // Flatten all sections and modules into our content format
-        const allContents: MoodleContent[] = [];
-        
-        sections.forEach(section => {
+        const allContents: MoodleContent[] = [];        sections.forEach(section => {
           // Add section title as text content
           if (section.name) {
             allContents.push({
@@ -166,29 +164,103 @@ export class MoodleService {
           
           // Process each module in the section
           if (section.modules) {
+            // Group modules by type for better organization
+            const sectionModules: { [key: string]: any[] } = {};
+            
             section.modules.forEach((module: any) => {
-              // Add module name as a subheading
-              allContents.push({
+              // Skip modules without contents
+              if (!module.contents || module.contents.length === 0) {
+                return;
+              }
+              
+              // Handle special case for labels - integrate them directly into section
+              if (module.modname === 'label') {
+                // Add label content directly to section without separate header
+                if (module.contents && module.contents.length > 0 && module.contents[0].content) {
+                  allContents.push({
+                    id: module.id,
+                    name: '',  // No name for labels
+                    type: 'label',
+                    content: module.contents[0].content,
+                    moduleId: courseId
+                  });
+                }
+                return;
+              }
+              
+              // Create an entry for the module with all its content combined
+              const mainContent: MoodleContent = {
                 id: module.id,
                 name: module.name,
                 type: module.modname || 'unknown',
+                content: '',
                 moduleId: courseId
-              });
+              };
               
               // Process contents of the module
               if (module.contents) {
-                module.contents.forEach((content: any) => {
-                  allContents.push({
-                    id: content.fileurl ? content.fileurl.hashCode() : Math.random(),
-                    name: content.filename || content.name || 'Content',
-                    type: this.determineContentType(content),
-                    content: content.content,
-                    fileUrl: content.fileurl ? this.appendTokenToUrl(content.fileurl) : undefined,
-                    mimeType: content.mimetype,
-                    timeModified: content.timemodified ? new Date(content.timemodified * 1000) : undefined,
-                    moduleId: courseId
+                // For resources like files, combine all information into one entry
+                if (module.modname === 'resource' && module.contents.length > 0) {
+                  const fileContent = module.contents[0];
+                  mainContent.fileUrl = fileContent.fileurl ? this.appendTokenToUrl(fileContent.fileurl) : undefined;
+                  mainContent.mimeType = fileContent.mimetype;
+                  mainContent.type = this.determineContentType(fileContent);
+                  
+                  // If there's a description, add it to the main content
+                  const descriptionContent = module.contents.find((c: any) => c.type === 'file' && c.content);
+                  if (descriptionContent) {
+                    mainContent.content = descriptionContent.content;
+                  }
+                  
+                  allContents.push(mainContent);
+                }                // Handle URLs properly
+                else if (module.modname === 'url' && module.contents.length > 0) {
+                  const urlContent = module.contents[0];
+                  
+                  // For external URL modules, extract the correct URL
+                  // from the fileurl parameter or externalurl
+                  let externalUrl = '';
+                  if (urlContent.fileurl) {
+                    // The URL is often embedded as a parameter in the fileurl
+                    const urlMatch = urlContent.fileurl.match(/url=([^&]+)/);
+                    if (urlMatch && urlMatch[1]) {
+                      externalUrl = decodeURIComponent(urlMatch[1]);
+                    } else {
+                      externalUrl = urlContent.fileurl;
+                    }
+                  }
+                  
+                  mainContent.fileUrl = externalUrl;
+                  mainContent.type = 'url';
+                  
+                  // If there's a description, add it to the main content
+                  if (urlContent.content) {
+                    mainContent.content = urlContent.content;
+                  }
+                  
+                  allContents.push(mainContent);
+                }
+                // Handle other module types
+                else {
+                  allContents.push(mainContent);
+                  
+                  // Add subcontents as needed
+                  module.contents.forEach((content: any) => {
+                    // Skip content that's just metadata or already processed
+                    if (content.type === 'file' && content.mimetype) {
+                      allContents.push({
+                        id: content.fileurl ? content.fileurl.hashCode() : Math.random(),
+                        name: content.filename || content.name || 'Content',
+                        type: this.determineContentType(content),
+                        content: content.content,
+                        fileUrl: content.fileurl ? this.appendTokenToUrl(content.fileurl) : undefined,
+                        mimeType: content.mimetype,
+                        timeModified: content.timemodified ? new Date(content.timemodified * 1000) : undefined,
+                        moduleId: courseId
+                      });
+                    }
                   });
-                });
+                }
               }
             });
           }
