@@ -75,14 +75,14 @@
 }
 
 .content-card {
-  padding: 10px; // Reduced from 12px
+  padding: 8px 12px; /* Further reduced padding */
   border-radius: 8px;
   background-color: #424242;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12); // Lighter shadow
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  margin-bottom: 4px; // Reduced from 6px
-  min-height: 24px; // Ensure minimum height for all cards
+  margin-bottom: 8px;
+  min-height: 24px;
   display: flex;
   flex-direction: column;
   
@@ -92,18 +92,18 @@
   }
   
   &.label-card {
-    padding: 8px 10px; // Even more compact for labels
-    background-color: rgba(66, 66, 66, 0.5); // Lighter background
-    box-shadow: none; // No shadow for label cards
+    padding: 8px 12px; /* Further reduced */
+    background-color: rgba(66, 66, 66, 0.5);
+    box-shadow: none;
     
     &:hover {
-      transform: none; // No hover effect for label cards
+      transform: none;
       box-shadow: none;
     }
   }
   
   &.resource-card {
-    background-color: rgba(66, 66, 66, 0.8); // Slightly different background
+    background-color: rgba(66, 66, 66, 0.8);
   }
 }
 
@@ -123,137 +123,33 @@
 .text-content, .url-content, .image-content, 
 .video-content, .audio-content, .file-content, 
 .default-content, .resource-content {
-  min-height: 36px; /* Ensure minimum height for all content types */
-}
-
-/* Make buttons consistently positioned in the vertical center */
-.content-header button, 
-.content-header a[mat-icon-button] {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.section-header {
-  width: 100%;
-  cursor: pointer;
+  padding: 0 0 0 12px; /* Further reduced from 24px */
+  min-height: 36px;
   
-  h2 {
-    margin: 0; // Remove top margin
-    color: #7986CB;
-    font-size: 20px; // Reduced from 22px
-    font-weight: 500;
-  }
-  
-  mat-divider {
-    margin: 12px 0 8px; // Reduced from 16px 0
-    background-color: rgba(255, 255, 255, 0.12);
-  }
-}
-
-.section-summary {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-  margin: 6px 0 0;
-  padding: 0 8px;
-}
-
-.section-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 4px; // Reduced from 8px
-  
-  h2 {
-    font-size: 20px; // Reduced from 24px
-    font-weight: 500;
-    margin: 12px 0; // Reduced from 16px
-    color: #90CAF9; 
-  }
-  
-  .section-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px; // Reduced from 8px
-    
-    button {
-      background-color: rgba(90, 139, 214, 0.1);
-      transition: background-color 0.3s ease;
-      
-      &:hover {
-        background-color: rgba(90, 139, 214, 0.2);
-      }
-      
-      mat-icon {
-        color: #90CAF9;
-      }
-    }
-    
-    .expand-icon {
-      font-size: 24px; // Reduced from 28px
-      width: 24px; // Reduced from 28px
-      height: 24px; // Reduced from 28px
-      color: #7986CB;
-    }
-  }
-}
-
-.expand-icon {
-  transition: transform 0.3s ease;
-  
-  &.expanded {
-    transform: rotate(180deg);
-  }
-}
-
-.section-container {
-  margin-bottom: 24px; // Reduced from 32px
-  animation: fadeIn 0.3s ease-in-out forwards;
-  opacity: 0;
-}
-
-.section-card {
-  border-radius: 8px;
-  background-color: #424242;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15); // Reduced shadow
-  margin-bottom: 8px; // Reduced from 16px
-  overflow: hidden;
-  transition: all 0.3s ease;
-  padding: 12px; // Reduced from 16px
-  
-  &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); // Reduced shadow on hover
-  }
-}
-
-.section-contents {
-  display: flex;
-  flex-direction: column;
-  gap: 6px; // Reduced from 8px
-  margin: 2px 0 12px 12px; // Reduced from 4px 0 16px 16px
-  overflow: hidden;
-  padding-right: 4px; // Reduced from 8px
-}
-
-.text-content, .url-content, .image-content, 
-.video-content, .audio-content, .file-content, .default-content, .resource-content {
   h3 {
     display: flex;
     align-items: center;
-    font-size: 14px; // Reduced from 15px
+    font-size: 14px;
     color: rgba(255, 255, 255, 0.87);
-    margin: 0 0 3px 0; // Reduced from 0 0 4px 0
+    margin: 0 0 3px 0;
     line-height: 1.3;
-    min-height: 24px; // Ensure consistent height
+    min-height: 36px;
     
     mat-icon {
-      margin-right: 6px;
+      margin-right: 8px; /* Reduced from 12px */
       color: #7986CB;
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-      line-height: 18px;
-      flex-shrink: 0; // Prevent icon from shrinking
+      font-size: 16px; /* Smaller icon size */
+      width: 28px; /* Reduced from 32px */
+      height: 28px; /* Reduced from 32px */
+      line-height: 28px; /* Reduced from 32px */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+      background-color: rgba(121, 134, 203, 0.12);
+      border-radius: 4px; /* Smaller radius */
+      padding: 4px; /* Reduced padding */
+      box-sizing: border-box;
     }
     
     .content-title {
@@ -264,16 +160,16 @@
     }
     
     .expand-icon {
-      flex-shrink: 0; // Prevent icon from shrinking
+      flex-shrink: 0;
     }
   }
   
   ::ng-deep {
     p, div, span, li {
       color: rgba(255, 255, 255, 0.7);
-      margin: 3px 0; // Reduced from 4px
-      line-height: 1.3; // Reduced from 1.4
-      font-size: 13px; // Added smaller font size
+      margin: 3px 0;
+      line-height: 1.3;
+      font-size: 13px;
     }
     
     a {
@@ -379,8 +275,13 @@ audio {
     margin-top: 0;
     
     mat-icon {
-      margin-right: 8px; // Reduced from 12px
-      color: #7986CB;
+      margin-right: 8px;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      font-size: 16px;
+      padding: 4px;
+      border-radius: 4px;
     }
   }
   
@@ -408,14 +309,15 @@ audio {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px; // Reduced from 6px
-  min-height: 36px; // Add fixed minimum height for all headers
+  margin-bottom: 0; /* Removed margin */
+  min-height: 36px; /* Further reduced */
+  padding: 0; /* Removed padding completely */
   
   h3 {
     margin: 0;
     flex: 1;
     line-height: 1.2;
-    font-size: 14px; // Reduced from 15px
+    font-size: 14px;
     display: flex;
     align-items: center;
     
@@ -430,35 +332,57 @@ audio {
       }
     }
     
+    /* Boxed and centered icons */
     mat-icon {
-      margin-right: 6px;
-      font-size: 16px; // Reduced from 18px
-      width: 16px; // Reduced from 18px
-      height: 16px; // Reduced from 18px
-      line-height: 16px; // Reduced from 18px
-      flex-shrink: 0; // Prevent icon from shrinking
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-right: 8px; /* Reduced from 12px */
+      font-size: 16px; /* Reduced */
+      width: 28px; /* Further reduced */
+      height: 28px; /* Further reduced */
+      line-height: 28px; /* Further reduced */
+      flex-shrink: 0;
+      background-color: rgba(121, 134, 203, 0.12);
+      border-radius: 4px; /* Smaller radius */
+      padding: 4px; /* Reduced padding */
+      box-sizing: border-box;
     }
   }
   
+  /* Centered buttons with consistent layout */
   .actions-container {
     display: flex;
     align-items: center;
-    gap: 2px; // Small gap between buttons
-    margin-left: 8px; // Keep some distance from the title
+    justify-content: center;
+    gap: 4px;
+    margin-left: 8px; /* Reduced from 12px */
+    height: 28px; /* Reduced to match content */
+    min-width: 32px; /* Reduced minimum width */
   }
   
   button, a[mat-icon-button] {
     flex-shrink: 0;
-    width: 28px; // Reduced from 30px
-    height: 28px; // Reduced from 30px
-    line-height: 28px; // Reduced from 30px
-    padding: 0; // Ensure no extra padding
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 28px; /* Further reduced */
+    height: 28px; /* Further reduced */
+    border-radius: 4px; /* Smaller radius */
+    background-color: rgba(121, 134, 203, 0.12);
+    transition: background-color 0.2s ease;
+    padding: 0; /* No padding */
+    margin: 0; /* No margin */
+    
+    &:hover {
+      background-color: rgba(121, 134, 203, 0.24);
+    }
     
     mat-icon {
-      font-size: 16px; // Reduced from 18px
-      width: 16px; // Reduced from 18px
-      height: 16px; // Reduced from 18px
-      line-height: 16px; // Reduced from 18px
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      line-height: 16px;
     }
   }
 }
@@ -526,7 +450,7 @@ audio {
 .collapsible-header {
   cursor: pointer;
   transition: background-color 0.3s ease;
-  padding: 4px; // Reduced from 8px
+  padding: 8px;
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -536,8 +460,15 @@ audio {
   }
   
   .expand-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     transition: transform 0.3s ease;
-    margin-left: 6px; // Reduced from 8px
+    margin-left: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background-color: rgba(121, 134, 203, 0.12);
     
     &.expanded {
       transform: rotate(180deg);
@@ -545,18 +476,177 @@ audio {
   }
 }
 
-/* Responsive adjustments */
+/* Section header and content styles */
+.section-header {
+  width: 100%;
+  cursor: pointer;
+  
+  h2 {
+    margin: 0;
+    color: #7986CB;
+    font-size: 20px;
+    font-weight: 500;
+  }
+  
+  mat-divider {
+    margin: 12px 0 8px;
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.section-summary {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 6px 0 0;
+  padding: 0 8px;
+}
+
+/* Similar boxed treatment for section actions */
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+  
+  h2 {
+    font-size: 20px;
+    font-weight: 500;
+    margin: 12px 0;
+    color: #90CAF9; 
+  }
+  
+  .section-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    button {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(90, 139, 214, 0.1);
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      
+      &:hover {
+        background-color: rgba(90, 139, 214, 0.2);
+      }
+      
+      mat-icon {
+        color: #90CAF9;
+      }
+    }
+    
+    .expand-icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      width: 36px;
+      height: 36px;
+      background-color: rgba(121, 134, 203, 0.12);
+      border-radius: 6px;
+      color: #7986CB;
+    }
+  }
+}
+
+.expand-icon {
+  transition: transform 0.3s ease;
+  
+  &.expanded {
+    transform: rotate(180deg);
+  }
+}
+
+.section-container {
+  margin-bottom: 24px;
+  animation: fadeIn 0.3s ease-in-out forwards;
+  opacity: 0;
+}
+
+.section-card {
+  border-radius: 8px;
+  background-color: #424242;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  padding: 16px;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.section-contents {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 16px 16px;
+  overflow: hidden;
+  padding-right: 8px;
+}
+
+.collapsible-header {
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  padding: 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .expand-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease;
+    margin-left: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background-color: rgba(121, 134, 203, 0.12);
+    
+    &.expanded {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+/* Mobile-responsive rules */
 @media (max-width: 600px) {
   .content-container {
-    padding: 12px; // Reduced from 16px
+    padding: 8px; /* Further reduced */
   }
   
   .content-card {
-    padding: 12px; // Reduced from 16px
+    padding: 8px 10px; /* Further reduced */
   }
   
   .section-header h2 {
-    font-size: 18px; // Reduced from 20px
+    font-size: 18px;
+  }
+  
+  .content-header {
+    min-height: 28px; /* Further reduced */
+    
+    h3 mat-icon {
+      width: 24px; /* Smaller for mobile */
+      height: 24px;
+      margin-right: 6px;
+    }
+  }
+  
+  .text-content, .url-content, .image-content, 
+  .video-content, .audio-content, .file-content, 
+  .default-content, .resource-content {
+    padding: 0 0 0 10px; /* Minimal padding for mobile */
   }
   
   .text-content h3, 
@@ -566,7 +656,12 @@ audio {
   .audio-content h3, 
   .file-content h3, 
   .default-content h3 {
-    font-size: 14px; // Reduced from 16px
+    font-size: 13px; /* Smaller font */
+  }
+  
+  button, a[mat-icon-button] {
+    width: 24px; /* Even smaller */
+    height: 24px;
   }
 }
 
