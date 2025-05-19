@@ -140,6 +140,25 @@ html, body {
     margin-left: 4px !important;
     margin-right: 0 !important;
   }
+
+  /* Ensure PDF iframe uses full height */
+  .pdf-container {
+    height: 100% !important; 
+    width: 100% !important;
+    display: block !important;
+    position: relative !important;
+  }
+
+  .pdf-container iframe {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: 100% !important;
+    width: 100% !important;
+    border: none !important;
+  }
 }
 
 /* Rich text content from Moodle */

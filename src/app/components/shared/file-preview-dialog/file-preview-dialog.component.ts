@@ -46,7 +46,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
         <!-- PDF preview -->
         <div *ngIf="fileData.fileType === 'pdf' && !loading" class="pdf-container">
-          <iframe [src]="safeUrl" frameborder="0"></iframe>
+          <iframe [src]="safeUrl" frameborder="0" style="width:100%; height:100%; position:absolute; top:0; left:0; right:0; bottom:0;"></iframe>
         </div>
 
         <!-- Text file preview -->
@@ -178,10 +178,24 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       color: rgba(255, 255, 255, 0.7);
     }
 
-    .pdf-container iframe {
+    .pdf-container {
       width: 100%;
       height: 100%;
+      overflow: hidden;
+      display: block;
+      position: relative;
+    }
+
+    .pdf-container iframe {
+      display: block;
       border: none;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
     }
 
     .text-preview {
