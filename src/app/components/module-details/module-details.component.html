@@ -5,9 +5,13 @@
     </button>
     <span class="module-title">{{moduleName}}</span>
     <span class="spacer"></span>
-    <button mat-icon-button (click)="downloadAllModuleFiles()" aria-label="Download all files" matTooltip="Download All Files" class="download-all-btn">
-      <mat-icon>cloud_download</mat-icon>
-    </button>
+    <div class="download-all-btn-container" [class.downloading]="downloadingAll">
+      <button mat-icon-button (click)="downloadAllModuleFiles()" [disabled]="downloadingAll || loading" 
+              aria-label="Download all files" matTooltip="Download All Files" class="download-all-btn">
+        <mat-icon *ngIf="!downloadingAll">cloud_download</mat-icon>
+        <span *ngIf="downloadingAll" class="progress-text">{{downloadAllProgress}}%</span>
+      </button>
+    </div>
     <button mat-icon-button (click)="loadModuleContents()" [disabled]="loading" aria-label="Refresh content" matTooltip="Refresh Content">
       <mat-icon>refresh</mat-icon>
     </button>
@@ -42,9 +46,13 @@
             <div class="section-title-row">
               <h2>{{section.name}}</h2>
               <div class="section-actions">
-                <button mat-icon-button color="accent" (click)="downloadSectionContents(section.id, $event)" matTooltip="Download All Files">
-                  <mat-icon>folder_zip</mat-icon>
-                </button>
+                <div class="section-download-container">
+                  <button mat-icon-button color="accent" (click)="downloadSectionContents(section.id, $event)" 
+                          [disabled]="downloadingSections[section.id]" matTooltip="Download All Files">
+                    <mat-icon *ngIf="!downloadingSections[section.id]">folder_zip</mat-icon>
+                    <span *ngIf="downloadingSections[section.id]" class="progress-text">{{downloadSectionProgress[section.id]}}%</span>
+                  </button>
+                </div>
                 <mat-icon class="expand-icon" [class.expanded]="isSectionExpanded(section.id)">
                   {{ isSectionExpanded(section.id) ? 'expand_less' : 'expand_more' }}
                 </mat-icon>

@@ -743,4 +743,116 @@ audio {
   }
 }
 
+/* Styling for download buttons with spinners */
+.download-all-btn {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  mat-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  
+  button {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    mat-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
+/* Styles for download progress indicators */
+.download-all-btn-container {
+  position: relative;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  
+  .download-all-btn {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    mat-icon {
+      color: white;
+    }
+    
+    .progress-text {
+      font-weight: 500;
+      text-align: center;
+      font-size: 14px;
+      color: white;
+    }
+  }
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .section-download-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    
+    button {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(90, 139, 214, 0.1);
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      z-index: 2;
+      
+      &:hover {
+        background-color: rgba(90, 139, 214, 0.2);
+      }
+      
+      mat-icon {
+        color: #90CAF9;
+      }
+      
+      .progress-text {
+        font-weight: 500;
+        text-align: center;
+        font-size: 14px;
+        color: #90CAF9;
+      }
+    }
+  }
+  
+  .expand-icon {
+    background-color: rgba(121, 134, 203, 0.12);
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    font-size: 20px;
+  }
+}
+
 

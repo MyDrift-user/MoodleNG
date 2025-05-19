@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
@@ -16,6 +17,17 @@ import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-brows
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import JSZip from 'jszip';
 import { FilePreviewService } from '../../services/file-preview.service';
+
+// Add interface for JSZip metadata
+interface JSZipMetadata {
+  percent: number;
+  currentFile: string;
+}
+
+// Add interface that extends JSZipGeneratorOptions to include onUpdate
+interface JSZipGeneratorOptionsWithCallback extends JSZip.JSZipGeneratorOptions<'blob'> {
+  onUpdate?: (metadata: JSZipMetadata) => void;
+}
 
 @Component({
   selector: 'app-module-details',
@@ -28,6 +40,7 @@ import { FilePreviewService } from '../../services/file-preview.service';
     MatButtonModule,
     MatCardModule,
     MatProgressSpinnerModule,
+    MatProgressBarModule,
     MatExpansionModule,
     MatDividerModule,
     MatListModule,
@@ -60,6 +73,12 @@ export class ModuleDetailsComponent implements OnInit {
   contents: MoodleContent[] = [];
   loading = true;
   error = '';
+  
+  // Loading states and progress for downloads
+  downloadingAll = false;
+  downloadAllProgress = 0;
+  downloadingSections: { [sectionId: number]: boolean } = {};
+  downloadSectionProgress: { [sectionId: number]: number } = {};
   
   // Track expanded/collapsed sections
   expandedSections: { [sectionId: number]: boolean } = {};
@@ -271,6 +290,10 @@ export class ModuleDetailsComponent implements OnInit {
     if (!this.groupedContents[sectionId] || this.groupedContents[sectionId].length === 0) {
       return;
     }
+
+    // Set loading state and initialize progress for this section
+    this.downloadingSections[sectionId] = true;
+    this.downloadSectionProgress[sectionId] = 0;
     
     // Get all downloadable files in this section
     const downloadableContents = this.groupedContents[sectionId].filter(content => 
@@ -281,6 +304,8 @@ export class ModuleDetailsComponent implements OnInit {
     
     if (downloadableContents.length === 0) {
       console.log('No downloadable files in this section');
+      this.downloadingSections[sectionId] = false;
+      this.downloadSectionProgress[sectionId] = 0;
       return;
     }
     
@@ -288,8 +313,9 @@ export class ModuleDetailsComponent implements OnInit {
     const sectionName = this.sections.find(s => s.id === sectionId)?.name || 'section';
     const zip = new JSZip();
     
-    // Simple loading indicator using console (could be replaced with a proper UI indicator)
-    console.log(`Preparing ${downloadableContents.length} files for download...`);
+    // Progress tracking
+    const totalFiles = downloadableContents.length;
+    let filesProcessed = 0;
     
     try {
       // Add files to the zip
@@ -304,27 +330,65 @@ export class ModuleDetailsComponent implements OnInit {
           const blob = await response.blob();
           // Add to zip with a sanitized filename
           zip.file(this.sanitizeFileName(`${content.name || fileName}`), blob);
+          
+          // Update progress
+          filesProcessed++;
+          this.downloadSectionProgress[sectionId] = Math.round((filesProcessed / totalFiles) * 70); // 70% for file downloads
         } catch (error) {
           console.error(`Error downloading file: ${content.name}`, error);
+          // Still count as processed even if error
+          filesProcessed++;
+          this.downloadSectionProgress[sectionId] = Math.round((filesProcessed / totalFiles) * 70);
         }
       });
       
       await Promise.all(downloadPromises);
       
-      // Generate the zip file
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      // Update progress - compression starting
+      this.downloadSectionProgress[sectionId] = 75;
+      
+      // Generate the zip file - this can take time for larger files
+      const zipBlob = await zip.generateAsync({ 
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
+        // Add a progress callback
+        onUpdate: (metadata: JSZipMetadata) => {
+          // Update from 75% to 95% during zip generation
+          if (metadata.percent) {
+            const zipProgress = Math.round(75 + (metadata.percent * 0.20));
+            this.downloadSectionProgress[sectionId] = zipProgress;
+          }
+        }
+      } as JSZipGeneratorOptionsWithCallback);
+      
+      // Update progress - almost done
+      this.downloadSectionProgress[sectionId] = 95;
       
       // Create download link
       const downloadLink = document.createElement('a');
       downloadLink.href = URL.createObjectURL(zipBlob);
       downloadLink.download = this.sanitizeFileName(`${sectionName}.zip`);
       document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
       
-      console.log('Download complete!');
+      // Wait a moment to ensure UI updates
+      setTimeout(() => {
+        this.downloadSectionProgress[sectionId] = 100;
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        console.log('Download complete!');
+        
+        // Reset after a brief moment to show 100% completion
+        setTimeout(() => {
+          this.downloadingSections[sectionId] = false;
+          this.downloadSectionProgress[sectionId] = 0;
+        }, 1000);
+      }, 500);
+      
     } catch (error) {
       console.error('Error creating zip file:', error);
+      this.downloadingSections[sectionId] = false;
+      this.downloadSectionProgress[sectionId] = 0;
     }
   }
   
@@ -360,6 +424,10 @@ export class ModuleDetailsComponent implements OnInit {
       return;
     }
     
+    // Set loading state and initialize progress
+    this.downloadingAll = true;
+    this.downloadAllProgress = 0;
+    
     // Gather all downloadable content from all sections
     let allDownloadableContents: MoodleContent[] = [];
     
@@ -384,13 +452,16 @@ export class ModuleDetailsComponent implements OnInit {
     
     if (allDownloadableContents.length === 0) {
       console.log('No downloadable files in this module');
+      this.downloadingAll = false;
+      this.downloadAllProgress = 0;
       return;
     }
     
     const zip = new JSZip();
     
-    // Simple loading indicator using console (could be replaced with a proper UI indicator)
-    console.log(`Preparing ${allDownloadableContents.length} files for download from ${this.sections.length} sections...`);
+    // Progress tracking
+    const totalFiles = allDownloadableContents.length;
+    let filesProcessed = 0;
     
     try {
       // Create folders for each section
@@ -400,6 +471,9 @@ export class ModuleDetailsComponent implements OnInit {
       for (const section of this.sections) {
         const safeSectionName = this.sanitizeFileName(section.name || `Section ${section.id}`);
         sectionFolders[section.id] = zip.folder(safeSectionName) as JSZip;
+        
+        // Update progress slightly for folder creation
+        this.downloadAllProgress = Math.round((this.sections.indexOf(section) / this.sections.length) * 5);
       }
       
       // Add files to respective section folders
@@ -417,40 +491,77 @@ export class ModuleDetailsComponent implements OnInit {
             const response = await fetch(content.fileUrl);
             const blob = await response.blob();
             zip.file(fileName, blob);
-            return;
+          } else {
+            // Get the file name from the URL or content name
+            const fileName = this.sanitizeFileName(content.name || this.getFileNameFromUrl(content.fileUrl));
+            
+            // Fetch the file
+            const response = await fetch(content.fileUrl);
+            const blob = await response.blob();
+            
+            // Add to the appropriate section folder
+            sectionFolders[sectionId].file(fileName, blob);
           }
           
-          // Get the file name from the URL or content name
-          const fileName = this.sanitizeFileName(content.name || this.getFileNameFromUrl(content.fileUrl));
+          // Update progress
+          filesProcessed++;
+          this.downloadAllProgress = 5 + Math.round((filesProcessed / totalFiles) * 65); // 5-70% for downloads
           
-          // Fetch the file
-          const response = await fetch(content.fileUrl);
-          const blob = await response.blob();
-          
-          // Add to the appropriate section folder
-          sectionFolders[sectionId].file(fileName, blob);
-          console.log(`Added ${fileName} to section ${sectionId}`);
         } catch (error) {
           console.error(`Error downloading file: ${content.name}`, error);
+          // Still count as processed even if error
+          filesProcessed++;
+          this.downloadAllProgress = 5 + Math.round((filesProcessed / totalFiles) * 65);
         }
       });
       
       await Promise.all(downloadPromises);
       
+      // Update progress - compression starting
+      this.downloadAllProgress = 75;
+      
       // Generate the zip file
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const zipBlob = await zip.generateAsync({ 
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
+        // Add a progress callback
+        onUpdate: (metadata: JSZipMetadata) => {
+          // Update from 75% to 95% during zip generation
+          if (metadata.percent) {
+            const zipProgress = Math.round(75 + (metadata.percent * 0.20));
+            this.downloadAllProgress = zipProgress;
+          }
+        }
+      } as JSZipGeneratorOptionsWithCallback);
+      
+      // Update progress - almost done
+      this.downloadAllProgress = 95;
       
       // Create download link
       const downloadLink = document.createElement('a');
       downloadLink.href = URL.createObjectURL(zipBlob);
       downloadLink.download = this.sanitizeFileName(`${this.moduleName}.zip`);
       document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
       
-      console.log('Module download complete!');
+      // Wait a moment to ensure UI updates
+      setTimeout(() => {
+        this.downloadAllProgress = 100;
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        console.log('Module download complete!');
+        
+        // Reset after a brief moment to show 100% completion
+        setTimeout(() => {
+          this.downloadingAll = false;
+          this.downloadAllProgress = 0;
+        }, 1000);
+      }, 500);
+      
     } catch (error) {
       console.error('Error creating module zip file:', error);
+      this.downloadingAll = false;
+      this.downloadAllProgress = 0;
     }
   }
 
