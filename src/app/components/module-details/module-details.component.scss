@@ -11,6 +11,19 @@
   top: 0;
   z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  
+  /* Styling for the download all button */
+  .download-all-btn {
+    margin-right: 8px;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    mat-icon {
+      color: white;
+    }
+  }
 }
 
 .module-title {

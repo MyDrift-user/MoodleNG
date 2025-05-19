@@ -5,6 +5,9 @@
     </button>
     <span class="module-title">{{moduleName}}</span>
     <span class="spacer"></span>
+    <button mat-icon-button (click)="downloadAllModuleFiles()" aria-label="Download all files" matTooltip="Download All Files" class="download-all-btn">
+      <mat-icon>cloud_download</mat-icon>
+    </button>
     <button mat-icon-button (click)="loadModuleContents()" [disabled]="loading" aria-label="Refresh content" matTooltip="Refresh Content">
       <mat-icon>refresh</mat-icon>
     </button>

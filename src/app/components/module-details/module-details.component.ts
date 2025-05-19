@@ -351,4 +351,104 @@ export class ModuleDetailsComponent implements OnInit {
     // Remove any characters that aren't safe for filenames
     return name.replace(/[\\/:*?"<>|]/g, '_').substring(0, 200);
   }
+
+  // Download all files from all sections in the module
+  async downloadAllModuleFiles(): Promise<void> {
+    if (this.loading || this.sections.length === 0) {
+      return;
+    }
+    
+    // Gather all downloadable content from all sections
+    let allDownloadableContents: MoodleContent[] = [];
+    
+    // Map to store which section each content belongs to
+    const contentSectionMap = new Map<number, number>();
+    
+    // Collect downloadable files from each section and track their section
+    for (const section of this.sections) {
+      const sectionContents = this.groupedContents[section.id] || [];
+      const downloadableContents = sectionContents.filter(content => 
+        content.fileUrl && 
+        content.type !== 'label' && 
+        content.type !== 'url'
+      );
+      
+      // Add to overall collection and map each content to its section
+      downloadableContents.forEach(content => {
+        allDownloadableContents.push(content);
+        contentSectionMap.set(content.id, section.id);
+      });
+    }
+    
+    if (allDownloadableContents.length === 0) {
+      console.log('No downloadable files in this module');
+      return;
+    }
+    
+    const zip = new JSZip();
+    
+    // Simple loading indicator using console (could be replaced with a proper UI indicator)
+    console.log(`Preparing ${allDownloadableContents.length} files for download from ${this.sections.length} sections...`);
+    
+    try {
+      // Create folders for each section
+      const sectionFolders: { [sectionId: number]: JSZip } = {};
+      
+      // Setup folders for each section
+      for (const section of this.sections) {
+        const safeSectionName = this.sanitizeFileName(section.name || `Section ${section.id}`);
+        sectionFolders[section.id] = zip.folder(safeSectionName) as JSZip;
+      }
+      
+      // Add files to respective section folders
+      const downloadPromises = allDownloadableContents.map(async (content) => {
+        if (!content.fileUrl) return;
+        
+        try {
+          // Find which section this content belongs to using our map
+          const sectionId = contentSectionMap.get(content.id);
+          
+          if (!sectionId || !sectionFolders[sectionId]) {
+            // If we can't find the section, put it in the root of the zip
+            console.log(`Couldn't find section for content ${content.name}, adding to root`);
+            const fileName = this.sanitizeFileName(content.name || this.getFileNameFromUrl(content.fileUrl));
+            const response = await fetch(content.fileUrl);
+            const blob = await response.blob();
+            zip.file(fileName, blob);
+            return;
+          }
+          
+          // Get the file name from the URL or content name
+          const fileName = this.sanitizeFileName(content.name || this.getFileNameFromUrl(content.fileUrl));
+          
+          // Fetch the file
+          const response = await fetch(content.fileUrl);
+          const blob = await response.blob();
+          
+          // Add to the appropriate section folder
+          sectionFolders[sectionId].file(fileName, blob);
+          console.log(`Added ${fileName} to section ${sectionId}`);
+        } catch (error) {
+          console.error(`Error downloading file: ${content.name}`, error);
+        }
+      });
+      
+      await Promise.all(downloadPromises);
+      
+      // Generate the zip file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Create download link
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(zipBlob);
+      downloadLink.download = this.sanitizeFileName(`${this.moduleName}.zip`);
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      console.log('Module download complete!');
+    } catch (error) {
+      console.error('Error creating module zip file:', error);
+    }
+  }
 }
