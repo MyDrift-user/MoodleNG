@@ -26,9 +26,12 @@
 }
 
 .content-container {
-  padding: 16px; // Reduced from 24px
+  padding: 16px;
   overflow-y: auto;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center content horizontally */
 }
 
 /* Fade-in animation */
@@ -68,31 +71,34 @@
   }
 }
 
+/* Set maximum width for content to prevent full-width stretching */
 .contents-list {
   display: flex;
   flex-direction: column;
-  gap: 16px; // Reduced from 24px
+  gap: 16px;
+  max-width: 800px; /* Limit maximum width */
+  width: 100%; /* Use 100% of available space up to max-width */
 }
 
 .content-card {
-  padding: 8px 12px; /* Further reduced padding */
-  border-radius: 8px;
+  padding: 6px 10px; /* Further reduced padding */
+  border-radius: 6px;
   background-color: #424242;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  box-shadow: none; /* Removed shadow completely */
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  margin-bottom: 8px;
-  min-height: 24px;
+  transition: transform 0.2s ease;
+  margin-bottom: 2px; /* Minimal spacing between cards */
+  min-height: 20px;
   display: flex;
   flex-direction: column;
   
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); /* Very subtle hover shadow */
   }
   
   &.label-card {
-    padding: 8px 12px; /* Further reduced */
+    padding: 6px 10px;
     background-color: rgba(66, 66, 66, 0.5);
     box-shadow: none;
     
@@ -309,9 +315,9 @@ audio {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0; /* Removed margin */
-  min-height: 36px; /* Further reduced */
-  padding: 0; /* Removed padding completely */
+  margin-bottom: 0;
+  min-height: 36px;
+  padding: 0;
   
   h3 {
     margin: 0;
@@ -337,15 +343,15 @@ audio {
       display: flex;
       justify-content: center;
       align-items: center;
-      margin-right: 8px; /* Reduced from 12px */
-      font-size: 16px; /* Reduced */
-      width: 28px; /* Further reduced */
-      height: 28px; /* Further reduced */
-      line-height: 28px; /* Further reduced */
+      margin-right: 8px;
+      font-size: 16px;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
       flex-shrink: 0;
       background-color: rgba(121, 134, 203, 0.12);
-      border-radius: 4px; /* Smaller radius */
-      padding: 4px; /* Reduced padding */
+      border-radius: 4px;
+      padding: 4px;
       box-sizing: border-box;
     }
   }
@@ -356,9 +362,9 @@ audio {
     align-items: center;
     justify-content: center;
     gap: 4px;
-    margin-left: 8px; /* Reduced from 12px */
-    height: 28px; /* Reduced to match content */
-    min-width: 32px; /* Reduced minimum width */
+    margin-left: 8px;
+    height: 28px;
+    min-width: 32px;
   }
   
   button, a[mat-icon-button] {
@@ -366,16 +372,33 @@ audio {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 28px; /* Further reduced */
-    height: 28px; /* Further reduced */
-    border-radius: 4px; /* Smaller radius */
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
     background-color: rgba(121, 134, 203, 0.12);
     transition: background-color 0.2s ease;
-    padding: 0; /* No padding */
-    margin: 0; /* No margin */
+    padding: 0;
+    margin: 0;
+    position: relative;
+    overflow: visible; /* Changed from hidden to ensure hover covers full height */
+    
+    /* Full-coverage hover effect with absolute positioning */
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: transparent;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+      z-index: 0;
+      pointer-events: none; /* Allow clicks to pass through */
+    }
     
     &:hover {
-      background-color: rgba(121, 134, 203, 0.24);
+      background-color: rgba(121, 134, 203, 0.24); /* Direct background change */
     }
     
     mat-icon {
@@ -383,7 +406,24 @@ audio {
       width: 16px;
       height: 16px;
       line-height: 16px;
+      position: relative;
+      z-index: 1;
     }
+  }
+}
+
+/* Fix for material button ripple effect */
+::ng-deep {
+  .mat-mdc-icon-button .mat-mdc-button-persistent-ripple,
+  .mat-mdc-icon-button .mat-mdc-button-ripple {
+    border-radius: 4px !important;
+  }
+  
+  /* Override material button shape */
+  .mat-mdc-icon-button {
+    --mdc-icon-button-state-layer-size: 28px !important;
+    --mat-mdc-button-persistent-ripple-color: rgba(121, 134, 203, 0.12) !important;
+    border-radius: 4px !important;
   }
 }
 
@@ -447,10 +487,11 @@ audio {
   }
 }
 
+/* Restore collapsible header styling */
 .collapsible-header {
   cursor: pointer;
   transition: background-color 0.3s ease;
-  padding: 8px;
+  padding: 6px;
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -460,19 +501,15 @@ audio {
   }
   
   .expand-icon {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     transition: transform 0.3s ease;
     margin-left: 8px;
     width: 24px;
     height: 24px;
-    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background-color: rgba(121, 134, 203, 0.12);
-    
-    &.expanded {
-      transform: rotate(180deg);
-    }
+    border-radius: 4px;
   }
 }
 
@@ -540,81 +577,77 @@ audio {
     }
     
     .expand-icon {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 24px;
-      width: 36px;
-      height: 36px;
       background-color: rgba(121, 134, 203, 0.12);
-      border-radius: 6px;
-      color: #7986CB;
+      border-radius: 4px;
+      width: 28px;
+      height: 28px;
+      font-size: 20px;
     }
   }
 }
 
+/* Common styles for expand icons to ensure proper rotation */
 .expand-icon {
   transition: transform 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   
   &.expanded {
-    transform: rotate(180deg);
+    transform: rotate(180deg) !important; /* Force rotation with !important */
   }
 }
 
+/* Section container should respect max width */
 .section-container {
   margin-bottom: 24px;
   animation: fadeIn 0.3s ease-in-out forwards;
   opacity: 0;
+  width: 100%; /* Take full width of parent */
 }
 
 .section-card {
   border-radius: 8px;
   background-color: #424242;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-  margin-bottom: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); /* Further reduced shadow */
+  margin-bottom: 4px; /* Further reduced */
   overflow: hidden;
   transition: all 0.3s ease;
-  padding: 16px;
+  padding: 10px; /* Further reduced padding */
   
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); /* Very subtle hover shadow */
   }
 }
 
 .section-contents {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: 4px 0 16px 16px;
+  gap: 2px; /* Minimal gap */
+  margin: 1px 0 8px 10px; /* Further reduced spacing */
   overflow: hidden;
-  padding-right: 8px;
+  padding-right: 4px;
 }
 
-.collapsible-header {
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  padding: 8px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+/* Override for all icons in section headers to ensure proper rotation */
+.section-actions .expand-icon,
+.collapsible-header .expand-icon,
+.video-content h3 .expand-icon,
+.resource-content h3 .expand-icon {
+  &.expanded {
+    transform: rotate(180deg) !important; /* Force rotation */
   }
-  
-  .expand-icon {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: transform 0.3s ease;
-    margin-left: 8px;
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    background-color: rgba(121, 134, 203, 0.12);
-    
-    &.expanded {
-      transform: rotate(180deg);
+}
+
+/* Fix icon in section header */
+.section-title-row {
+  .section-actions {
+    .expand-icon {
+      background-color: rgba(121, 134, 203, 0.12);
+      border-radius: 4px;
+      width: 28px;
+      height: 28px;
+      font-size: 20px;
     }
   }
 }
@@ -696,3 +729,5 @@ audio {
     }
   }
 }
+
+
