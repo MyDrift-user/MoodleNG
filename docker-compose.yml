@@ -7,3 +7,25 @@ services:
       - "80:80"
     environment:
       - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/moodle_themes
+      - PORT=80
+    depends_on:
+      - db
+    volumes:
+      - ./server/uploads:/app/server/uploads
+    restart: unless-stopped
+
+  db:
+    image: postgres:14-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=moodle_themes
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:

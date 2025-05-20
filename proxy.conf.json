@@ -1,11 +1,17 @@
 {
-  "/api": {
+  "/api/moodle": {
     "target": "http://placeholder-moodle-instance.com",
     "secure": false,
     "changeOrigin": true,
     "pathRewrite": {
-      "^/api": ""
+      "^/api/moodle": ""
     },
+    "logLevel": "debug"
+  },
+  "/api/settings": {
+    "target": "http://localhost:3000",
+    "secure": false,
+    "changeOrigin": true,
     "logLevel": "debug"
   }
 }

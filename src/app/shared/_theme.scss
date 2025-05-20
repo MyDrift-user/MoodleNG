@@ -1,81 +1,129 @@
 @use 'sass:map';
 
-// Custom theme variables
-$primary-palette: (
-  50: #e8eaf6,
-  100: #c5cae9,
-  200: #9fa8da,
-  300: #7986cb,
-  400: #5c6bc0,
-  500: #3f51b5,
-  600: #3949ab,
-  700: #303f9f,
-  800: #283593,
-  900: #1a237e,
-  contrast: (
-    50: rgba(0,0,0,0.87),
-    100: rgba(0,0,0,0.87),
-    200: rgba(0,0,0,0.87),
-    300: white,
-    400: white,
-    500: white,
-    600: white,
-    700: white,
-    800: white,
-    900: white,
+// Theme definitions - these can be customized per user
+$themes: (
+  default: (
+    // Primary colors
+    primary-palette: (
+      50: #e8eaf6,
+      100: #c5cae9,
+      200: #9fa8da,
+      300: #7986cb,
+      400: #5c6bc0,
+      500: #3f51b5,
+      600: #3949ab,
+      700: #303f9f,
+      800: #283593,
+      900: #1a237e,
+      contrast: (
+        50: rgba(0,0,0,0.87),
+        100: rgba(0,0,0,0.87),
+        200: rgba(0,0,0,0.87),
+        300: white,
+        400: white,
+        500: white,
+        600: white,
+        700: white,
+        800: white,
+        900: white,
+      )
+    ),
+    // Accent colors
+    accent-palette: (
+      50: #fce4ec,
+      100: #f8bbd0,
+      200: #f48fb1,
+      300: #f06292,
+      400: #ec407a,
+      500: #ff4081,
+      600: #d81b60,
+      700: #c2185b,
+      800: #ad1457,
+      900: #880e4f,
+      A100: #ff80ab,
+      A200: #ff4081,
+      A400: #f50057,
+      A700: #c51162,
+      contrast: (
+        50: rgba(0,0,0,0.87),
+        100: rgba(0,0,0,0.87),
+        200: rgba(0,0,0,0.87),
+        300: rgba(0,0,0,0.87),
+        400: rgba(0,0,0,0.87),
+        500: white,
+        600: white,
+        700: white,
+        800: white,
+        900: white,
+        A100: rgba(0,0,0,0.87),
+        A200: white,
+        A400: white,
+        A700: white,
+      )
+    ),
+    // Main color values
+    primary-color: #3f51b5,
+    primary-light: #7986cb,
+    primary-dark: #303f9f,
+    accent-color: #ff4081,
+    accent-light: #ff80ab,
+    accent-dark: #f50057,
+    warn-color: #f44336,
+    
+    // Background colors
+    background-color: #303030,
+    card-color: #424242,
+    elevated-color: #484848,
+    dialog-color: #424242,
+    
+    // Text colors
+    text-color: rgba(255, 255, 255, 0.87),
+    text-secondary: rgba(255, 255, 255, 0.6),
+    text-hint: rgba(255, 255, 255, 0.38),
+    
+    // Border and divider colors
+    divider-color: rgba(255, 255, 255, 0.12),
+    border-color: rgba(255, 255, 255, 0.12),
+    
+    // Status colors
+    success-color: #4caf50,
+    info-color: #2196f3,
+    warning-color: #ff9800,
+    error-color: #f44336
   )
 );
 
-$accent-palette: (
-  50: #fce4ec,
-  100: #f8bbd0,
-  200: #f48fb1,
-  300: #f06292,
-  400: #ec407a,
-  500: #ff4081,
-  600: #d81b60,
-  700: #c2185b,
-  800: #ad1457,
-  900: #880e4f,
-  A100: #ff80ab,
-  A200: #ff4081,
-  A400: #f50057,
-  A700: #c51162,
-  contrast: (
-    50: rgba(0,0,0,0.87),
-    100: rgba(0,0,0,0.87),
-    200: rgba(0,0,0,0.87),
-    300: rgba(0,0,0,0.87),
-    400: rgba(0,0,0,0.87),
-    500: white,
-    600: white,
-    700: white,
-    800: white,
-    900: white,
-    A100: rgba(0,0,0,0.87),
-    A200: white,
-    A400: white,
-    A700: white,
-  )
-);
+// Current active theme
+$active-theme: map.get($themes, default);
 
-// Theme variables
-$primary-color: map.get($primary-palette, 500);
-$primary-light: map.get($primary-palette, 300);
-$primary-dark: map.get($primary-palette, 700);
+// Theme variables - use these in your components
+$primary-color: map.get($active-theme, primary-color);
+$primary-light: map.get($active-theme, primary-light);
+$primary-dark: map.get($active-theme, primary-dark);
 
-$accent-color: map.get($accent-palette, A200);
-$accent-light: map.get($accent-palette, A100);
-$accent-dark: map.get($accent-palette, A400);
+$accent-color: map.get($active-theme, accent-color);
+$accent-light: map.get($active-theme, accent-light);
+$accent-dark: map.get($active-theme, accent-dark);
 
-$warn-color: #f44336;
+$warn-color: map.get($active-theme, warn-color);
 
 // Background colors
-$background-dark: #303030;
-$card-color-dark: #424242;
-$dark-elevated: #484848;
+$background-dark: map.get($active-theme, background-color);
+$card-color-dark: map.get($active-theme, card-color);
+$dark-elevated: map.get($active-theme, elevated-color);
+$dialog-color: map.get($active-theme, dialog-color);
 
 // Text colors
-$text-color-dark: rgba(255, 255, 255, 0.87);
-$text-secondary-dark: rgba(255, 255, 255, 0.6);
-$text-hint-dark: rgba(255, 255, 255, 0.38);
+$text-color-dark: map.get($active-theme, text-color);
+$text-secondary-dark: map.get($active-theme, text-secondary);
+$text-hint-dark: map.get($active-theme, text-hint);
+
+// Border and divider colors
+$divider-color: map.get($active-theme, divider-color);
+$border-color: map.get($active-theme, border-color);
+
+// Status colors
+$success-color: map.get($active-theme, success-color);
+$info-color: map.get($active-theme, info-color);
+$warning-color: map.get($active-theme, warning-color);
+$error-color: map.get($active-theme, error-color);

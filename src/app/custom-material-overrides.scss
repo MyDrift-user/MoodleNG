@@ -1,0 +1,164 @@
+/**
+ * Custom overrides for Angular Material components
+ * This file explicitly overrides prebuilt theme colors with our custom theme
+ */
+
+/* Form fields */
+.mat-mdc-form-field-appearance-fill .mat-mdc-form-field-flex {
+  background-color: var(--card-color) !important;
+}
+
+/* Input focused states */
+.mat-mdc-form-field.mat-focused .mat-mdc-form-field-ripple {
+  background-color: var(--accent-color) !important;
+}
+
+.mat-mdc-form-field.mat-focused .mat-mdc-form-field-label {
+  color: var(--accent-color) !important;
+}
+
+/* Login form text fields */
+.mdc-text-field--filled:not(.mdc-text-field--disabled) {
+  background-color: var(--card-color) !important;
+}
+
+.mdc-text-field--filled:not(.mdc-text-field--disabled) .mdc-line-ripple::after {
+  border-bottom-color: var(--accent-color) !important;
+}
+
+.mdc-text-field--filled:not(.mdc-text-field--disabled) .mdc-text-field__input {
+  color: var(--text-color) !important;
+  caret-color: var(--accent-color) !important;
+}
+
+.mdc-text-field--filled .mdc-floating-label {
+  color: var(--text-secondary) !important;
+}
+
+.mdc-text-field--focused:not(.mdc-text-field--disabled) .mdc-floating-label {
+  color: var(--accent-color) !important;
+}
+
+/* Containers - use color variables directly */
+.app-container,
+.dashboard-container,
+.login-container,
+.settings-container,
+.module-details-container {
+  background-color: var(--background-color) !important;
+}
+
+.content-container {
+  background-color: var(--content-container-color) !important;
+}
+
+.content-wrapper {
+  background-color: var(--background-color) !important;
+}
+
+/* Cards and components */
+.mat-mdc-card {
+  background-color: var(--card-color) !important;
+}
+
+.section-card {
+  background-color: var(--content-container-color) !important;
+}
+
+.content-card {
+  background-color: var(--card-color) !important;
+}
+
+/* Buttons */
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-unelevated-button.mat-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.mat-mdc-outlined-button.mat-primary,
+.mat-mdc-button.mat-primary {
+  color: var(--primary-color) !important;
+}
+
+/* Accent Buttons */
+.mat-mdc-raised-button.mat-accent,
+.mat-mdc-unelevated-button.mat-accent {
+  background-color: var(--accent-color) !important;
+}
+
+.mat-mdc-outlined-button.mat-accent,
+.mat-mdc-button.mat-accent {
+  color: var(--accent-color) !important;
+}
+
+/* Toolbar */
+.mat-toolbar.mat-primary {
+  background-color: var(--primary-color) !important;
+}
+
+/* Lists */
+.mat-mdc-list-item {
+  color: var(--text-color) !important;
+}
+
+/* Progress bars and spinners */
+.mat-progress-bar-fill::after {
+  background-color: var(--accent-color) !important;
+}
+
+.mat-spinner circle {
+  stroke: var(--accent-color) !important;
+}
+
+/* Checkboxes and radio buttons */
+.mat-checkbox-checked .mat-checkbox-background,
+.mat-checkbox-indeterminate .mat-checkbox-background {
+  background-color: var(--accent-color) !important;
+}
+
+.mat-radio-button.mat-accent.mat-radio-checked .mat-radio-outer-circle {
+  border-color: var(--accent-color) !important;
+}
+
+.mat-radio-button.mat-accent .mat-radio-inner-circle {
+  background-color: var(--accent-color) !important;
+}
+
+/* Slide toggles */
+.mat-slide-toggle.mat-checked .mat-slide-toggle-thumb {
+  background-color: var(--accent-color) !important;
+}
+
+.mat-slide-toggle.mat-checked .mat-slide-toggle-bar {
+  background-color: color-mix(in srgb, var(--accent-color) 50%, transparent) !important;
+}
+
+/* Fix for toolbar and icon button sizing */
+.mat-toolbar button.mat-mdc-icon-button,
+.mat-toolbar .mat-mdc-icon-button {
+  width: 40px !important;
+  height: 40px !important;
+  padding: 8px !important;
+  line-height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.mat-toolbar .mat-icon {
+  font-size: 24px !important;
+  width: 24px !important;
+  height: 24px !important;
+  line-height: 24px !important;
+}
+
+/* Improve section toolbar layout */
+.section-actions button.mat-mdc-icon-button,
+.section-actions .mat-mdc-icon-button {
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+} 

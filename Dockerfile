@@ -10,12 +10,29 @@ COPY . .
 
 RUN npm run build:prod
 
-FROM nginx:alpine
+FROM node:20-alpine
 
-COPY --from=build /app/dist/moodle-ng/browser /usr/share/nginx/html
+# Install PostgreSQL client and other dependencies
+RUN apk add --no-cache postgresql-client
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
+
+# Copy built app - correct path for Angular output
+COPY --from=build /app/dist/moodle-ng/browser /app/dist
+
+# Copy server files
+COPY server /app/server
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies
+RUN npm ci --omit=dev
+
+# Create upload directory
+RUN mkdir -p /app/server/uploads
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Start Node.js server
+CMD ["node", "server/index.js"]

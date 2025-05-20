@@ -341,6 +341,30 @@ export class MoodleService {
   }
 
   /**
+   * Allows manually setting user info (for debugging or recovery)
+   * @param user The user object to set
+   */
+  setUser(user: MoodleUser): void {
+    if (!user.email || !user.token) {
+      console.warn('Setting incomplete user object. This may cause issues.');
+    }
+    this.currentUser = user;
+    this.saveSession();
+  }
+  
+  /**
+   * Allows manually setting site info (for debugging or recovery)
+   * @param site The site object to set
+   */
+  setSite(site: MoodleSite): void {
+    if (!site.domain) {
+      console.warn('Setting incomplete site object. This may cause issues.');
+    }
+    this.currentSite = site;
+    this.saveSession();
+  }
+
+  /**
    * Save session to localStorage
    */
   private saveSession() {
@@ -354,12 +378,43 @@ export class MoodleService {
    * Restore session from localStorage
    */
   private restoreSession() {
-    const userJson = localStorage.getItem('moodleUser');
-    const siteJson = localStorage.getItem('moodleSite');
-    
-    if (userJson && siteJson) {
-      this.currentUser = JSON.parse(userJson);
-      this.currentSite = JSON.parse(siteJson);
+    try {
+      const userJson = localStorage.getItem('moodleUser');
+      const siteJson = localStorage.getItem('moodleSite');
+      
+      if (userJson && siteJson) {
+        const parsedUser = JSON.parse(userJson);
+        const parsedSite = JSON.parse(siteJson);
+        
+        if (parsedUser && parsedUser.email && parsedUser.token) {
+          console.log('Restoring user session from localStorage');
+          this.currentUser = parsedUser;
+        } else {
+          console.warn('Incomplete user data found in localStorage');
+        }
+        
+        if (parsedSite && parsedSite.domain) {
+          console.log('Restoring site session from localStorage');
+          this.currentSite = parsedSite;
+        } else {
+          console.warn('Incomplete site data found in localStorage');
+        }
+        
+        // Validate restored session by ensuring essential data is present
+        if (!this.currentUser || !this.currentUser.token || !this.currentSite || !this.currentSite.domain) {
+          console.warn('Restored session is missing essential data, clearing session');
+          this.logout();
+        } else {
+          console.log('Session restored successfully');
+        }
+      } else {
+        console.warn('No stored session found in localStorage');
+      }
+    } catch (e) {
+      console.error('Error restoring session from localStorage:', e);
+      // Reset state to prevent partial or corrupted state
+      this.currentUser = null;
+      this.currentSite = null;
     }
   }
 

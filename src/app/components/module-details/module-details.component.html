@@ -49,7 +49,7 @@
                 <div class="section-download-container">
                   <button mat-icon-button color="accent" (click)="downloadSectionContents(section.id, $event)" 
                           [disabled]="downloadingSections[section.id]" matTooltip="Download All Files">
-                    <mat-icon *ngIf="!downloadingSections[section.id]">folder_zip</mat-icon>
+                    <mat-icon *ngIf="!downloadingSections[section.id]">archive</mat-icon>
                     <span *ngIf="downloadingSections[section.id]" class="progress-text">{{downloadSectionProgress[section.id]}}%</span>
                   </button>
                 </div>

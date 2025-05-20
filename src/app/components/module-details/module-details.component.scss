@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-  background-color: #303030;
+  background-color: var(--background-color);
 }
 
 .toolbar {
@@ -11,10 +11,27 @@
   top: 0;
   z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  height: 64px;
   
   /* Styling for the download all button */
-  .download-all-btn {
+  .download-all-btn-container {
     margin-right: 8px;
+    height: 40px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .download-all-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     
     &:hover {
       background-color: rgba(255, 255, 255, 0.1);
@@ -22,6 +39,9 @@
     
     mat-icon {
       color: white;
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
     }
   }
 }
@@ -32,6 +52,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 400;
+  flex: 1;
+  max-width: calc(100% - 160px);
 }
 
 .spacer {
@@ -45,6 +67,7 @@
   display: flex;
   flex-direction: column;
   align-items: center; /* Center content horizontally */
+  background-color: var(--content-container-color) !important;
 }
 
 /* Fade-in animation */
@@ -551,7 +574,7 @@ audio {
   padding: 0 8px;
 }
 
-/* Similar boxed treatment for section actions */
+/* Fix section actions */
 .section-title-row {
   display: flex;
   justify-content: space-between;
@@ -563,29 +586,56 @@ audio {
     font-weight: 500;
     margin: 12px 0;
     color: #90CAF9; 
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
   .section-actions {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-shrink: 0;
     
-    button {
+    .section-download-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 36px;
       height: 36px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: rgba(90, 139, 214, 0.1);
-      border-radius: 6px;
-      transition: background-color 0.3s ease;
       
-      &:hover {
-        background-color: rgba(90, 139, 214, 0.2);
-      }
-      
-      mat-icon {
-        color: #90CAF9;
+      button {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(90, 139, 214, 0.1);
+        border-radius: 6px;
+        transition: background-color 0.3s ease;
+        padding: 0;
+        margin: 0;
+        
+        &:hover {
+          background-color: rgba(90, 139, 214, 0.2);
+        }
+        
+        mat-icon {
+          color: #90CAF9;
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+          line-height: 20px;
+        }
+        
+        .progress-text {
+          font-weight: 500;
+          text-align: center;
+          font-size: 14px;
+          color: #90CAF9;
+        }
       }
     }
     
@@ -595,6 +645,10 @@ audio {
       width: 28px;
       height: 28px;
       font-size: 20px;
+      line-height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   }
 }
@@ -777,12 +831,15 @@ audio {
   }
 }
 
-/* Styles for download progress indicators */
+/* Styles for download progress indicators in the toolbar */
 .download-all-btn-container {
   position: relative;
   margin-right: 8px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  height: 40px;
+  width: 40px;
   
   .download-all-btn {
     position: relative;
@@ -790,6 +847,8 @@ audio {
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 40px;
+    height: 40px;
     
     &:hover {
       background-color: rgba(255, 255, 255, 0.1);
@@ -797,6 +856,10 @@ audio {
     
     mat-icon {
       color: white;
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
     }
     
     .progress-text {

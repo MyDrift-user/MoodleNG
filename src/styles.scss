@@ -1,14 +1,53 @@
 /* You can add global styles to this file, and also import other style files */
 @use '@angular/material' as mat;
 @use './app/shared/theme' as theme;
+@import './app/custom-material-overrides.scss';
 
-// Apply dark theme by default
-html, body { 
-  height: 100%; 
+/* Custom theme variables */
+:root {
+  --primary-color: #{theme.$primary-color};
+  --primary-light: #{theme.$primary-light};
+  --primary-dark: #{theme.$primary-dark};
+  
+  --accent-color: #{theme.$accent-color};
+  --accent-light: #{theme.$accent-light};
+  --accent-dark: #{theme.$accent-dark};
+  
+  --background-color: #{theme.$background-dark};
+  --card-color: #{theme.$card-color-dark};
+  --content-container-color: #{theme.$card-color-dark};
+  --elevated-color: #{theme.$dark-elevated};
+  
+  --text-color: #{theme.$text-color-dark};
+  --text-secondary: #{theme.$text-secondary-dark};
+  --text-hint: #{theme.$text-hint-dark};
+  
+  --divider-color: #{theme.$divider-color};
+  --border-color: #{theme.$border-color};
+  
+  --success-color: #{theme.$success-color};
+  --info-color: #{theme.$info-color};
+  --warning-color: #{theme.$warning-color};
+  --error-color: #{theme.$error-color};
+}
+
+/* Override Angular Material Theme Globally */
+html body {
+  background-color: var(--background-color) !important;
+  color: var(--text-color) !important;
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  background-color: theme.$background-dark;
-  color: theme.$text-color-dark;
+  height: 100%;
+}
+
+html {
+  height: 100%;
+}
+
+/* App level container */
+.app-container {
+  min-height: 100vh;
+  background-color: var(--background-color) !important;
 }
 
 /* Global utility classes */
@@ -35,52 +74,103 @@ html, body {
   background: rgba(255, 255, 255, 0.5);
 }
 
-/* Global Material overrides */
+/* Global Material overrides - use !important to override pre-built themes */
 .mat-mdc-card {
-  border-radius: 8px;
+  border-radius: 8px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
-  background-color: theme.$card-color-dark;
-  color: theme.$text-color-dark;
+  background-color: var(--card-color) !important;
+  color: var(--text-color) !important;
 }
 
 .mat-mdc-card-subtitle {
-  color: theme.$text-secondary-dark !important;
+  color: var(--text-secondary) !important;
 }
 
 .mat-toolbar.mat-primary {
-  background: theme.$primary-color;
+  background: var(--primary-color) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Button styling */
 .mat-mdc-raised-button.mat-primary {
-  background-color: theme.$primary-color !important;
-}
-
-.mat-mdc-raised-button.mat-accent {
-  background-color: theme.$accent-color !important;
+  background-color: var(--primary-color) !important;
 }
 
 .mat-mdc-button.mat-primary {
-  color: theme.$primary-light;
+  color: var(--primary-light) !important;
 }
 
-.mat-mdc-button.mat-accent {
-  color: theme.$accent-light;
+/* Input field customization */
+.mat-mdc-form-field-focus-overlay {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.mdc-text-field--filled:not(.mdc-text-field--disabled) {
+  background-color: var(--card-color) !important;
+}
+
+.mdc-text-field--filled:not(.mdc-text-field--disabled) .mdc-line-ripple::after {
+  border-bottom-color: var(--primary-color) !important;
+}
+
+.mdc-text-field--focused:not(.mdc-text-field--disabled) .mdc-floating-label {
+  color: var(--primary-color) !important;
+}
+
+/* Login form specific overrides */
+.mdc-text-field .mdc-floating-label {
+  color: var(--text-secondary) !important;
+}
+
+.mdc-text-field__input {
+  caret-color: var(--primary-color) !important;
+}
+
+.mdc-text-field:not(.mdc-text-field--disabled) .mdc-text-field__input {
+  color: var(--text-color) !important;
+}
+
+.mdc-text-field--focused:not(.mdc-text-field--disabled) .mdc-floating-label {
+  color: var(--primary-color) !important;
+}
+
+/* Background elements */
+.dashboard-container, 
+.login-container,
+.module-details-container,
+.settings-container {
+  background-color: var(--background-color) !important;
+  min-height: 100vh;
+}
+
+/* Content containers - separate styling with higher specificity */
+html body .content-container,
+body .content-container,
+.module-details-container .content-container,
+div.content-container {
+  background-color: var(--content-container-color) !important;
+  padding: 16px;
+  border-radius: 4px;
+  margin: 16px;
+}
+
+.content-wrapper {
+  background-color: var(--background-color) !important;
+  min-height: 100vh;
 }
 
 /* Form field styling */
 .mat-mdc-form-field {
   .mat-mdc-text-field-wrapper {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.05) !important;
   }
   
   .mat-mdc-input-element {
-    color: theme.$text-color-dark;
+    color: var(--text-color) !important;
   }
   
   .mat-mdc-form-field-label {
-    color: theme.$text-secondary-dark;
+    color: var(--text-secondary) !important;
   }
 }
 
@@ -105,6 +195,7 @@ html, body {
     max-width: 98vw !important;
     max-height: 95vh !important;
     width: 98vw !important;
+    background-color: var(--card-color) !important;
   }
   
   .mat-mdc-dialog-container {
@@ -163,7 +254,7 @@ html, body {
 
 /* Rich text content from Moodle */
 .moodle-content {
-  color: theme.$text-color-dark;
+  color: var(--text-color);
   
   img, video, iframe {
     max-width: 100%;
@@ -172,7 +263,7 @@ html, body {
   }
   
   a {
-    color: theme.$primary-light;
+    color: var(--primary-light);
     text-decoration: none;
     
     &:hover {
@@ -186,7 +277,7 @@ html, body {
     margin: 16px 0;
     
     th, td {
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--divider-color);
       padding: 8px;
     }
     
@@ -196,7 +287,7 @@ html, body {
   }
   
   p, li, span, div {
-    color: theme.$text-color-dark;
+    color: var(--text-color);
   }
 }
 
@@ -233,4 +324,20 @@ html, body {
   h3 {
     font-size: 18px !important;
   }
+}
+
+/* Accent button styling */
+.mat-mdc-raised-button.mat-accent,
+.mat-mdc-unelevated-button.mat-accent {
+  background-color: var(--accent-color) !important;
+}
+
+.mat-mdc-button.mat-accent,
+.mat-mdc-outlined-button.mat-accent {
+  color: var(--accent-color) !important;
+}
+
+/* Input accent color */
+.mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper .mdc-line-ripple::after {
+  border-bottom-color: var(--accent-color) !important;
 }
