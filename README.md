@@ -60,6 +60,29 @@ npm run build
 
 The build artifacts will be stored in the `dist/` directory.
 
+## Docker Deployment
+
+You can easily deploy this application using Docker Compose.
+
+### Prerequisites
+- Docker
+- Docker Compose
+- A separate Moodle instance with API access enabled
+
+### Deployment Steps
+
+1. Build and start the container:
+   ```bash
+   docker-compose up -d
+   ```
+
+2. To stop the container:
+   ```bash
+   docker-compose down
+   ```
+
+The Angular application will be accessible at http://localhost and will connect to your configured Moodle instance.
+
 ## Moodle API Requirements
 
 This application requires the following Moodle Web Service APIs to be enabled on the target Moodle instance:

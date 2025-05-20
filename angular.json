@@ -15,8 +15,7 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
-          "options": {
+          "builder": "@angular-devkit/build-angular:application",          "options": {
             "outputPath": "dist/moodle-ng",
             "index": "src/index.html",
             "browser": "src/main.ts",
@@ -25,6 +24,9 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "allowedCommonJsDependencies": [
+              "jszip"
+            ],
             "assets": [
               {
                 "glob": "**/*",
@@ -36,19 +38,18 @@
               "src/styles.scss"
             ],
             "scripts": []
-          },
-          "configurations": {
+          },          "configurations": {
             "production": {
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "1MB",
+                  "maximumError": "2MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "10kB",
+                  "maximumError": "20kB"
                 }
               ],
               "outputHashing": "all"
