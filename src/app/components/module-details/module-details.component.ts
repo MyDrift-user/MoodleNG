@@ -638,7 +638,50 @@ export class ModuleDetailsComponent implements OnInit {
     
     this.moodleService.getCourseResults(this.moduleId).subscribe({
       next: (results) => {
-        this.results = results;
+        // Store original results for reference
+        const originalResults = [...results];
+        
+        // First filter - keep non-categories, overall summary, and named categories
+        const filteredResults = results.filter(result => {
+          if (!result.isCategory) {
+            return true;
+          }
+          
+          if (result.isOverallSummary) {
+            // Update the overall summary's name to be more descriptive
+            result.name = `${this.moduleName} Overall Summary`;
+            return true;
+          }
+          
+          if (!result.name || result.name.trim() === '') {
+            return false;
+          }
+          
+          return true;
+        });
+        
+        // Process items that might have lost their parent categories
+        for (let i = 0; i < filteredResults.length; i++) {
+          const item = filteredResults[i];
+          
+          // Skip categories and summary items
+          if (item.isCategory || item.isCategorySummary || item.isOverallSummary) {
+            continue;
+          }
+          
+          // Check if this item's parent category exists in filtered results
+          const parentExists = filteredResults.some(
+            result => result.isCategory && result.id === item.categoryId
+          );
+          
+          // If parent was filtered out, change this item's level to make it top-level
+          if (!parentExists) {
+            item.level = 1;
+          }
+        }
+        
+        // Assign the processed results
+        this.results = filteredResults;
         this.loadingResults = false;
       },
       error: (err) => {
@@ -666,15 +709,18 @@ export class ModuleDetailsComponent implements OnInit {
   
   // Check if a result should be shown based on its parent's expansion state
   shouldShowResult(result: MoodleCourseResult, index: number): boolean {
-    // Always show top-level items (level 0 or 1)
-    if (result.level <= 1) return true;
+    // Always show top-level items and overall summary
+    if (result.level <= 1 || result.isOverallSummary) return true;
     
-    // For nested items, check if all parent categories are expanded
+    // For nested items, try to find their parent category
+    let parentFound = false;
+    
     for (let i = index - 1; i >= 0; i--) {
       const potentialParent = this.results[i];
       
       // Found the immediate parent
       if (potentialParent.isCategory && result.categoryId === potentialParent.id) {
+        parentFound = true;
         return potentialParent.isExpanded === true;
       }
       
@@ -685,21 +731,27 @@ export class ModuleDetailsComponent implements OnInit {
       }
     }
     
-    return true; // Default to showing
+    // If no parent found (possibly filtered out), show the item by default
+    return !parentFound || true;
   }
   
   // Get indentation based on level for hierarchical display
   getIndentation(level: number): string {
-    return `${level * 16}px`;
+    // Ensure level is at least 0 (for safety) 
+    const safeLevel = Math.max(0, level || 0);
+    return `${safeLevel * 16}px`;
   }
   
   // Get icon for category/item
   getCategoryIcon(result: MoodleCourseResult): string {
     if (result.isOverallSummary) {
-      return 'star';
+      return 'grade'; // Using 'grade' icon instead of 'star' to better represent overall score
     }
     
     if (result.isCategory) {
+      if (!result.name || result.name.trim() === '') {
+        return 'help_outline'; // Default icon for unnamed categories (should be filtered out)
+      }
       return result.isExpanded ? 'folder_open' : 'folder';
     }
     
@@ -759,5 +811,10 @@ export class ModuleDetailsComponent implements OnInit {
   // Format number if it exists, otherwise return placeholder
   formatNumberOrPlaceholder(value: number | undefined, placeholder: string = '-'): string {
     return value !== undefined ? value.toString() : placeholder;
+  }
+
+  // Helper method to check if a value is NaN for use in the template
+  isNaN(value: any): boolean {
+    return Number.isNaN(value);
   }
 }

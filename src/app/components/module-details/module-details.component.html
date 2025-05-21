@@ -372,37 +372,51 @@
                           
                           <!-- Grade column -->
                           <td class="grade-column">
-                            <div *ngIf="result.gradeFormatted && !result.isCategory" class="grade-value">
+                            <div *ngIf="result.gradeFormatted && !result.gradeFormatted.includes('NaN') && !result.isCategory" class="grade-value">
                               {{result.gradeFormatted}}
                             </div>
-                            <div *ngIf="!result.gradeFormatted && result.gradeRaw !== undefined" class="grade-value">
+                            <div *ngIf="!result.gradeFormatted && result.gradeRaw !== undefined && !isNaN(result.gradeRaw)" class="grade-value">
                               {{result.gradeRaw}}
                             </div>
                             <div *ngIf="result.isCategory && !result.isCategorySummary" class="empty-cell">-</div>
-                            <div *ngIf="(result.isCategorySummary || result.isOverallSummary) && result.gradeRaw !== undefined" class="summary-grade">
+                            <div *ngIf="(result.isCategorySummary || result.isOverallSummary) && result.gradeRaw !== undefined && !isNaN(result.gradeRaw)" class="summary-grade">
                               {{result.gradeRaw}}
                             </div>
-                            <div *ngIf="result.gradeRaw === undefined && result.gradeFormatted === undefined" class="empty-cell">-</div>
+                            <div *ngIf="(result.gradeRaw === undefined || isNaN(result.gradeRaw)) && (result.gradeFormatted === undefined || result.gradeFormatted.includes('NaN')) && !result.isCategory" class="empty-cell">-</div>
+                            <div *ngIf="(result.isCategorySummary || result.isOverallSummary) && (result.gradeRaw === undefined || isNaN(result.gradeRaw) || (result.gradeFormatted && result.gradeFormatted.includes('NaN')))" class="empty-cell">-</div>
                           </td>
                           
                           <!-- Percentage column -->
                           <td class="percentage-column">
-                            <span *ngIf="result.percentageFormatted" class="percentage-value">{{result.percentageFormatted}}</span>
-                            <span *ngIf="!result.percentageFormatted && result.percentage !== undefined" class="percentage-value">{{result.percentage}}%</span>
-                            <span *ngIf="result.percentage === undefined" class="empty-cell">-</span>
+                            <!-- Has valid percentage formatted text -->
+                            <span *ngIf="result.percentageFormatted && !result.percentageFormatted.includes('NaN')" class="percentage-value">
+                              {{result.percentageFormatted}}
+                            </span>
+                            
+                            <!-- Has valid raw percentage -->
+                            <span *ngIf="(!result.percentageFormatted || result.percentageFormatted.includes('NaN')) && 
+                                        result.percentage !== undefined && !isNaN(result.percentage)" class="percentage-value">
+                              {{result.percentage}}%
+                            </span>
+                            
+                            <!-- No valid percentage data -->
+                            <span *ngIf="(result.percentage === undefined || isNaN(result.percentage)) && 
+                                        (!result.percentageFormatted || result.percentageFormatted.includes('NaN'))" class="empty-cell">
+                              -
+                            </span>
                           </td>
                           
                           <!-- Weight column -->
                           <td class="weight-column">
-                            <span *ngIf="result.weightFormatted" class="weight-value">{{result.weightFormatted}}</span>
-                            <span *ngIf="!result.weightFormatted && result.weight !== undefined" class="weight-value">{{result.weight}}%</span>
-                            <span *ngIf="result.weight === undefined" class="empty-cell">-</span>
+                            <span *ngIf="result.weightFormatted && !result.weightFormatted.includes('NaN')" class="weight-value">{{result.weightFormatted}}</span>
+                            <span *ngIf="(!result.weightFormatted || result.weightFormatted.includes('NaN')) && result.weight !== undefined && !isNaN(result.weight)" class="weight-value">{{result.weight}}%</span>
+                            <span *ngIf="result.weight === undefined || isNaN(result.weight) || (result.weightFormatted && result.weightFormatted.includes('NaN'))" class="empty-cell">-</span>
                           </td>
                           
                           <!-- Range column -->
                           <td class="range-column">
-                            <span *ngIf="result.range" class="range-value">{{result.range}}</span>
-                            <span *ngIf="!result.range" class="empty-cell">-</span>
+                            <span *ngIf="result.range && !result.range.includes('NaN')" class="range-value">{{result.range}}</span>
+                            <span *ngIf="!result.range || result.range.includes('NaN')" class="empty-cell">-</span>
                           </td>
                           
                           <!-- Feedback column -->
