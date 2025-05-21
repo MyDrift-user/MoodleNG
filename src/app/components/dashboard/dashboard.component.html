@@ -23,52 +23,54 @@
       <mat-icon>school</mat-icon>
       <span>Find and enroll in courses</span>
     </div>
-    <mat-form-field appearance="fill" class="search-field dark-theme-search">
-      <mat-label>Search for courses</mat-label>
-      <input matInput [formControl]="searchControl" placeholder="Enter course name or course ID">
-      <mat-icon matPrefix>search</mat-icon>
-      <button *ngIf="searchControl.value" matSuffix mat-icon-button aria-label="Clear" 
-              (click)="searchControl.setValue(''); clearSearch()">
-        <mat-icon>close</mat-icon>
-      </button>
-    </mat-form-field>
-    
-    <!-- Search Results -->
-    <div *ngIf="showSearchResults" class="search-results">
-      <div *ngIf="searching" class="searching-indicator">
-        <mat-spinner diameter="24"></mat-spinner>
-        <span>Searching...</span>
-      </div>
+    <div class="search-input-container">
+      <mat-form-field appearance="fill" class="search-field dark-theme-search">
+        <mat-label>Search for courses</mat-label>
+        <input matInput [formControl]="searchControl" placeholder="Enter course name or course ID">
+        <mat-icon matPrefix>search</mat-icon>
+        <button *ngIf="searchControl.value" matSuffix mat-icon-button aria-label="Clear" 
+                (click)="searchControl.setValue(''); clearSearch(); $event.stopPropagation()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
       
-      <div *ngIf="!searching && searchResults.length === 0" class="no-results">
-        <mat-icon>info</mat-icon>
-        <span>No courses found. Try a different search term.</span>
-      </div>
-      
-      <div *ngIf="!searching && searchResults.length > 0" class="results-list">
-        <div class="results-header">
-          <h3>Available Courses</h3>
+      <!-- Search Results -->
+      <div *ngIf="showSearchResults" class="search-results">
+        <div *ngIf="searching" class="searching-indicator">
+          <mat-spinner diameter="24"></mat-spinner>
+          <span>Searching...</span>
         </div>
-        <mat-divider></mat-divider>
         
-        <div *ngFor="let course of searchResults" class="search-result-item" 
-             [class.enrolled]="isEnrolled(course.id)" 
-             [class.clickable]="isEnrolled(course.id)"
-             (click)="openCourse(course.id)">
-          <div class="course-info">
-            <div class="course-header">
-              <h4>{{course.name}}</h4>
-              <div *ngIf="isEnrolled(course.id)" class="enrolled-badge">
-                <mat-icon>check_circle</mat-icon>
-                <span>Enrolled</span>
-              </div>
-            </div>
-            <p *ngIf="course.summary" class="course-summary" [innerHTML]="sanitizeHtml(course.summary)"></p>
+        <div *ngIf="!searching && searchResults.length === 0" class="no-results">
+          <mat-icon>info</mat-icon>
+          <span>No courses found. Try a different search term.</span>
+        </div>
+        
+        <div *ngIf="!searching && searchResults.length > 0" class="results-list">
+          <div class="results-header">
+            <h3>Available Courses</h3>
           </div>
-          <button *ngIf="!isEnrolled(course.id)" mat-raised-button color="accent" (click)="enrollInCourse(course.id); $event.stopPropagation()" class="enroll-button">
-            <mat-icon>add_circle</mat-icon>
-            Enroll
-          </button>
+          <mat-divider></mat-divider>
+          
+          <div *ngFor="let course of searchResults" class="search-result-item" 
+               [class.enrolled]="isEnrolled(course.id)" 
+               [class.clickable]="isEnrolled(course.id)"
+               (click)="openCourse(course.id)">
+            <div class="course-info">
+              <div class="course-header">
+                <h4>{{course.name}}</h4>
+                <div *ngIf="isEnrolled(course.id)" class="enrolled-badge">
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Enrolled</span>
+                </div>
+              </div>
+              <p *ngIf="course.summary && !isEmptyHtml(course.summary)" class="course-summary" [innerHTML]="sanitizeHtml(course.summary)"></p>
+            </div>
+            <button *ngIf="!isEnrolled(course.id)" mat-button color="accent" (click)="enrollInCourse(course.id); $event.stopPropagation()" class="enroll-button">
+              <mat-icon>add_circle</mat-icon>
+              Enroll
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -113,7 +115,7 @@
           </mat-card-header>
           
           <mat-card-content>
-            <p *ngIf="module.summary" class="module-summary" [innerHTML]="sanitizeHtml(module.summary)"></p>
+            <p *ngIf="module.summary && !isEmptyHtml(module.summary)" class="module-summary" [innerHTML]="sanitizeHtml(module.summary)"></p>
             <div class="access-info">
               <mat-icon class="access-icon">access_time</mat-icon>
               <span class="last-access">{{formatLastAccess(module.lastAccess)}}</span>

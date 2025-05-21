@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -54,7 +54,8 @@ export class DashboardComponent implements OnInit {
     private moodleService: MoodleService,
     private authService: AuthService,
     private sanitizer: DomSanitizer,
-    private router: Router
+    private router: Router,
+    private elementRef: ElementRef
   ) {}
   
   ngOnInit(): void {
@@ -84,12 +85,30 @@ export class DashboardComponent implements OnInit {
     });
   }
   
+  /**
+   * Check if HTML content is effectively empty (contains no text)
+   * @param html HTML content to check
+   * @returns true if content is empty or only contains HTML tags without text
+   */
+  isEmptyHtml(html: string | undefined): boolean {
+    if (!html) return true;
+    
+    // Trim the content
+    const trimmed = html.trim();
+    if (!trimmed) return true;
+    
+    // Remove all HTML tags and check if there's any content left
+    const textOnly = trimmed.replace(/<[^>]*>/g, '').trim();
+    return !textOnly;
+  }
+  
   // Sanitize HTML content from Moodle
   sanitizeHtml(html: string | undefined): SafeHtml {
-    if (!html) return '';
+    if (this.isEmptyHtml(html)) return '';
     
     // Remove img tags before sanitizing
-    const imgRemoved = html.replace(/<img[^>]*>/g, '');
+    // At this point we know html is defined because isEmptyHtml would have returned true otherwise
+    const imgRemoved = html!.replace(/<img[^>]*>/g, '');
     
     return this.sanitizer.bypassSecurityTrustHtml(imgRemoved);
   }
@@ -187,6 +206,18 @@ export class DashboardComponent implements OnInit {
   openCourse(courseId: number): void {
     if (this.isEnrolled(courseId)) {
       this.router.navigate(['/modules', courseId]);
+    }
+  }
+
+  /**
+   * Handle clicks outside the search container to close search results
+   */
+  @HostListener('document:click', ['$event'])
+  onClickOutside(event: MouseEvent) {
+    // Check if the clicked element is outside the search container
+    const target = event.target as HTMLElement;
+    if (this.showSearchResults && !this.elementRef.nativeElement.querySelector('.course-search-container').contains(target)) {
+      this.clearSearch();
     }
   }
 }

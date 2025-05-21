@@ -615,12 +615,14 @@ mat-card-actions {
 }
 
 .enroll-button {
-  display: flex !important;
+  margin: 0;
+  border-radius: 18px;
+  padding: 0 16px;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
   
   mat-icon {
+    margin-right: 4px;
     font-size: 18px;
     height: 18px;
     width: 18px;
@@ -681,4 +683,9 @@ mat-card-actions {
     margin-right: 8px;
     color: rgba(255, 255, 255, 0.6);
   }
+}
+
+.search-input-container {
+  position: relative;
+  width: 100%;
 }
