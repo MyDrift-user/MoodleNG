@@ -1,7 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 @use '@angular/material' as mat;
-@use './app/shared/theme' as theme;
-@import './app/custom-material-overrides.scss';
+@use './app/shared/_theme' as theme;
+@use './app/custom-material-overrides.scss' as overrides;
 
 /* Custom theme variables */
 :root {
