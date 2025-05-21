@@ -681,23 +681,4 @@ mat-card-actions {
     margin-right: 8px;
     color: rgba(255, 255, 255, 0.6);
   }
-  
-  .search-mode-toggle {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-    
-    .toggle-label {
-      font-size: 0.8rem;
-      margin: 0 8px;
-      color: rgba(255, 255, 255, 0.6);
-      white-space: nowrap;
-    }
-    
-    ::ng-deep .mat-mdc-slide-toggle {
-      .mdc-switch__track {
-        background-color: rgba(255, 255, 255, 0.2);
-      }
-    }
-  }
 }

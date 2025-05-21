@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map, tap, of, switchMap } from 'rxjs';
+import { Observable, map, tap, of, switchMap, catchError, forkJoin } from 'rxjs';
 import { 
   MoodleUser, 
   MoodleSite, 
@@ -706,49 +706,111 @@ export class MoodleService {
   }
 
   /**
-   * Search for available courses by keyword or ID
+   * Search for available courses - handles both ID and name searches
    * @param searchTerm Keyword or ID to search for
-   * @param searchById Whether to search by ID (true) or name (false)
    */
-  searchCourses(searchTerm: string, searchById: boolean = false): Observable<MoodleModule[]> {
+  searchCourses(searchTerm: string): Observable<MoodleModule[]> {
     if (!this.currentUser?.token || !this.currentSite?.domain) {
       return of([]);
     }
     
-    // If searching by ID, try to directly get the course first
-    if (searchById && !isNaN(Number(searchTerm))) {
-      const courseId = Number(searchTerm);
-      const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+    const trimmedTerm = searchTerm.trim();
+    
+    // If empty search term, return empty array
+    if (!trimmedTerm) {
+      return of([]);
+    }
+    
+    // Check if the search term is purely numeric (likely an ID)
+    const isNumeric = /^\d+$/.test(trimmedTerm);
+    
+    // For numeric search terms, search by both ID and name
+    if (isNumeric) {
+      const courseId = Number(trimmedTerm);
       
-      const params = new HttpParams()
-        .set('wstoken', this.currentUser.token)
-        .set('wsfunction', 'core_course_get_courses_by_field')
-        .set('field', 'id')
-        .set('value', courseId.toString())
-        .set('moodlewsrestformat', 'json');
+      // First search by ID
+      const idSearch = this.searchCourseById(courseId);
       
-      return this.http.get<any>(webServiceUrl, { params }).pipe(
-        map(response => {
-          if (!response || !response.courses || response.courses.length === 0) {
-            return [];
-          }
+      // Then search by name using the same numeric term
+      const nameSearch = this.searchCoursesByName(trimmedTerm);
+      
+      // Combine results and remove duplicates
+      return forkJoin([idSearch, nameSearch]).pipe(
+        map(([idResults, nameResults]) => {
+          // Combine both result sets
+          const combinedResults = [...idResults, ...nameResults];
           
-          // Map API response to our MoodleModule interface
-          return response.courses.map((course: any) => ({
-            id: course.id,
-            name: course.fullname,
-            description: course.summary,
-            visible: course.visible === 1,
-            summary: course.summary,
-            lastAccess: undefined, // Direct lookup doesn't include last access
-            courseId: course.id,
-            courseName: course.shortname
-          }));
+          // Remove duplicates by using course ID as unique identifier
+          const uniqueResults = combinedResults.filter((course, index, self) =>
+            index === self.findIndex((c) => c.id === course.id)
+          );
+          
+          return uniqueResults;
+        }),
+        catchError(error => {
+          console.error('Error in combined search:', error);
+          // Fallback to name search if combined search fails
+          return this.searchCoursesByName(trimmedTerm);
         })
       );
     }
     
-    // Otherwise, use the regular search functionality
+    // For non-numeric search terms, just use the name search
+    return this.searchCoursesByName(trimmedTerm);
+  }
+
+  /**
+   * Search course directly by ID
+   * @param courseId The course ID to search for
+   */
+  private searchCourseById(courseId: number): Observable<MoodleModule[]> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of([]);
+    }
+    
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+    
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'core_course_get_courses_by_field')
+      .set('field', 'id')
+      .set('value', courseId.toString())
+      .set('moodlewsrestformat', 'json');
+    
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        if (!response || !response.courses || response.courses.length === 0) {
+          return [];
+        }
+        
+        // Map API response to our MoodleModule interface
+        return response.courses.map((course: any) => ({
+          id: course.id,
+          name: course.fullname,
+          description: course.summary,
+          visible: course.visible === 1,
+          summary: course.summary,
+          lastAccess: undefined,
+          courseId: course.id,
+          courseName: course.shortname
+        }));
+      }),
+      catchError(error => {
+        console.error('Error searching by ID:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Search courses by name using the search API
+   * @param searchTerm Keyword to search for
+   */
+  private searchCoursesByName(searchTerm: string): Observable<MoodleModule[]> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of([]);
+    }
+    
     const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
     
     const params = new HttpParams()
@@ -756,7 +818,10 @@ export class MoodleService {
       .set('wsfunction', 'core_course_search_courses')
       .set('criterianame', 'search')
       .set('criteriavalue', searchTerm)
-      .set('moodlewsrestformat', 'json');
+      .set('moodlewsrestformat', 'json')
+      .set('page', '0')
+      .set('perpage', '100')
+      .set('limittoenrolled', '0');
     
     return this.http.get<any>(webServiceUrl, { params }).pipe(
       map(response => {
@@ -771,10 +836,14 @@ export class MoodleService {
           description: course.summary,
           visible: course.visible === 1,
           summary: course.summary,
-          lastAccess: undefined, // Search results don't include last access
+          lastAccess: undefined,
           courseId: course.id,
           courseName: course.shortname
         }));
+      }),
+      catchError(error => {
+        console.error('Error searching by name:', error);
+        return of([]);
       })
     );
   }

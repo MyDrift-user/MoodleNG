@@ -22,19 +22,10 @@
     <div class="search-header">
       <mat-icon>school</mat-icon>
       <span>Find and enroll in courses</span>
-      <div class="search-mode-toggle">
-        <span class="toggle-label">Search by Name</span>
-        <mat-slide-toggle 
-          [checked]="searchById" 
-          (change)="toggleSearchMode()" 
-          color="accent">
-        </mat-slide-toggle>
-        <span class="toggle-label">Search by ID</span>
-      </div>
     </div>
     <mat-form-field appearance="fill" class="search-field dark-theme-search">
-      <mat-label>{{searchById ? 'Enter course ID' : 'Search for courses'}}</mat-label>
-      <input matInput [formControl]="searchControl" [placeholder]="searchById ? 'Enter numeric course ID' : 'Enter course name or keyword'">
+      <mat-label>Search for courses</mat-label>
+      <input matInput [formControl]="searchControl" placeholder="Enter course name or course ID">
       <mat-icon matPrefix>search</mat-icon>
       <button *ngIf="searchControl.value" matSuffix mat-icon-button aria-label="Clear" 
               (click)="searchControl.setValue(''); clearSearch()">
