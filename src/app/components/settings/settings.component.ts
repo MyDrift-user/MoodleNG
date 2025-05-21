@@ -63,6 +63,7 @@ export class SettingsComponent implements OnInit {
       backgroundColor: ['', Validators.required],
       cardColor: ['', Validators.required],
       contentContainerColor: ['', Validators.required],
+      textColor: ['', Validators.required],
       username: ['', [Validators.required]],
       moodleUrl: ['']
     });
@@ -214,7 +215,8 @@ export class SettingsComponent implements OnInit {
         accentColor: settings.accentColor,
         backgroundColor: settings.backgroundColor,
         cardColor: settings.cardColor,
-        contentContainerColor: settings.contentContainerColor
+        contentContainerColor: settings.contentContainerColor,
+        textColor: settings.textColor
       });
     });
     

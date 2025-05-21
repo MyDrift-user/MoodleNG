@@ -18,7 +18,7 @@
           <h3>Theme Preview</h3>
           <div class="color-preview" [style.background-color]="settingsForm.value.backgroundColor">
             <!-- Header (Primary Color) -->
-            <div class="preview-header" [style.background-color]="settingsForm.value.primaryColor">
+            <div class="preview-header" [style.background-color]="settingsForm.value.primaryColor" [style.color]="settingsForm.value.textColor">
               <mat-icon>menu</mat-icon>
               <span>Header (Primary Color)</span>
             </div>
@@ -26,14 +26,14 @@
             <!-- Content Container -->
             <div class="preview-content-container" [style.background-color]="settingsForm.value.contentContainerColor">
               <!-- Card -->
-              <div class="preview-card" [style.background-color]="settingsForm.value.cardColor">
+              <div class="preview-card" [style.background-color]="settingsForm.value.cardColor" [style.color]="settingsForm.value.textColor">
                 <div class="preview-content">
                   <h4>Card Title</h4>
                   <p>This is sample content to preview the theme.</p>
                 </div>
                 <div class="preview-actions">
-                  <button class="preview-primary-button" [style.background-color]="settingsForm.value.primaryColor">Primary Button</button>
-                  <button class="preview-accent-button" [style.background-color]="settingsForm.value.accentColor">Accent Button</button>
+                  <button class="preview-primary-button" [style.background-color]="settingsForm.value.primaryColor" [style.color]="settingsForm.value.textColor">Primary Button</button>
+                  <button class="preview-accent-button" [style.background-color]="settingsForm.value.accentColor" [style.color]="settingsForm.value.textColor">Accent Button</button>
                 </div>
               </div>
             </div>
@@ -85,6 +85,15 @@
               type="color" 
               formControlName="accentColor"
               (change)="onColorChange('accentColor', $event)"
+            >
+          </div>
+          
+          <div class="color-field">
+            <label>Text Color:</label>
+            <input 
+              type="color" 
+              formControlName="textColor"
+              (change)="onColorChange('textColor', $event)"
             >
           </div>
         </div>

@@ -10,6 +10,7 @@ export interface ThemeSettings {
   cardColor: string;
   accentColor: string;
   contentContainerColor: string;
+  textColor: string;
 }
 
 @Injectable({
@@ -21,7 +22,8 @@ export class ThemeService {
     backgroundColor: '#303030',
     cardColor: '#424242',
     accentColor: '#ff4081',
-    contentContainerColor: '#424242'
+    contentContainerColor: '#424242',
+    textColor: '#ffffff'
   };
 
   private themeSettingsSubject = new BehaviorSubject<ThemeSettings>(this.defaultSettings);
@@ -259,9 +261,11 @@ export class ThemeService {
     document.documentElement.style.setProperty('--card-color', settings.cardColor);
     document.documentElement.style.setProperty('--accent-color', settings.accentColor);
     document.documentElement.style.setProperty('--content-container-color', settings.contentContainerColor);
+    document.documentElement.style.setProperty('--text-color', settings.textColor);
     
     // Apply to body element directly
     document.body.style.backgroundColor = settings.backgroundColor;
+    document.body.style.color = settings.textColor;
     
     // Apply to all Material components
     this.applyMaterialTheming(settings);
