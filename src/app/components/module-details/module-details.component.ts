@@ -11,7 +11,12 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MoodleContent, MoodleModule } from '../../models/moodle.models';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatTableModule } from '@angular/material/table';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatSortModule } from '@angular/material/sort';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MoodleContent, MoodleModule, MoodleCourseResult, ResultsGroup } from '../../models/moodle.models';
 import { MoodleService } from '../../services/moodle.service';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { animate, state, style, transition, trigger } from '@angular/animations';
@@ -44,7 +49,12 @@ interface JSZipGeneratorOptionsWithCallback extends JSZip.JSZipGeneratorOptions<
     MatExpansionModule,
     MatDividerModule,
     MatListModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatTabsModule,
+    MatTableModule,
+    MatChipsModule,
+    MatSortModule,
+    MatBadgeModule
   ],
   templateUrl: './module-details.component.html',
   styleUrl: './module-details.component.scss',  animations: [
@@ -71,6 +81,11 @@ export class ModuleDetailsComponent implements OnInit {
   moduleId!: number;
   moduleName = 'Module';
   contents: MoodleContent[] = [];
+  results: MoodleCourseResult[] = [];
+  loadingResults = false;
+  resultsError = '';
+  activeTabIndex = 0;
+  resultsDisplayColumns: string[] = ['name', 'grade', 'percentage', 'weight', 'range', 'feedback'];
   loading = true;
   error = '';
   
@@ -94,7 +109,7 @@ export class ModuleDetailsComponent implements OnInit {
   
   constructor(
     private route: ActivatedRoute,
-    private moodleService: MoodleService,
+    public moodleService: MoodleService,
     private sanitizer: DomSanitizer,
     private filePreviewService: FilePreviewService
   ) {}
@@ -125,6 +140,12 @@ export class ModuleDetailsComponent implements OnInit {
         this.moodleService.getModuleContents(this.moduleId).subscribe({
           next: (contents) => {
             this.contents = contents;
+            
+            // Debug logging
+            console.log('Loaded module contents:', contents);
+            const contentTypes = contents.map(c => c.type);
+            const uniqueTypes = [...new Set(contentTypes)];
+            console.log('Content types in this module:', uniqueTypes);
             
             // Group contents by section
             this.sections = [];
@@ -203,6 +224,8 @@ export class ModuleDetailsComponent implements OnInit {
     }
   }
     getIconForContentType(type: string): string {
+    console.log('Getting icon for content type:', type);
+    
     switch (type) {
       case 'section':
         return 'bookmark';
@@ -222,6 +245,8 @@ export class ModuleDetailsComponent implements OnInit {
         return 'description';
       case 'label':
         return 'label';
+      case 'assignment':
+        return 'assignment';
       case 'assign':
         return 'assignment';
       case 'forum':
@@ -229,6 +254,7 @@ export class ModuleDetailsComponent implements OnInit {
       case 'quiz':
         return 'quiz';
       default:
+        console.log('Unknown content type:', type);
         return 'school';
     }
   }
@@ -599,5 +625,139 @@ export class ModuleDetailsComponent implements OnInit {
       mimeType.includes('opendocument') ||
       mimeType.startsWith('image/')
     );
+  }
+
+  // Load course results
+  loadCourseResults(): void {
+    if (this.activeTabIndex !== 1) {
+      return; // Only load when on the results tab
+    }
+    
+    this.loadingResults = true;
+    this.resultsError = '';
+    
+    this.moodleService.getCourseResults(this.moduleId).subscribe({
+      next: (results) => {
+        this.results = results;
+        this.loadingResults = false;
+      },
+      error: (err) => {
+        this.resultsError = 'Failed to load course results. Please try again.';
+        this.loadingResults = false;
+        console.error('Error loading course results:', err);
+      }
+    });
+  }
+  
+  // Handle tab changes
+  onTabChange(event: any): void {
+    this.activeTabIndex = event.index;
+    if (event.index === 1) {
+      this.loadCourseResults();
+    }
+  }
+  
+  // Toggle category expansion
+  toggleCategoryExpansion(result: MoodleCourseResult): void {
+    if (!result.isCategory) return;
+    
+    result.isExpanded = !result.isExpanded;
+  }
+  
+  // Check if a result should be shown based on its parent's expansion state
+  shouldShowResult(result: MoodleCourseResult, index: number): boolean {
+    // Always show top-level items (level 0 or 1)
+    if (result.level <= 1) return true;
+    
+    // For nested items, check if all parent categories are expanded
+    for (let i = index - 1; i >= 0; i--) {
+      const potentialParent = this.results[i];
+      
+      // Found the immediate parent
+      if (potentialParent.isCategory && result.categoryId === potentialParent.id) {
+        return potentialParent.isExpanded === true;
+      }
+      
+      // If we reached a category with a lower level than our current item,
+      // we've gone beyond the scope of potential parents
+      if (potentialParent.isCategory && potentialParent.level < result.level - 1) {
+        break;
+      }
+    }
+    
+    return true; // Default to showing
+  }
+  
+  // Get indentation based on level for hierarchical display
+  getIndentation(level: number): string {
+    return `${level * 16}px`;
+  }
+  
+  // Get icon for category/item
+  getCategoryIcon(result: MoodleCourseResult): string {
+    if (result.isOverallSummary) {
+      return 'star';
+    }
+    
+    if (result.isCategory) {
+      return result.isExpanded ? 'folder_open' : 'folder';
+    }
+    
+    if (result.isCategorySummary) {
+      return 'summarize';
+    }
+    
+    switch (result.itemType?.toLowerCase()) {
+      case 'test':
+        return 'quiz';
+      case 'aufgabe':
+        return 'assignment';
+      case 'einfach gewichteter durchschnitt':
+        return 'calculate';
+      case 'summe':
+        return 'functions';
+      default:
+        return 'description';
+    }
+  }
+  
+  // Get color for result status
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'graded':
+        return 'primary';
+      case 'submitted':
+        return 'accent';
+      case 'notsubmitted':
+      default:
+        return 'warn';
+    }
+  }
+  
+  // Get label for result status
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'graded':
+        return 'Graded';
+      case 'submitted':
+        return 'Submitted';
+      case 'notsubmitted':
+        return 'Not Submitted';
+      default:
+        return status;
+    }
+  }
+  
+  // Get row class based on result type
+  getRowClass(result: MoodleCourseResult): string {
+    if (result.isOverallSummary) return 'overall-summary-row';
+    if (result.isCategorySummary) return 'category-summary-row';
+    if (result.isCategory) return 'category-row';
+    return '';
+  }
+  
+  // Format number if it exists, otherwise return placeholder
+  formatNumberOrPlaceholder(value: number | undefined, placeholder: string = '-'): string {
+    return value !== undefined ? value.toString() : placeholder;
   }
 }

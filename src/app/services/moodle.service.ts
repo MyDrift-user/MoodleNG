@@ -6,7 +6,8 @@ import {
   MoodleSite, 
   MoodleModule, 
   MoodleContent, 
-  MoodleLoginResponse 
+  MoodleLoginResponse,
+  MoodleCourseResult
 } from '../models/moodle.models';
 
 @Injectable({
@@ -168,8 +169,40 @@ export class MoodleService {
             const sectionModules: { [key: string]: any[] } = {};
             
             section.modules.forEach((module: any) => {
-              // Skip modules without contents
+              // Debug logs
+              console.log(`Processing module: ${module.name}, modname: ${module.modname}`);
+              
+              // Special handling for assignments and quizzes
+              if (module.modname === 'assign' || module.modname === 'quiz') {
+                console.log(`Special handling for ${module.modname} module:`, module);
+                
+                // Create content object for the module
+                const specialContent: MoodleContent = {
+                  id: module.id,
+                  name: module.name,
+                  type: module.modname === 'assign' ? 'assignment' : 'quiz',
+                  content: module.description || '',
+                  moduleId: courseId,
+                  modname: module.modname,
+                  timeModified: module.timemodified ? new Date(module.timemodified * 1000) : undefined
+                };
+                
+                // Add direct link to Moodle activity
+                if (this.currentSite?.domain) {
+                  specialContent.fileUrl = `https://${this.currentSite.domain}/mod/${module.modname}/view.php?id=${module.id}`;
+                }
+                
+                // Always add this content
+                allContents.push(specialContent);
+                console.log(`Added ${module.modname} to contents:`, specialContent);
+                
+                // Continue to next module
+                return;
+              }
+              
+              // Skip modules without contents (except assignments and quizzes, handled above)
               if (!module.contents || module.contents.length === 0) {
+                console.log(`Skipping module ${module.name} - no contents`);
                 return;
               }
               
@@ -188,14 +221,30 @@ export class MoodleService {
                 return;
               }
               
-              // Create an entry for the module with all its content combined
+              // Debug log - check module types more specifically
+              if (module.modname === 'assign' || module.modname === 'quiz') {
+                console.log(`Found ${module.modname} module:`, module);
+              }
+              
+              // Create a main content object for each module
               const mainContent: MoodleContent = {
                 id: module.id,
                 name: module.name,
-                type: module.modname || 'unknown',
-                content: '',
-                moduleId: courseId
+                type: module.modname || 'unknown', // Use modname as the initial type
+                content: module.description,
+                moduleId: courseId,
+                modname: module.modname, // Add the modname property
+                timeModified: module.timemodified ? new Date(module.timemodified * 1000) : undefined
               };
+              
+              // Set specific types for special modules
+              if (module.modname === 'assign') {
+                mainContent.type = 'assignment';
+                console.log('Setting assignment type for module:', module.id, module.name);
+              } else if (module.modname === 'quiz') {
+                mainContent.type = 'quiz';
+                console.log('Setting quiz type for module:', module.id, module.name);
+              }
               
               // Process contents of the module
               if (module.contents) {
@@ -240,7 +289,7 @@ export class MoodleService {
                   
                   allContents.push(mainContent);
                 }
-                // Handle other module types
+                // Handle other module types (assignments and quizzes now handled earlier)
                 else {
                   allContents.push(mainContent);
                   
@@ -275,6 +324,14 @@ export class MoodleService {
    * Determine the type of content based on the API response
    */
   private determineContentType(content: any): string {
+    // Check for module type first
+    if (content.modname === 'assign') {
+      return 'assignment';
+    } else if (content.modname === 'quiz') {
+      return 'quiz';
+    }
+    
+    // Then check based on file type or mime type
     if (content.type === 'file') {
       if (content.mimetype?.startsWith('image/')) {
         return 'image';
@@ -436,6 +493,216 @@ export class MoodleService {
    */
   isLoggedIn(): boolean {
     return !!this.currentUser && !!this.currentUser.token;
+  }
+
+  /**
+   * Get the results/grades for a specific course
+   */
+  getCourseResults(courseId: number): Observable<MoodleCourseResult[]> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of([]);
+    }
+    
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+    
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'gradereport_user_get_grade_items')
+      .set('courseid', courseId.toString())
+      .set('userid', this.currentUser.id.toString())
+      .set('moodlewsrestformat', 'json');
+    
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        // Ensure we have the usergrades structure
+        if (!response || !response.usergrades || !response.usergrades[0] || !response.usergrades[0].gradeitems) {
+          return [];
+        }
+        
+        // Extract grade items and map to our interface
+        const gradeItems = response.usergrades[0].gradeitems;
+        
+        // First pass - create all result items
+        let allResults: MoodleCourseResult[] = [];
+        
+        // Track categories by ID
+        const categoriesById: { [key: number]: MoodleCourseResult } = {};
+        
+        // Track items that belong to each category
+        const itemsByCategory: { [key: number]: MoodleCourseResult[] } = {};
+        
+        // Process each item and identify categories
+        gradeItems.forEach((item: any) => {
+          const isCategory = item.itemtype === 'category';
+          const isCategorySummary = item.itemtype === 'category' && item.itemname.includes('gesamt');
+          const isOverallSummary = item.itemtype === 'course' || (item.itemname && item.itemname.toLowerCase().includes('kurs gesamt'));
+          
+          // Process each grade item
+          const result: MoodleCourseResult = {
+            id: item.id,
+            name: item.itemname || '',
+            itemType: item.itemtype || item.itemmodule || 'unknown',
+            gradeFormatted: item.gradeformatted,
+            gradeRaw: item.graderaw !== undefined ? parseFloat(item.graderaw) : undefined,
+            gradeMax: item.grademax !== undefined ? parseFloat(item.grademax) : undefined,
+            feedbackFormatted: item.feedback,
+            status: this.determineGradeStatus(item),
+            courseId: courseId,
+            
+            // Category-specific fields
+            isCategory: isCategory,
+            isCategorySummary: isCategorySummary,
+            isOverallSummary: isOverallSummary,
+            categoryId: item.categoryid || 0,
+            weight: item.weightraw !== undefined ? parseFloat(item.weightraw) * 100 : undefined,
+            weightFormatted: item.weightformatted,
+            range: item.grademin !== undefined && item.grademax !== undefined ? 
+              `${item.grademin}–${item.grademax}` : undefined,
+            percentage: item.percentageformatted !== undefined ? 
+              parseFloat(item.percentageformatted.replace('%', '').trim()) : undefined,
+            percentageFormatted: item.percentageformatted,
+            contributionToTotal: item.contributiontocoursetotalraw !== undefined ? 
+              parseFloat(item.contributiontocoursetotalraw) * 100 : undefined,
+            contributionFormatted: item.contributiontocourseformatted,
+            level: 0,  // Default level, will be updated later
+            isExpanded: true  // Default to expanded
+          };
+          
+          allResults.push(result);
+          
+          // Track categories for later processing
+          if (isCategory) {
+            categoriesById[item.id] = result;
+            
+            // Initialize the items array for this category
+            if (!itemsByCategory[item.id]) {
+              itemsByCategory[item.id] = [];
+            }
+          }
+          
+          // Add to parent category's children (if it has a parent)
+          if (item.categoryid && item.categoryid > 0) {
+            if (!itemsByCategory[item.categoryid]) {
+              itemsByCategory[item.categoryid] = [];
+            }
+            
+            // Add this item to its parent category's items
+            itemsByCategory[item.categoryid].push(result);
+          }
+        });
+        
+        // Second pass - establish hierarchy and levels
+        const processedResults: MoodleCourseResult[] = [];
+        const processedIds = new Set<number>();
+        
+        // Find the root categories (those without parents or with parent = 0)
+        const rootCategories = allResults.filter(r => 
+          r.isCategory && (!r.categoryId || r.categoryId === 0)
+        );
+        
+        // Start with overall summary if it exists
+        const overallSummary = allResults.find(r => r.isOverallSummary);
+        if (overallSummary) {
+          overallSummary.level = 0;
+          processedResults.push(overallSummary);
+          processedIds.add(overallSummary.id);
+        }
+        
+        // Process each root category and its children
+        rootCategories.forEach(category => {
+          // Skip if already processed (avoid duplicates)
+          if (processedIds.has(category.id)) return;
+          
+          // Set the level for the category
+          category.level = 1;
+          processedResults.push(category);
+          processedIds.add(category.id);
+          
+          // Get all items for this category
+          const categoryItems = itemsByCategory[category.id] || [];
+          
+          // Further categorize by subcategories
+          const subcategories = categoryItems.filter(item => item.isCategory);
+          const directItems = categoryItems.filter(item => !item.isCategory && !item.isCategorySummary);
+          
+          // Add direct items first
+          directItems.forEach(item => {
+            item.level = 2;
+            processedResults.push(item);
+            processedIds.add(item.id);
+          });
+          
+          // Then process each subcategory
+          subcategories.forEach(subcategory => {
+            // Skip if already processed (avoid duplicates)
+            if (processedIds.has(subcategory.id)) return;
+            
+            subcategory.level = 2;
+            processedResults.push(subcategory);
+            processedIds.add(subcategory.id);
+            
+            // Get all items for this subcategory
+            const subcategoryItems = itemsByCategory[subcategory.id] || [];
+            
+            // Add items from subcategory
+            subcategoryItems.forEach(item => {
+              // Skip if already processed or if it's a category itself
+              if (processedIds.has(item.id) || item.isCategory) return;
+              
+              item.level = 3;
+              processedResults.push(item);
+              processedIds.add(item.id);
+            });
+            
+            // Add subcategory summary if it exists
+            const subcategorySummary = allResults.find(r => 
+              r.isCategorySummary && r.categoryId === subcategory.id
+            );
+            
+            if (subcategorySummary) {
+              subcategorySummary.level = 3;
+              processedResults.push(subcategorySummary);
+              processedIds.add(subcategorySummary.id);
+            }
+          });
+          
+          // Add category summary if it exists
+          const categorySummary = allResults.find(r => 
+            r.isCategorySummary && r.categoryId === category.id
+          );
+          
+          if (categorySummary) {
+            categorySummary.level = 2;
+            processedResults.push(categorySummary);
+            processedIds.add(categorySummary.id);
+          }
+        });
+        
+        // Add any remaining items that weren't processed
+        allResults.forEach(result => {
+          if (!processedIds.has(result.id)) {
+            processedResults.push(result);
+          }
+        });
+        
+        return processedResults;
+      })
+    );
+  }
+  
+  /**
+   * Helper function to determine the status of a grade item
+   */
+  private determineGradeStatus(gradeItem: any): string {
+    if (gradeItem.graderaw === null || gradeItem.graderaw === undefined) {
+      return 'notsubmitted';
+    }
+    
+    if (gradeItem.feedback) {
+      return 'graded';
+    }
+    
+    return 'submitted';
   }
 }
 

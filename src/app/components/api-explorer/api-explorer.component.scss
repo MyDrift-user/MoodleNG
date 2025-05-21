@@ -1,0 +1,227 @@
+.api-explorer-container {
+  padding: 16px;
+  position: relative;
+  min-height: 85vh;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.api-explorer-tabs {
+  margin-top: 16px;
+}
+
+// Request Tab
+.request-form-container {
+  padding: 16px;
+}
+
+.api-form {
+  margin-bottom: 24px;
+}
+
+.endpoint-selector {
+  margin-bottom: 16px;
+}
+
+.endpoint-description {
+  margin: 16px 0;
+  padding: 12px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+.parameters-container {
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.parameter-field {
+  margin-bottom: 16px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.custom-endpoint-panel {
+  margin-top: 24px;
+}
+
+.custom-endpoint-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// Response Tab
+.response-container {
+  padding: 16px;
+}
+
+.response-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.response-meta {
+  display: flex;
+  gap: 8px;
+}
+
+.json-viewer-container,
+.interface-container {
+  margin-top: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  max-height: 600px;
+  overflow: auto;
+}
+
+.toolbar {
+  display: flex;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.json-content,
+.typescript-content {
+  padding: 16px;
+  margin: 0;
+  background-color: inherit;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: inherit;
+}
+
+.error-container {
+  margin-top: 16px;
+}
+
+.error-card {
+  background-color: #ffebee;
+}
+
+.no-response {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+  margin-top: 16px;
+}
+
+// History Tab
+.history-container {
+  padding: 16px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.history-list {
+  margin-top: 16px;
+}
+
+.history-item {
+  margin-bottom: 8px;
+}
+
+.history-details {
+  padding: 8px;
+}
+
+.history-request,
+.history-response {
+  margin-bottom: 16px;
+}
+
+.response-preview {
+  margin-top: 8px;
+}
+
+.preview-json {
+  padding: 8px;
+  background-color: inherit;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  margin: 0;
+  color: inherit;
+}
+
+.history-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.history-time {
+  margin-left: 16px;
+  color: rgba(0, 0, 0, 0.54);
+  font-size: 12px;
+}
+
+.success {
+  color: #4caf50;
+}
+
+.error {
+  color: #f44336;
+}
+
+.no-history {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+// Loading overlay
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+// Styles for the category headers in select dropdown
+::ng-deep .category-header {
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.87) !important;
+  background-color: rgba(0, 0, 0, 0.08);
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  pointer-events: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  margin-top: 4px;
+  opacity: 1 !important;
+} 
