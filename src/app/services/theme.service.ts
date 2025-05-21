@@ -145,14 +145,14 @@ export class ThemeService {
     return this.isDbAvailable;
   }
 
-  public deleteUserSettings(username: string): boolean {
+  public deleteUserSettings(username: string, moodleUrl: string): boolean {
     // Check if database service is available first
     if (!this.isDbAvailable) {
       console.warn('Database service unavailable. Cannot delete remote settings.');
       return false;
     }
     
-    this.http.delete<any>(`/api/settings/theme/${encodeURIComponent(username)}`)
+    this.http.delete<any>(`/api/settings/theme/${encodeURIComponent(username)}?moodleUrl=${encodeURIComponent(moodleUrl)}`)
       .pipe(
         catchError(err => {
           console.error('Error deleting user settings:', err);
@@ -173,6 +173,54 @@ export class ThemeService {
       });
       
     return this.isDbAvailable;
+  }
+
+  // Load user theme from server
+  public loadUserTheme(username: string, moodleUrl: string): void {
+    // Check if database service is available first
+    if (!this.isDbAvailable) {
+      console.warn('Database service unavailable. Cannot load remote settings.');
+      return;
+    }
+
+    this.http.get<any>(`/api/settings/theme/${encodeURIComponent(username)}?moodleUrl=${encodeURIComponent(moodleUrl)}`)
+      .pipe(
+        catchError(err => {
+          console.error('Error loading user theme:', err);
+          // If server returns specific error about database availability
+          if (err.error && err.error.localStorageOnly) {
+            this.isDbAvailable = false;
+          }
+          return of({ status: 'error', message: 'Error loading theme', localStorageOnly: true });
+        })
+      )
+      .subscribe(response => {
+        if (response.status === 'error' || !response.data || !response.data.theme_settings) {
+          console.log('No saved theme found on server or error loading theme');
+          return;
+        }
+        
+        // Settings exist on server - apply them
+        console.log('Found saved settings on server - applying theme');
+        const themeSettings = response.data.theme_settings;
+        this.themeSettingsSubject.next(themeSettings);
+        this.applyTheme(themeSettings);
+        
+        // Save to local storage
+        if (this.isBrowser) {
+          localStorage.setItem('user-theme', JSON.stringify(themeSettings));
+          
+          // If the saveThemeToServer preference wasn't explicitly set to false, 
+          // set it to true since we found settings on the server
+          const savedPreference = localStorage.getItem('saveThemeToServer');
+          if (savedPreference !== 'false') {
+            console.log('Auto-enabling settings sync since settings exist on server');
+            localStorage.setItem('saveThemeToServer', 'true');
+          }
+        }
+        
+        console.log('Theme loaded from server successfully');
+      });
   }
   
   // Returns whether the database service is available

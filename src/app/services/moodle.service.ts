@@ -386,28 +386,29 @@ export class MoodleService {
         const parsedUser = JSON.parse(userJson);
         const parsedSite = JSON.parse(siteJson);
         
-        if (parsedUser && parsedUser.email && parsedUser.token) {
+        let sessionValid = true;
+        
+        if (!parsedUser || !parsedUser.token || !parsedUser.username) {
+          console.warn('Incomplete user data found in localStorage');
+          sessionValid = false;
+        }
+        
+        if (!parsedSite || !parsedSite.domain) {
+          console.warn('Incomplete site data found in localStorage');
+          sessionValid = false;
+        }
+        
+        if (sessionValid) {
           console.log('Restoring user session from localStorage');
           this.currentUser = parsedUser;
-        } else {
-          console.warn('Incomplete user data found in localStorage');
-        }
-        
-        if (parsedSite && parsedSite.domain) {
-          console.log('Restoring site session from localStorage');
           this.currentSite = parsedSite;
-        } else {
-          console.warn('Incomplete site data found in localStorage');
-        }
-        
-        // Validate restored session by ensuring essential data is present
-        if (!this.currentUser || !this.currentUser.token || !this.currentSite || !this.currentSite.domain) {
-          console.warn('Restored session is missing essential data, clearing session');
-          this.logout();
-        } else {
           console.log('Session restored successfully');
+        } else {
+          console.warn('Invalid session data, clearing session');
+          this.logout();
         }
       } else {
+        // Just log - don't clear if we don't have data
         console.warn('No stored session found in localStorage');
       }
     } catch (e) {
@@ -415,6 +416,8 @@ export class MoodleService {
       // Reset state to prevent partial or corrupted state
       this.currentUser = null;
       this.currentSite = null;
+      localStorage.removeItem('moodleUser');
+      localStorage.removeItem('moodleSite');
     }
   }
 

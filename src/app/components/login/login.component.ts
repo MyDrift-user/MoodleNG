@@ -8,10 +8,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
+import { UserSettingsService } from '../../services/user-settings.service';
 
 @Component({
   selector: 'app-login',
-  standalone: true,  imports: [
+  standalone: true,
+  imports: [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -21,7 +23,8 @@ import { AuthService } from '../../services/auth.service';
     MatProgressSpinnerModule,
     MatIconModule
   ],
-  templateUrl: './login.component.html',  styleUrl: './login.component.scss'
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.scss'
 })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup;
@@ -29,11 +32,13 @@ export class LoginComponent implements OnInit {
   error = '';
   returnUrl = '/dashboard';
   hidePassword = true;
+  
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private userSettingsService: UserSettingsService
   ) {
     // Initialize form
     this.loginForm = this.formBuilder.group({
@@ -41,16 +46,18 @@ export class LoginComponent implements OnInit {
       username: ['', [Validators.required]],
       password: ['', [Validators.required]]
     });
-    
-    // Check if already logged in
-    if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard']);
-    }
   }
   
   ngOnInit(): void {
     // Get return URL from route parameters or default to '/dashboard'
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+    
+    // Check if already logged in
+    if (this.authService.isAuthenticated()) {
+      console.log('User already authenticated, redirecting to dashboard');
+      this.userSettingsService.initialize(); // Initialize settings for authenticated user
+      this.router.navigate(['/dashboard']);
+    }
   }
   
   onSubmit(): void {
@@ -67,7 +74,12 @@ export class LoginComponent implements OnInit {
     this.authService.login(domain, username, password)
       .subscribe({
         next: () => {
-          this.router.navigate([this.returnUrl]);
+          console.log('Login successful, initializing user settings');
+          // Give a small delay to ensure auth state is fully updated
+          setTimeout(() => {
+            this.userSettingsService.reset();
+            this.router.navigate([this.returnUrl]);
+          }, 100);
         },
         error: err => {
           this.error = err.message || 'Login failed. Please check your credentials.';

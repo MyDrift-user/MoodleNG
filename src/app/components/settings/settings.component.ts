@@ -187,11 +187,18 @@ export class SettingsComponent implements OnInit {
   private loadSavePreference(): void {
     // Load save preference from localStorage
     const savedPreference = localStorage.getItem('saveThemeToServer');
+    
+    // If preference is explicitly set in either direction, use that value
     if (savedPreference === 'true') {
       console.log('Loading saved preference: save to server enabled');
       this.saveToServer = true;
+    } else if (savedPreference === 'false') {
+      console.log('Loading saved preference: save to server disabled');
+      this.saveToServer = false;
     } else {
-      console.log('No saved preference found or preference is disabled');
+      // For the 'auto' state (null/undefined), set saveToServer to false in UI
+      // but it might be changed to true if settings are found on the server
+      console.log('No explicit preference found, defaulting to disabled in UI');
       this.saveToServer = false;
     }
   }
@@ -216,6 +223,29 @@ export class SettingsComponent implements OnInit {
     if (this.isLoggedIn && (!this.username || !this.moodleDomain)) {
       console.log('Logged in but missing user data, trying again...');
       setTimeout(() => this.loadUserData(), 1000);
+    }
+    // DO NOT automatically check for saved settings here, as it may re-enable sync
+    // when the user has specifically disabled it
+  }
+  
+  private checkForSavedSettings(): void {
+    if (!this.isLoggedIn || !this.username || !this.moodleDomain) {
+      console.log('Cannot check for saved settings: user not logged in or missing user data');
+      return;
+    }
+    
+    // Only try to load from server if database service is available
+    if (!this.themeService.isDatabaseAvailable()) {
+      console.log('Database service unavailable, skipping check for saved settings');
+      return;
+    }
+    
+    // Only load settings if the user has explicitly enabled saving to server
+    if (this.saveToServer) {
+      console.log('Attempting to load user theme from server');
+      this.themeService.loadUserTheme(this.username, this.moodleDomain);
+    } else {
+      console.log('Save to server is disabled, not loading settings from server');
     }
   }
 
@@ -246,6 +276,9 @@ export class SettingsComponent implements OnInit {
       if (this.username && this.moodleDomain) {
         this.settingsForm.get('username')?.setValue(this.username);
         this.settingsForm.get('moodleUrl')?.setValue(this.moodleDomain);
+        
+        // When enabling save to server, check if there are any settings to load
+        this.checkForSavedSettings();
       } else {
         console.log('Attempting to reload user data before showing error');
         // Try reloading user data before showing error
@@ -255,6 +288,9 @@ export class SettingsComponent implements OnInit {
         if (this.username && this.moodleDomain) {
           this.settingsForm.get('username')?.setValue(this.username);
           this.settingsForm.get('moodleUrl')?.setValue(this.moodleDomain);
+          
+          // When enabling save to server, check if there are any settings to load
+          this.checkForSavedSettings();
         } else {
           this.snackBar.open('Could not retrieve user information. Make sure you are logged in.', 'Close', {
             duration: 3000
@@ -298,7 +334,7 @@ export class SettingsComponent implements OnInit {
       if (this.username && this.moodleDomain) {
         const saveSuccess = this.themeService.saveThemeSettings(this.username, this.moodleDomain);
         
-        // Ensure save preference is persisted
+        // Explicitly set save preference to true - user has actively chosen to save
         localStorage.setItem('saveThemeToServer', 'true');
         
         if (saveSuccess) {
@@ -318,7 +354,8 @@ export class SettingsComponent implements OnInit {
         localStorage.setItem('saveThemeToServer', 'false');
       }
     } else {
-      // Ensure save preference is persisted as disabled
+      // User has explicitly chosen to disable syncing - set to false, not null/undefined
+      // to prevent auto-enable even if settings exist on the server
       localStorage.setItem('saveThemeToServer', 'false');
       
       this.snackBar.open('Settings saved to this device only', 'Close', {
@@ -342,7 +379,7 @@ export class SettingsComponent implements OnInit {
   }
 
   onDeleteSettings(): void {
-    if (this.username) {
+    if (this.username && this.moodleDomain) {
       // Check if database service is available
       if (!this.themeService.isDatabaseAvailable()) {
         this.snackBar.open('Database service is unavailable. Cannot delete remote settings.', 'Close', {
@@ -351,7 +388,7 @@ export class SettingsComponent implements OnInit {
         return;
       }
       
-      const deleteSuccess = this.themeService.deleteUserSettings(this.username);
+      const deleteSuccess = this.themeService.deleteUserSettings(this.username, this.moodleDomain);
       this.saveToServer = false;
       
       // Reset save preference after deleting settings
@@ -367,7 +404,7 @@ export class SettingsComponent implements OnInit {
         });
       }
     } else {
-      this.snackBar.open('Could not delete your data. Username information is missing.', 'Close', {
+      this.snackBar.open('Could not delete your data. Username or Moodle domain information is missing.', 'Close', {
         duration: 3000
       });
     }
