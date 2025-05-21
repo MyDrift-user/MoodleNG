@@ -11,6 +11,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { debounceTime, distinctUntilChanged, finalize } from 'rxjs/operators';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MoodleModule } from '../../models/moodle.models';
@@ -32,7 +33,8 @@ import { AuthService } from '../../services/auth.service';
     MatDividerModule,
     MatTooltipModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    MatSlideToggleModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -49,6 +51,7 @@ export class DashboardComponent implements OnInit {
   searching = false;
   searchResults: MoodleModule[] = [];
   showSearchResults = false;
+  searchById = false;
 
   constructor(
     private moodleService: MoodleService,
@@ -113,7 +116,7 @@ export class DashboardComponent implements OnInit {
     this.searching = true;
     this.showSearchResults = true;
     
-    this.moodleService.searchCourses(term).pipe(
+    this.moodleService.searchCourses(term, this.searchById).pipe(
       finalize(() => this.searching = false)
     ).subscribe({
       next: (results) => {
@@ -187,6 +190,18 @@ export class DashboardComponent implements OnInit {
   openCourse(courseId: number): void {
     if (this.isEnrolled(courseId)) {
       this.router.navigate(['/modules', courseId]);
+    }
+  }
+
+  /**
+   * Toggle search mode between name and ID
+   */
+  toggleSearchMode(): void {
+    this.searchById = !this.searchById;
+    // If search field has content, search again with new mode
+    const currentValue = this.searchControl.value;
+    if (currentValue && currentValue.trim().length > 2) {
+      this.searchCourses(currentValue);
     }
   }
 }

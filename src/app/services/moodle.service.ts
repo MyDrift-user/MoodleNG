@@ -706,14 +706,49 @@ export class MoodleService {
   }
 
   /**
-   * Search for available courses by keyword
-   * @param searchTerm Keyword to search for
+   * Search for available courses by keyword or ID
+   * @param searchTerm Keyword or ID to search for
+   * @param searchById Whether to search by ID (true) or name (false)
    */
-  searchCourses(searchTerm: string): Observable<MoodleModule[]> {
+  searchCourses(searchTerm: string, searchById: boolean = false): Observable<MoodleModule[]> {
     if (!this.currentUser?.token || !this.currentSite?.domain) {
       return of([]);
     }
     
+    // If searching by ID, try to directly get the course first
+    if (searchById && !isNaN(Number(searchTerm))) {
+      const courseId = Number(searchTerm);
+      const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+      
+      const params = new HttpParams()
+        .set('wstoken', this.currentUser.token)
+        .set('wsfunction', 'core_course_get_courses_by_field')
+        .set('field', 'id')
+        .set('value', courseId.toString())
+        .set('moodlewsrestformat', 'json');
+      
+      return this.http.get<any>(webServiceUrl, { params }).pipe(
+        map(response => {
+          if (!response || !response.courses || response.courses.length === 0) {
+            return [];
+          }
+          
+          // Map API response to our MoodleModule interface
+          return response.courses.map((course: any) => ({
+            id: course.id,
+            name: course.fullname,
+            description: course.summary,
+            visible: course.visible === 1,
+            summary: course.summary,
+            lastAccess: undefined, // Direct lookup doesn't include last access
+            courseId: course.id,
+            courseName: course.shortname
+          }));
+        })
+      );
+    }
+    
+    // Otherwise, use the regular search functionality
     const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
     
     const params = new HttpParams()
