@@ -704,6 +704,45 @@ export class MoodleService {
     
     return 'submitted';
   }
+
+  /**
+   * Search for available courses by keyword
+   * @param searchTerm Keyword to search for
+   */
+  searchCourses(searchTerm: string): Observable<MoodleModule[]> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of([]);
+    }
+    
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+    
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'core_course_search_courses')
+      .set('criterianame', 'search')
+      .set('criteriavalue', searchTerm)
+      .set('moodlewsrestformat', 'json');
+    
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        if (!response || !response.courses) {
+          return [];
+        }
+        
+        // Map API response to our MoodleModule interface
+        return response.courses.map((course: any) => ({
+          id: course.id,
+          name: course.fullname,
+          description: course.summary,
+          visible: course.visible === 1,
+          summary: course.summary,
+          lastAccess: undefined, // Search results don't include last access
+          courseId: course.id,
+          courseName: course.shortname
+        }));
+      })
+    );
+  }
 }
 
 // Helper extension to generate ID from string
