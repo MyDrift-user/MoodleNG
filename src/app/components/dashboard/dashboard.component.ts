@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -37,10 +37,11 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   modules: MoodleModule[] = [];
   loading = true;
   error = '';
+  successMessage = '';
   siteName = '';
   userName = '';
   
@@ -49,6 +50,10 @@ export class DashboardComponent implements OnInit {
   searching = false;
   searchResults: MoodleModule[] = [];
   showSearchResults = false;
+  enrollingCourseId: number | null = null; // Track which course is being enrolled
+  
+  // Interval reference for cleanup
+  private enrollmentRefreshInterval: any;
 
   constructor(
     private moodleService: MoodleService,
@@ -60,6 +65,11 @@ export class DashboardComponent implements OnInit {
   
   ngOnInit(): void {
     this.loadModules();
+    
+    // Setup a timer to periodically refresh enrollment status while the dashboard is open
+    this.enrollmentRefreshInterval = setInterval(() => {
+      this.refreshEnrollmentStatus();
+    }, 30000); // Refresh every 30 seconds
     
     // Get site name and user info
     const site = this.moodleService.getCurrentSite();
@@ -132,15 +142,38 @@ export class DashboardComponent implements OnInit {
     this.searching = true;
     this.showSearchResults = true;
     
-    this.moodleService.searchCourses(term).pipe(
-      finalize(() => this.searching = false)
-    ).subscribe({
-      next: (results) => {
-        this.searchResults = results;
+    // First refresh our enrollment status to ensure we show accurate data
+    this.moodleService.getUserModules().subscribe({
+      next: (modules) => {
+        this.modules = modules;
+        
+        // Now perform the search with up-to-date enrollment data
+        this.moodleService.searchCourses(term).pipe(
+          finalize(() => this.searching = false)
+        ).subscribe({
+          next: (results) => {
+            this.searchResults = results;
+          },
+          error: (err) => {
+            console.error('Error searching courses:', err);
+            this.searchResults = [];
+          }
+        });
       },
       error: (err) => {
-        console.error('Error searching courses:', err);
-        this.searchResults = [];
+        // If we fail to refresh modules, still try the search
+        console.error('Error refreshing modules before search:', err);
+        this.moodleService.searchCourses(term).pipe(
+          finalize(() => this.searching = false)
+        ).subscribe({
+          next: (results) => {
+            this.searchResults = results;
+          },
+          error: (err) => {
+            console.error('Error searching courses:', err);
+            this.searchResults = [];
+          }
+        });
       }
     });
   }
@@ -151,13 +184,84 @@ export class DashboardComponent implements OnInit {
   }
   
   enrollInCourse(courseId: number): void {
-    // In a real implementation, you would call an API to enroll the user
-    // For now, we'll just reload the modules after a short delay to simulate enrollment
-    setTimeout(() => {
-      this.loadModules();
-      this.clearSearch();
-      this.searchControl.setValue('');
-    }, 500);
+    // Clear any existing messages
+    this.error = '';
+    this.successMessage = '';
+    
+    // Set the enrolling course ID
+    this.enrollingCourseId = courseId;
+    
+    // Store the current search term to restore it after reload
+    const currentSearchTerm = this.searchControl.value;
+    
+    this.moodleService.enrollInCourse(courseId).subscribe({
+      next: (response) => {
+        if (response.status) {
+          // Set success message
+          const course = this.searchResults.find(c => c.id === courseId);
+          const courseName = course ? course.name : 'course';
+          this.successMessage = `Successfully enrolled in ${courseName}`;
+          
+          // First, reload modules to get the updated enrollment status
+          this.moodleService.getUserModules().subscribe({
+            next: (modules) => {
+              // Update the modules list
+              this.modules = modules;
+              
+              // If we had active search results, run the search again to refresh with current enrollment status
+              if (currentSearchTerm) {
+                this.moodleService.searchCourses(currentSearchTerm).subscribe({
+                  next: (results) => {
+                    this.searchResults = results;
+                    // Keep search results visible
+                    this.showSearchResults = true;
+                  },
+                  error: (err) => {
+                    console.error('Error refreshing search results after enrollment:', err);
+                  }
+                });
+              }
+            },
+            error: (err) => {
+              console.error('Error updating modules after enrollment:', err);
+            }
+          });
+          
+          // Hide success message after a few seconds
+          setTimeout(() => {
+            this.successMessage = '';
+          }, 5000);
+        } else {
+          // Enrollment failed with warnings
+          console.error('Enrollment failed:', response.warnings);
+          
+          const warningMessage = response.warnings && response.warnings.length > 0 
+            ? response.warnings[0].message 
+            : 'Failed to enroll in the course';
+            
+          this.error = warningMessage;
+          
+          // Hide error after a few seconds
+          setTimeout(() => {
+            this.error = '';
+          }, 5000);
+        }
+        // Reset the enrolling course ID
+        this.enrollingCourseId = null;
+      },
+      error: (err) => {
+        console.error('Error during enrollment:', err);
+        this.error = 'Failed to enroll in the course. Please try again.';
+        
+        // Reset the enrolling course ID
+        this.enrollingCourseId = null;
+        
+        // Hide error after a few seconds
+        setTimeout(() => {
+          this.error = '';
+        }, 5000);
+      }
+    });
   }
 
   logout(): void {
@@ -218,6 +322,37 @@ export class DashboardComponent implements OnInit {
     const target = event.target as HTMLElement;
     if (this.showSearchResults && !this.elementRef.nativeElement.querySelector('.course-search-container').contains(target)) {
       this.clearSearch();
+    }
+  }
+
+  /**
+   * Check if a specific course is currently being enrolled
+   */
+  isEnrolling(courseId: number): boolean {
+    return this.enrollingCourseId === courseId;
+  }
+
+  /**
+   * Force a refresh of the modules list to ensure enrollment status is up to date
+   * This helps ensure the UI shows correct enrollment status
+   */
+  refreshEnrollmentStatus(): void {
+    if (this.moodleService.isLoggedIn()) {
+      this.moodleService.getUserModules().subscribe({
+        next: (modules) => {
+          this.modules = modules;
+        },
+        error: (err) => {
+          console.error('Error refreshing enrollment status:', err);
+        }
+      });
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Clear the interval when the component is destroyed
+    if (this.enrollmentRefreshInterval) {
+      clearInterval(this.enrollmentRefreshInterval);
     }
   }
 }

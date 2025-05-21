@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,12 +16,16 @@ import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSortModule } from '@angular/material/sort';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MoodleContent, MoodleModule, MoodleCourseResult, ResultsGroup } from '../../models/moodle.models';
 import { MoodleService } from '../../services/moodle.service';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import JSZip from 'jszip';
 import { FilePreviewService } from '../../services/file-preview.service';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 // Add interface for JSZip metadata
 interface JSZipMetadata {
@@ -54,7 +58,9 @@ interface JSZipGeneratorOptionsWithCallback extends JSZip.JSZipGeneratorOptions<
     MatTableModule,
     MatChipsModule,
     MatSortModule,
-    MatBadgeModule
+    MatBadgeModule,
+    MatDialogModule,
+    MatSnackBarModule
   ],
   templateUrl: './module-details.component.html',
   styleUrl: './module-details.component.scss',  animations: [
@@ -107,11 +113,17 @@ export class ModuleDetailsComponent implements OnInit {
   // Track all sections in order
   sections: MoodleContent[] = [];
   
+  // Track unenrollment state
+  unenrolling = false;
+  
   constructor(
     private route: ActivatedRoute,
     public moodleService: MoodleService,
     private sanitizer: DomSanitizer,
-    private filePreviewService: FilePreviewService
+    private filePreviewService: FilePreviewService,
+    private router: Router,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {}
   
   ngOnInit(): void {
@@ -816,5 +828,51 @@ export class ModuleDetailsComponent implements OnInit {
   // Helper method to check if a value is NaN for use in the template
   isNaN(value: any): boolean {
     return Number.isNaN(value);
+  }
+
+  /**
+   * Opens a confirmation dialog and unenrolls the user from the course if confirmed
+   */
+  unenrollFromCourse(): void {
+    // Don't allow unenrollment if already in progress
+    if (this.unenrolling) return;
+    
+    // Show confirmation dialog
+    const confirmUnenroll = window.confirm('Are you sure you want to unenroll from this course? This action cannot be undone.');
+    
+    if (confirmUnenroll) {
+      this.unenrolling = true;
+      
+      this.moodleService.unenrollFromCourse(this.moduleId).subscribe({
+        next: (response) => {
+          if (response.status) {
+            // Show success message
+            this.snackBar.open(`Successfully unenrolled from ${this.moduleName}`, 'Close', {
+              duration: 5000
+            });
+            
+            // Redirect to root/dashboard
+            this.router.navigate(['/']);
+          } else {
+            // Show error message
+            const warningMessage = response.warnings && response.warnings.length > 0 
+              ? response.warnings[0].message 
+              : 'Failed to unenroll from course';
+              
+            this.snackBar.open(warningMessage, 'Close', {
+              duration: 5000
+            });
+            this.unenrolling = false;
+          }
+        },
+        error: (err) => {
+          console.error('Error during unenrollment:', err);
+          this.snackBar.open('Failed to unenroll from the course. Please try again.', 'Close', {
+            duration: 5000
+          });
+          this.unenrolling = false;
+        }
+      });
+    }
   }
 }

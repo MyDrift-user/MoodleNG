@@ -847,6 +847,96 @@ export class MoodleService {
       })
     );
   }
+
+  /**
+   * Enroll the current user in a course
+   * @param courseId The ID of the course to enroll in
+   * @returns An observable with the enrollment status
+   */
+  enrollInCourse(courseId: number): Observable<{status: boolean, warnings?: any[]}> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of({ status: false, warnings: [{ message: 'User not logged in' }] });
+    }
+    
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+    
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'enrol_self_enrol_user')
+      .set('courseid', courseId.toString())
+      .set('moodlewsrestformat', 'json');
+    
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        // Check if there was an error
+        if (response.errorcode) {
+          console.error('Enrollment error:', response);
+          return {
+            status: false,
+            warnings: [{ message: response.message || 'Failed to enroll in course' }]
+          };
+        }
+        
+        // Handle successful enrollment
+        return {
+          status: response.status || true,
+          warnings: response.warnings || []
+        };
+      }),
+      catchError(error => {
+        console.error('Enrollment request failed:', error);
+        return of({
+          status: false,
+          warnings: [{ message: 'Enrollment request failed' }]
+        });
+      })
+    );
+  }
+
+  /**
+   * Unenroll the current user from a course
+   * @param courseId The ID of the course to unenroll from
+   * @returns An observable with the unenrollment status
+   */
+  unenrollFromCourse(courseId: number): Observable<{status: boolean, warnings?: any[]}> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of({ status: false, warnings: [{ message: 'User not logged in' }] });
+    }
+    
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+    
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'enrol_self_unenrol_user')
+      .set('courseid', courseId.toString())
+      .set('moodlewsrestformat', 'json');
+    
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        // Check if there was an error
+        if (response.errorcode) {
+          console.error('Unenrollment error:', response);
+          return {
+            status: false,
+            warnings: [{ message: response.message || 'Failed to unenroll from course' }]
+          };
+        }
+        
+        // Handle successful unenrollment
+        return {
+          status: response.status || true,
+          warnings: response.warnings || []
+        };
+      }),
+      catchError(error => {
+        console.error('Unenrollment request failed:', error);
+        return of({
+          status: false,
+          warnings: [{ message: 'Unenrollment request failed' }]
+        });
+      })
+    );
+  }
 }
 
 // Helper extension to generate ID from string

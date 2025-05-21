@@ -5,6 +5,11 @@
     </button>
     <span class="module-title">{{moduleName}}</span>
     <span class="spacer"></span>
+    <button mat-icon-button (click)="unenrollFromCourse()" [disabled]="unenrolling" 
+            aria-label="Unenroll from course" matTooltip="Unenroll from Course" class="unenroll-btn">
+      <mat-icon *ngIf="!unenrolling">exit_to_app</mat-icon>
+      <mat-spinner *ngIf="unenrolling" diameter="24"></mat-spinner>
+    </button>
     <div class="download-all-btn-container" [class.downloading]="downloadingAll">
       <button mat-icon-button (click)="downloadAllModuleFiles()" [disabled]="downloadingAll || loading" 
               aria-label="Download all files" matTooltip="Download All Files" class="download-all-btn">
