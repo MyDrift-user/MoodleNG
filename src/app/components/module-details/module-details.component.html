@@ -6,8 +6,12 @@
     <span class="module-title">{{moduleName}}</span>
     <span class="spacer"></span>
     <button mat-icon-button (click)="unenrollFromCourse()" [disabled]="unenrolling" 
-            aria-label="Unenroll from course" matTooltip="Unenroll from Course" class="unenroll-btn">
-      <mat-icon *ngIf="!unenrolling">exit_to_app</mat-icon>
+            [class.unenroll-btn]="!confirmingUnenroll"
+            [class.confirm-unenroll-btn]="confirmingUnenroll"
+            aria-label="Unenroll from course" 
+            [matTooltip]="confirmingUnenroll ? 'Click again to confirm' : 'Unenroll from Course'">
+      <mat-icon *ngIf="!unenrolling && !confirmingUnenroll">work_off</mat-icon>
+      <mat-icon *ngIf="!unenrolling && confirmingUnenroll">warning</mat-icon>
       <mat-spinner *ngIf="unenrolling" diameter="24"></mat-spinner>
     </button>
     <div class="download-all-btn-container" [class.downloading]="downloadingAll">

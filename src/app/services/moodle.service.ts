@@ -905,17 +905,31 @@ export class MoodleService {
     
     const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
     
+    // Try direct unenrollment first using self method
     const params = new HttpParams()
       .set('wstoken', this.currentUser.token)
       .set('wsfunction', 'enrol_self_unenrol_user')
       .set('courseid', courseId.toString())
       .set('moodlewsrestformat', 'json');
-    
+      
     return this.http.get<any>(webServiceUrl, { params }).pipe(
       map(response => {
         // Check if there was an error
         if (response.errorcode) {
           console.error('Unenrollment error:', response);
+          
+          // If the API function doesn't exist, provide a fallback URL
+          if (response.errorcode === 'invalidfunction') {
+            const fallbackUrl = `${this.currentSite?.domain}/enrol/self/unenrolself.php?id=${courseId}`;
+            return {
+              status: true,
+              warnings: [{ 
+                message: 'Direct API unenrollment not supported by this Moodle instance.',
+                fallbackUrl: fallbackUrl
+              }]
+            };
+          }
+          
           return {
             status: false,
             warnings: [{ message: response.message || 'Failed to unenroll from course' }]
@@ -924,12 +938,25 @@ export class MoodleService {
         
         // Handle successful unenrollment
         return {
-          status: response.status || true,
+          status: true,
           warnings: response.warnings || []
         };
       }),
       catchError(error => {
         console.error('Unenrollment request failed:', error);
+        
+        // Provide a fallback URL to the standard Moodle unenroll page
+        if (this.currentSite?.domain) {
+          const fallbackUrl = `${this.currentSite.domain}/enrol/self/unenrolself.php?id=${courseId}`;
+          return of({
+            status: true,
+            warnings: [{ 
+              message: 'Direct API unenrollment failed.',
+              fallbackUrl: fallbackUrl
+            }]
+          });
+        }
+        
         return of({
           status: false,
           warnings: [{ message: 'Unenrollment request failed' }]
