@@ -169,12 +169,8 @@ export class MoodleService {
             const sectionModules: { [key: string]: any[] } = {};
             
             section.modules.forEach((module: any) => {
-              // Debug logs
-              console.log(`Processing module: ${module.name}, modname: ${module.modname}`);
-              
               // Special handling for assignments and quizzes
               if (module.modname === 'assign' || module.modname === 'quiz') {
-                console.log(`Special handling for ${module.modname} module:`, module);
                 
                 // Create content object for the module
                 const specialContent: MoodleContent = {
@@ -194,7 +190,6 @@ export class MoodleService {
                 
                 // Always add this content
                 allContents.push(specialContent);
-                console.log(`Added ${module.modname} to contents:`, specialContent);
                 
                 // Continue to next module
                 return;
@@ -202,7 +197,6 @@ export class MoodleService {
               
               // Skip modules without contents (except assignments and quizzes, handled above)
               if (!module.contents || module.contents.length === 0) {
-                console.log(`Skipping module ${module.name} - no contents`);
                 return;
               }
               
@@ -221,11 +215,6 @@ export class MoodleService {
                 return;
               }
               
-              // Debug log - check module types more specifically
-              if (module.modname === 'assign' || module.modname === 'quiz') {
-                console.log(`Found ${module.modname} module:`, module);
-              }
-              
               // Create a main content object for each module
               const mainContent: MoodleContent = {
                 id: module.id,
@@ -240,10 +229,8 @@ export class MoodleService {
               // Set specific types for special modules
               if (module.modname === 'assign') {
                 mainContent.type = 'assignment';
-                console.log('Setting assignment type for module:', module.id, module.name);
               } else if (module.modname === 'quiz') {
                 mainContent.type = 'quiz';
-                console.log('Setting quiz type for module:', module.id, module.name);
               }
               
               // Process contents of the module

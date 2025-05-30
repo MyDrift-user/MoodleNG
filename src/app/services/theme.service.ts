@@ -45,7 +45,6 @@ export class ThemeService {
     if (this.isBrowser) {
       this.loadSavedTheme();
       
-      // Use a lightweight approach instead of mutation observer
       // Apply theme once when page loads and then on specific events
       window.addEventListener('DOMContentLoaded', () => this.applyTheme(this.themeSettingsSubject.value));
       window.addEventListener('load', () => this.applyTheme(this.themeSettingsSubject.value));
@@ -337,6 +336,19 @@ export class ThemeService {
     
     for (let i = 0; i < maxContainers; i++) {
       (contentContainers[i] as HTMLElement).style.backgroundColor = settings.contentContainerColor;
+    }
+  }
+
+  // Clean up method to prevent memory leaks
+  public destroy(): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+    
+    if (this.mutationObserver) {
+      this.mutationObserver.disconnect();
+      this.mutationObserver = null;
     }
   }
 } 

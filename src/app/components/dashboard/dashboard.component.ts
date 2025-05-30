@@ -13,6 +13,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { debounceTime, distinctUntilChanged, finalize } from 'rxjs/operators';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Subscription } from 'rxjs';
 import { MoodleModule } from '../../models/moodle.models';
 import { MoodleService } from '../../services/moodle.service';
 import { AuthService } from '../../services/auth.service';
@@ -52,8 +53,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showSearchResults = false;
   enrollingCourseId: number | null = null; // Track which course is being enrolled
   
+  // Subscription management
+  private subscriptions = new Subscription();
+  
   // Interval reference for cleanup
   private enrollmentRefreshInterval: any;
+  
+  // Timer references for cleanup
+  private messageTimeouts: any[] = [];
 
   constructor(
     private moodleService: MoodleService,
@@ -82,8 +89,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.userName = user.fullname || user.username;
     }
     
-    // Set up search debounce
-    this.searchControl.valueChanges.pipe(
+    // Set up search debounce with subscription management
+    const searchSubscription = this.searchControl.valueChanges.pipe(
       debounceTime(500),
       distinctUntilChanged()
     ).subscribe(value => {
@@ -93,6 +100,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.clearSearch();
       }
     });
+    
+    this.subscriptions.add(searchSubscription);
+  }
+
+  ngOnDestroy(): void {
+    // Clear the interval when the component is destroyed
+    if (this.enrollmentRefreshInterval) {
+      clearInterval(this.enrollmentRefreshInterval);
+    }
+    
+    // Clear all message timeouts
+    this.messageTimeouts.forEach(timeout => clearTimeout(timeout));
+    this.messageTimeouts = [];
+    
+    // Clean up all subscriptions
+    this.subscriptions.unsubscribe();
   }
   
   /**
@@ -125,7 +148,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   loadModules(): void {
     this.loading = true;
-    this.moodleService.getUserModules().subscribe({
+    const loadSubscription = this.moodleService.getUserModules().subscribe({
       next: (modules) => {
         this.modules = modules;
         this.loading = false;
@@ -136,6 +159,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         console.error('Error loading modules:', err);
       }
     });
+    
+    this.subscriptions.add(loadSubscription);
   }
   
   searchCourses(term: string): void {
@@ -143,12 +168,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.showSearchResults = true;
     
     // First refresh our enrollment status to ensure we show accurate data
-    this.moodleService.getUserModules().subscribe({
+    const refreshSubscription = this.moodleService.getUserModules().subscribe({
       next: (modules) => {
         this.modules = modules;
         
         // Now perform the search with up-to-date enrollment data
-        this.moodleService.searchCourses(term).pipe(
+        const searchSubscription = this.moodleService.searchCourses(term).pipe(
           finalize(() => this.searching = false)
         ).subscribe({
           next: (results) => {
@@ -159,11 +184,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
             this.searchResults = [];
           }
         });
+        
+        this.subscriptions.add(searchSubscription);
       },
       error: (err) => {
         // If we fail to refresh modules, still try the search
         console.error('Error refreshing modules before search:', err);
-        this.moodleService.searchCourses(term).pipe(
+        const fallbackSearchSubscription = this.moodleService.searchCourses(term).pipe(
           finalize(() => this.searching = false)
         ).subscribe({
           next: (results) => {
@@ -174,8 +201,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
             this.searchResults = [];
           }
         });
+        
+        this.subscriptions.add(fallbackSearchSubscription);
       }
     });
+    
+    this.subscriptions.add(refreshSubscription);
   }
   
   clearSearch(): void {
@@ -194,7 +225,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Store the current search term to restore it after reload
     const currentSearchTerm = this.searchControl.value;
     
-    this.moodleService.enrollInCourse(courseId).subscribe({
+    const enrollSubscription = this.moodleService.enrollInCourse(courseId).subscribe({
       next: (response) => {
         if (response.status) {
           // Set success message
@@ -203,14 +234,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.successMessage = `Successfully enrolled in ${courseName}`;
           
           // First, reload modules to get the updated enrollment status
-          this.moodleService.getUserModules().subscribe({
+          const reloadSubscription = this.moodleService.getUserModules().subscribe({
             next: (modules) => {
               // Update the modules list
               this.modules = modules;
               
               // If we had active search results, run the search again to refresh with current enrollment status
               if (currentSearchTerm) {
-                this.moodleService.searchCourses(currentSearchTerm).subscribe({
+                const refreshSearchSubscription = this.moodleService.searchCourses(currentSearchTerm).subscribe({
                   next: (results) => {
                     this.searchResults = results;
                     // Keep search results visible
@@ -220,6 +251,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     console.error('Error refreshing search results after enrollment:', err);
                   }
                 });
+                
+                this.subscriptions.add(refreshSearchSubscription);
               }
             },
             error: (err) => {
@@ -227,10 +260,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
             }
           });
           
-          // Hide success message after a few seconds
-          setTimeout(() => {
-            this.successMessage = '';
-          }, 5000);
+          this.subscriptions.add(reloadSubscription);
+          
+          // Hide success message after a few seconds with cleanup
+          this.scheduleMessageClear('success', 5000);
         } else {
           // Enrollment failed with warnings
           console.error('Enrollment failed:', response.warnings);
@@ -241,10 +274,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
             
           this.error = warningMessage;
           
-          // Hide error after a few seconds
-          setTimeout(() => {
-            this.error = '';
-          }, 5000);
+          // Hide error after a few seconds with cleanup
+          this.scheduleMessageClear('error', 5000);
         }
         // Reset the enrolling course ID
         this.enrollingCourseId = null;
@@ -256,12 +287,33 @@ export class DashboardComponent implements OnInit, OnDestroy {
         // Reset the enrolling course ID
         this.enrollingCourseId = null;
         
-        // Hide error after a few seconds
-        setTimeout(() => {
-          this.error = '';
-        }, 5000);
+        // Hide error after a few seconds with cleanup
+        this.scheduleMessageClear('error', 5000);
       }
     });
+    
+    this.subscriptions.add(enrollSubscription);
+  }
+
+  /**
+   * Schedule a message to be cleared with proper cleanup tracking
+   */
+  private scheduleMessageClear(messageType: 'success' | 'error', delay: number): void {
+    const timeout = setTimeout(() => {
+      if (messageType === 'success') {
+        this.successMessage = '';
+      } else {
+        this.error = '';
+      }
+      
+      // Remove from tracking array
+      const index = this.messageTimeouts.indexOf(timeout);
+      if (index > -1) {
+        this.messageTimeouts.splice(index, 1);
+      }
+    }, delay);
+    
+    this.messageTimeouts.push(timeout);
   }
 
   logout(): void {
@@ -338,7 +390,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
    */
   refreshEnrollmentStatus(): void {
     if (this.moodleService.isLoggedIn()) {
-      this.moodleService.getUserModules().subscribe({
+      const refreshSubscription = this.moodleService.getUserModules().subscribe({
         next: (modules) => {
           this.modules = modules;
         },
@@ -346,13 +398,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
           console.error('Error refreshing enrollment status:', err);
         }
       });
-    }
-  }
-
-  ngOnDestroy(): void {
-    // Clear the interval when the component is destroyed
-    if (this.enrollmentRefreshInterval) {
-      clearInterval(this.enrollmentRefreshInterval);
+      
+      this.subscriptions.add(refreshSubscription);
     }
   }
 }

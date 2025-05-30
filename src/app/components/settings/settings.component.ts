@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -14,6 +14,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ThemeService, ThemeSettings } from '../../services/theme.service';
 import { MoodleService } from '../../services/moodle.service';
 import { AuthService } from '../../services/auth.service';
+import { Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-settings',
@@ -36,13 +38,16 @@ import { AuthService } from '../../services/auth.service';
     MatTooltipModule
   ]
 })
-export class SettingsComponent implements OnInit {
+export class SettingsComponent implements OnInit, OnDestroy {
   settingsForm: FormGroup;
   themeSettings: ThemeSettings | null = null;
   saveToServer = false;
   username: string = '';
   moodleDomain: string = '';
   isLoggedIn: boolean = false;
+  
+  // Subscription management
+  private subscriptions = new Subscription();
   
   // Debugging flags
   userDataLoaded: boolean = false;
@@ -55,8 +60,6 @@ export class SettingsComponent implements OnInit {
     private authService: AuthService,
     private snackBar: MatSnackBar
   ) {
-    console.log('SettingsComponent constructor started');
-    
     this.settingsForm = this.fb.group({
       primaryColor: ['', Validators.required],
       accentColor: ['', Validators.required],
@@ -71,40 +74,38 @@ export class SettingsComponent implements OnInit {
     // Check login status - this should happen first
     this.isLoggedIn = this.authService.isAuthenticated();
     this.loginChecked = true;
-    console.log('Auth status checked, isLoggedIn:', this.isLoggedIn);
     
     // Load user data
     this.loadUserData();
     
-    // Force-check localStorage directly for debugging
-    this.checkLocalStorage();
+    // Force-check localStorage directly for debugging - only in development
+    if (!environment.production) {
+      this.checkLocalStorage();
+    }
     
     // Load save preference from localStorage
     this.loadSavePreference();
   }
   
   private checkLocalStorage(): void {
-    console.log('Directly checking localStorage contents:');
-    console.log('moodleUser exists in localStorage:', !!localStorage.getItem('moodleUser'));
-    console.log('moodleSite exists in localStorage:', !!localStorage.getItem('moodleSite'));
-    
-    try {
-      const rawUserData = localStorage.getItem('moodleUser');
-      if (rawUserData) {
-        const userData = JSON.parse(rawUserData);
-        console.log('localStorage user data:', userData);
-        console.log('has username:', !!userData?.username);
-        console.log('has token:', !!userData?.token);
+    // Only log in development mode
+    if (!environment.production) {
+      try {
+        const rawUserData = localStorage.getItem('moodleUser');
+        const rawSiteData = localStorage.getItem('moodleSite');
+        
+        if (rawUserData) {
+          const userData = JSON.parse(rawUserData);
+          console.log('localStorage user data available:', !!userData?.username);
+        }
+        
+        if (rawSiteData) {
+          const siteData = JSON.parse(rawSiteData);
+          console.log('localStorage site data available:', !!siteData?.domain);
+        }
+      } catch (e) {
+        console.error('Error parsing localStorage data:', e);
       }
-      
-      const rawSiteData = localStorage.getItem('moodleSite');
-      if (rawSiteData) {
-        const siteData = JSON.parse(rawSiteData);
-        console.log('localStorage site data:', siteData);
-        console.log('has domain:', !!siteData?.domain);
-      }
-    } catch (e) {
-      console.error('Error parsing localStorage data:', e);
     }
   }
 
@@ -206,7 +207,8 @@ export class SettingsComponent implements OnInit {
 
   ngOnInit(): void {
     console.log('ngOnInit called, subscribing to theme settings');
-    this.themeService.themeSettings$.subscribe(settings => {
+    // Subscribe to theme settings changes and manage subscription
+    const themeSubscription = this.themeService.themeSettings$.subscribe(settings => {
       this.themeSettings = settings;
       
       // Update form with current theme settings
@@ -220,14 +222,20 @@ export class SettingsComponent implements OnInit {
       });
     });
     
+    this.subscriptions.add(themeSubscription);
+    
     // If we're logged in but no user data was found during construction,
-    // try once more to load the data
+    // try once more to load the data with a minimal delay
     if (this.isLoggedIn && (!this.username || !this.moodleDomain)) {
-      console.log('Logged in but missing user data, trying again...');
-      setTimeout(() => this.loadUserData(), 1000);
+      setTimeout(() => this.loadUserData(), 500); // Reduced from 1000ms
     }
     // DO NOT automatically check for saved settings here, as it may re-enable sync
     // when the user has specifically disabled it
+  }
+  
+  ngOnDestroy(): void {
+    // Clean up all subscriptions to prevent memory leaks
+    this.subscriptions.unsubscribe();
   }
   
   private checkForSavedSettings(): void {

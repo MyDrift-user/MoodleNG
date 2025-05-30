@@ -1,12 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { ThemeService } from './services/theme.service';
-import { UserSettingsService } from './services/user-settings.service';
-import { MoodleService } from './services/moodle.service';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { Subscription } from 'rxjs';
+
+import { ThemeService } from './services/theme.service';
+import { MoodleService } from './services/moodle.service';
+import { UserSettingsService } from './services/user-settings.service';
 
 @Component({
   selector: 'app-root',
@@ -15,40 +16,57 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'MoodleNG';
   
+  private subscriptions = new Subscription();
+  private initializationTimeout: any = null;
+
   constructor(
     private themeService: ThemeService,
-    private userSettingsService: UserSettingsService,
     private moodleService: MoodleService,
-    private router: Router,
-    private snackBar: MatSnackBar
+    private userSettingsService: UserSettingsService,
+    private snackBar: MatSnackBar,
+    private router: Router
   ) {}
   
   ngOnInit() {
-    console.log('App initializing');
-    
     // First make sure basic theme is applied regardless of auth state
-    this.themeService.themeSettings$.subscribe(settings => {
+    const themeSubscription = this.themeService.themeSettings$.subscribe(settings => {
       this.themeService.updateTheme(settings);
     });
     
+    this.subscriptions.add(themeSubscription);
+    
     // Check if authentication data exists and is valid
     if (this.moodleService.isLoggedIn()) {
-      console.log('User is logged in, initializing user settings');
-      
       // Use timeout to ensure all services are properly initialized
       // This helps avoid circular dependency issues during startup
-      setTimeout(() => {
+      this.initializationTimeout = setTimeout(() => {
         this.userSettingsService.initialize();
+        this.initializationTimeout = null;
       }, 200);
       
       // Check if we're returning from a Moodle unenrollment page
       this.checkForUnenrollmentReturn();
-    } else {
-      console.log('User not logged in, using local theme only');
     }
+  }
+
+  ngOnDestroy(): void {
+    // Clean up subscriptions to prevent memory leaks
+    this.subscriptions.unsubscribe();
+    
+    // Clean up timeout if still pending
+    if (this.initializationTimeout) {
+      clearTimeout(this.initializationTimeout);
+      this.initializationTimeout = null;
+    }
+    
+    // Clean up theme service resources
+    this.themeService.destroy();
+    
+    // Clean up user settings service resources
+    this.userSettingsService.destroy();
   }
   
   /**
@@ -68,7 +86,6 @@ export class AppComponent implements OnInit {
       if (timeElapsed < maxTimeWindow) {
         // We've returned from the unenrollment page within a reasonable time
         // Assume unenrollment was successful
-        console.log('Detected return from unenrollment page');
         
         // Show a success message
         this.snackBar.open('You have been unenrolled from the course', 'Close', {
@@ -81,7 +98,8 @@ export class AppComponent implements OnInit {
         }
         
         // Refresh the user's modules to reflect the unenrollment
-        this.moodleService.getUserModules().subscribe();
+        const refreshSubscription = this.moodleService.getUserModules().subscribe();
+        this.subscriptions.add(refreshSubscription);
       }
       
       // Clear the unenrollment state regardless of time elapsed

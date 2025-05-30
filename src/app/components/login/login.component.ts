@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatInputModule } from '@angular/material/input';
@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { UserSettingsService } from '../../services/user-settings.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -26,12 +27,15 @@ import { UserSettingsService } from '../../services/user-settings.service';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
   loginForm: FormGroup;
   loading = false;
   error = '';
-  returnUrl = '/dashboard';
+  returnUrl = '/';
   hidePassword = true;
+  
+  private subscriptions = new Subscription();
+  private loginTimeout: any = null;
   
   constructor(
     private formBuilder: FormBuilder,
@@ -42,21 +46,31 @@ export class LoginComponent implements OnInit {
   ) {
     // Initialize form
     this.loginForm = this.formBuilder.group({
-      domain: ['', [Validators.required]],
-      username: ['', [Validators.required]],
-      password: ['', [Validators.required]]
+      domain: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/)]],
+      username: ['', Validators.required],
+      password: ['', Validators.required]
     });
   }
   
   ngOnInit(): void {
-    // Get return URL from route parameters or default to '/dashboard'
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+    // Get return URL from route parameters or default to '/'
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
     
     // Check if already logged in
     if (this.authService.isAuthenticated()) {
       console.log('User already authenticated, redirecting to dashboard');
       this.userSettingsService.initialize(); // Initialize settings for authenticated user
       this.router.navigate(['/dashboard']);
+    }
+  }
+  
+  ngOnDestroy(): void {
+    // Clean up subscriptions and timeouts to prevent memory leaks
+    this.subscriptions.unsubscribe();
+    
+    if (this.loginTimeout) {
+      clearTimeout(this.loginTimeout);
+      this.loginTimeout = null;
     }
   }
   
@@ -71,20 +85,22 @@ export class LoginComponent implements OnInit {
     
     const { domain, username, password } = this.loginForm.value;
     
-    this.authService.login(domain, username, password)
+    const loginSubscription = this.authService.login(domain, username, password)
       .subscribe({
         next: () => {
-          console.log('Login successful, initializing user settings');
-          // Give a small delay to ensure auth state is fully updated
-          setTimeout(() => {
+          // Give a minimal delay to ensure auth state is fully updated
+          this.loginTimeout = setTimeout(() => {
             this.userSettingsService.reset();
             this.router.navigate([this.returnUrl]);
-          }, 100);
+            this.loginTimeout = null;
+          }, 50); // Reduced from 100ms
         },
         error: err => {
           this.error = err.message || 'Login failed. Please check your credentials.';
           this.loading = false;
         }
       });
+      
+    this.subscriptions.add(loginSubscription);
   }
 }

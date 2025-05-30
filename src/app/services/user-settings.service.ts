@@ -8,54 +8,54 @@ import { ThemeService } from './theme.service';
 })
 export class UserSettingsService {
   private initialized = false;
+  private initializationTimeout: any = null;
 
   constructor(
     private authService: AuthService,
     private moodleService: MoodleService,
     private themeService: ThemeService
   ) {
-    // Wait a short delay before initializing to prevent circular dependency issues
-    setTimeout(() => this.initialize(), 100);
+    // Use a single timeout to prevent multiple initialization calls
+    this.scheduleInitialization(100);
+  }
+
+  private scheduleInitialization(delay: number): void {
+    if (this.initializationTimeout) {
+      clearTimeout(this.initializationTimeout);
+    }
+    
+    this.initializationTimeout = setTimeout(() => {
+      this.initialize();
+      this.initializationTimeout = null;
+    }, delay);
   }
 
   /**
-   * Initialize user settings - can be called on app start
-   * or explicitly after login
+   * Initialize user settings if user is logged in and not already initialized
    */
   initialize(): void {
-    // Prevent multiple initializations
     if (this.initialized) {
       return;
     }
 
-    // Only load settings if user is authenticated
-    if (this.authService.isAuthenticated()) {
-      const user = this.moodleService.getCurrentUser();
-      const site = this.moodleService.getCurrentSite();
+    // Check if user is logged in
+    if (!this.moodleService.isLoggedIn()) {
+      return;
+    }
 
-      if (user?.username && site?.domain) {
-        console.log('Initializing user settings for:', user.username, 'at', site.domain);
-        
-        // Check user's preference for syncing settings
-        const savedPreference = localStorage.getItem('saveThemeToServer');
-        
-        // If the user has explicitly disabled syncing on this device, respect that choice
-        if (savedPreference === 'false') {
-          console.log('User explicitly disabled settings sync on this device');
-          // Set the flag to false - don't load remote settings
-          localStorage.setItem('saveThemeToServer', 'false');
-        } else {
-          // Either the setting is explicitly enabled (true) or this is a new device (null/undefined)
-          // Try to load settings from the server
-          console.log('Checking for remote settings');
-          
-          // Load theme from server - if settings exist, the flag will be set to true
-          // If no settings exist, it remains in 'auto' state (or stays true if already true)
-          this.themeService.loadUserTheme(user.username, site.domain);
-        }
-        
-        this.initialized = true;
-      }
+    const user = this.moodleService.getCurrentUser();
+    const site = this.moodleService.getCurrentSite();
+
+    if (!user || !site) {
+      return;
+    }
+
+    this.initialized = true;
+
+    // Load user preferences
+    const saveToServer = localStorage.getItem('saveThemeToServer');
+    if (saveToServer === 'true') {
+      this.themeService.loadUserTheme(user.username, site.domain);
     }
   }
 
@@ -65,7 +65,24 @@ export class UserSettingsService {
    */
   reset(): void {
     this.initialized = false;
-    // Use setTimeout to defer execution until next macrotask to avoid circular dependencies
-    setTimeout(() => this.initialize(), 0);
+    
+    // Clear any pending initialization
+    if (this.initializationTimeout) {
+      clearTimeout(this.initializationTimeout);
+      this.initializationTimeout = null;
+    }
+    
+    // Schedule immediate re-initialization
+    this.scheduleInitialization(0);
+  }
+
+  /**
+   * Clean up resources to prevent memory leaks
+   */
+  destroy(): void {
+    if (this.initializationTimeout) {
+      clearTimeout(this.initializationTimeout);
+      this.initializationTimeout = null;
+    }
   }
 } 
