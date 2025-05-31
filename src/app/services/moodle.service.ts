@@ -9,6 +9,7 @@ import {
   MoodleLoginResponse,
   MoodleCourseResult,
 } from '../models/moodle.models';
+import { ErrorHandlerService } from './error-handler.service';
 
 @Injectable({
   providedIn: 'root',
@@ -17,7 +18,10 @@ export class MoodleService {
   private currentUser: MoodleUser | null = null;
   private currentSite: MoodleSite | null = null;
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private errorHandler: ErrorHandlerService
+  ) {
     // Try to restore session from localStorage
     this.restoreSession();
   }
@@ -51,6 +55,10 @@ export class MoodleService {
 
         // Get user details with the token
         return this.getUserInfo(formattedDomain, response.token);
+      }),
+      catchError(error => {
+        this.errorHandler.handleMoodleError(error, 'Login failed');
+        throw error;
       })
     );
   }
@@ -130,7 +138,11 @@ export class MoodleService {
           if (!b.lastAccess) return -1;
           return b.lastAccess.getTime() - a.lastAccess.getTime();
         })
-      )
+      ),
+      catchError(error => {
+        this.errorHandler.handleMoodleError(error, 'Failed to load courses');
+        return of([]);
+      })
     );
   }
 
@@ -314,6 +326,10 @@ export class MoodleService {
         });
 
         return allContents;
+      }),
+      catchError(error => {
+        this.errorHandler.handleMoodleError(error, 'Failed to load course contents');
+        return of([]);
       })
     );
   }
@@ -467,7 +483,7 @@ export class MoodleService {
         console.warn('No stored session found in localStorage');
       }
     } catch (e) {
-      console.error('Error restoring session from localStorage:', e);
+      this.errorHandler.reportError('Failed to restore user session', 'Session management');
       // Reset state to prevent partial or corrupted state
       this.currentUser = null;
       this.currentSite = null;

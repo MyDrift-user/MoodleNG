@@ -16,6 +16,8 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { Subscription } from 'rxjs';
+import { MoodleService } from '../../services/moodle.service';
+import { ErrorHandlerService } from '../../services/error-handler.service';
 
 @Component({
   selector: 'app-login',
@@ -48,13 +50,15 @@ export class LoginComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    private userSettingsService: UserSettingsService
+    private userSettingsService: UserSettingsService,
+    private moodleService: MoodleService,
+    private errorHandler: ErrorHandlerService
   ) {
     // Initialize form
     this.loginForm = this.formBuilder.group({
-      domain: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/)]],
-      username: ['', Validators.required],
-      password: ['', Validators.required],
+      site: ['', [Validators.required]],
+      username: ['', [Validators.required]],
+      password: ['', [Validators.required]],
     });
   }
 
@@ -80,32 +84,42 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
   }
 
-  onSubmit(): void {
-    // Stop if form is invalid
-    if (this.loginForm.invalid) {
-      return;
-    }
+  async onSubmit(): Promise<void> {
+    if (this.loginForm.valid && !this.loading) {
+      this.loading = true;
+      this.error = '';
 
-    this.loading = true;
-    this.error = '';
+      const { site, username, password } = this.loginForm.value;
 
-    const { domain, username, password } = this.loginForm.value;
-
-    const loginSubscription = this.authService.login(domain, username, password).subscribe({
-      next: () => {
-        // Give a minimal delay to ensure auth state is fully updated
-        this.loginTimeout = setTimeout(() => {
+      try {
+        const user = await this.moodleService.login(site, username, password).toPromise();
+        
+        if (user) {
+          console.log('Login successful:', user);
+          
+          // Reset and initialize user settings
           this.userSettingsService.reset();
-          this.router.navigate([this.returnUrl]);
-          this.loginTimeout = null;
-        }, 50); // Reduced from 100ms
-      },
-      error: err => {
-        this.error = err.message || 'Login failed. Please check your credentials.';
+          
+          // Navigate to dashboard
+          this.router.navigate(['/dashboard']);
+        }
+      } catch (error: any) {
+        // The error is already handled by the global error handler and HTTP interceptor
+        // We just need to handle any UI-specific logic here
+        this.error = 'Login failed. Please check your credentials and try again.';
         this.loading = false;
-      },
-    });
-
-    this.subscriptions.add(loginSubscription);
+        
+        // Optionally provide more specific feedback based on error type
+        if (error?.status === 401) {
+          this.error = 'Invalid username or password.';
+        } else if (error?.status === 0) {
+          this.error = 'Cannot connect to Moodle server. Please check the URL and your internet connection.';
+        }
+      } finally {
+        this.loading = false;
+      }
+    } else {
+      this.errorHandler.handleValidationError('Please fill in all required fields.', 'Login form');
+    }
   }
 }
