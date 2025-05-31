@@ -6,6 +6,7 @@ export interface MoodleUser {
   fullname: string;
   email: string;
   token?: string;
+  profilePictureUrl?: string;
 }
 
 export interface MoodleSite {

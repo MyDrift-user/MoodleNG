@@ -4,7 +4,20 @@
     <span *ngIf="siteName" class="site-name">{{ siteName }}</span>
     <span class="spacer"></span>
     <span class="user-info" *ngIf="userName">
-      <mat-icon>account_circle</mat-icon>
+      
+      <img 
+        *ngIf="userProfilePicture?.imageUrl && !profilePictureError"
+        [src]="userProfilePicture?.imageUrl || ''"
+        [alt]="userProfilePicture?.altText || 'Profile picture'"
+        class="profile-picture"
+        style="display: inline-block !important; visibility: visible !important; width: 35px !important; height: 35px !important;"
+        (error)="onProfilePictureError()"
+        (load)="onProfilePictureLoad()"
+      />
+      <mat-icon 
+        *ngIf="!userProfilePicture?.imageUrl || profilePictureError"
+        style="border: 2px solid red !important;"
+      >account_circle</mat-icon>
       {{ userName }}
     </span>
     <button

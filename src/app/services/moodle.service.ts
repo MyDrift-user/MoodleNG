@@ -91,34 +91,80 @@ export class MoodleService {
       .set('moodlewsrestformat', 'json');
 
     return this.http.get<any>(webServiceUrl, { params }).pipe(
-      map(info => {
+      switchMap(info => {
+        console.log('MoodleService: Raw API response from core_webservice_get_site_info:', info);
+        
         // Sanitize user info from API
         const sanitizedInfo = this.sanitization.sanitizeObject(info, {
           allowBasicHtml: false,
           trimWhitespace: true
         });
 
-        // Create user object
-        const user: MoodleUser = {
-          id: sanitizedInfo.userid,
-          username: this.sanitization.sanitizeUsername(sanitizedInfo.username || ''),
-          firstname: this.sanitization.sanitizeText(sanitizedInfo.firstname || ''),
-          lastname: this.sanitization.sanitizeText(sanitizedInfo.lastname || ''),
-          fullname: this.sanitization.sanitizeText(sanitizedInfo.fullname || ''),
-          email: this.sanitization.sanitizeEmail(sanitizedInfo.email || ''),
-          token: token, // Don't sanitize token
-        };
+        console.log('MoodleService: Sanitized info:', sanitizedInfo);
 
-        // Store user in the service and localStorage
-        this.setCurrentUser(user);
-        this.currentSite = {
-          domain: domain,
-          sitename: this.sanitization.sanitizeText(sanitizedInfo.sitename || ''),
-          logo: this.sanitization.sanitizeUrl(sanitizedInfo.userpictureurl || ''),
-        };
-        this.saveSession();
+        // Get complete user details using core_user_get_users_by_field
+        return this.getUserDetailsByField('id', sanitizedInfo.userid.toString(), token, domain).pipe(
+          map(userDetails => {
+            console.log('MoodleService: Complete user details from core_user_get_users_by_field:', userDetails);
 
-        return user;
+            // Use profile picture from detailed user info if available, otherwise fallback to site info
+            const profilePictureUrl = userDetails?.profileimageurl || userDetails?.profileimageurlsmall || sanitizedInfo.userpictureurl || '';
+            console.log('MoodleService: Profile picture URL found:', profilePictureUrl);
+
+            // Create user object with complete information
+            const user: MoodleUser = {
+              id: sanitizedInfo.userid,
+              username: this.sanitization.sanitizeUsername(sanitizedInfo.username || ''),
+              firstname: this.sanitization.sanitizeText(sanitizedInfo.firstname || ''),
+              lastname: this.sanitization.sanitizeText(sanitizedInfo.lastname || ''),
+              fullname: this.sanitization.sanitizeText(sanitizedInfo.fullname || ''),
+              email: this.sanitization.sanitizeEmail(sanitizedInfo.email || ''),
+              token: token, // Don't sanitize token
+              profilePictureUrl: this.sanitization.sanitizeUrl(profilePictureUrl),
+            };
+
+            console.log('MoodleService: Created user object with profile picture:', user);
+
+            // Store user in the service and localStorage
+            this.setCurrentUser(user);
+            this.currentSite = {
+              domain: domain,
+              sitename: this.sanitization.sanitizeText(sanitizedInfo.sitename || ''),
+              logo: this.sanitization.sanitizeUrl(sanitizedInfo.sitelogo || ''),
+            };
+            this.saveSession();
+
+            return user;
+          }),
+          catchError(userDetailsError => {
+            console.warn('MoodleService: Failed to get detailed user info, using basic info:', userDetailsError);
+            
+            // Fallback to basic user info if detailed fetch fails
+            const user: MoodleUser = {
+              id: sanitizedInfo.userid,
+              username: this.sanitization.sanitizeUsername(sanitizedInfo.username || ''),
+              firstname: this.sanitization.sanitizeText(sanitizedInfo.firstname || ''),
+              lastname: this.sanitization.sanitizeText(sanitizedInfo.lastname || ''),
+              fullname: this.sanitization.sanitizeText(sanitizedInfo.fullname || ''),
+              email: this.sanitization.sanitizeEmail(sanitizedInfo.email || ''),
+              token: token, // Don't sanitize token
+              profilePictureUrl: this.sanitization.sanitizeUrl(sanitizedInfo.userpictureurl || ''),
+            };
+
+            console.log('MoodleService: Created fallback user object:', user);
+
+            // Store user in the service and localStorage
+            this.setCurrentUser(user);
+            this.currentSite = {
+              domain: domain,
+              sitename: this.sanitization.sanitizeText(sanitizedInfo.sitename || ''),
+              logo: this.sanitization.sanitizeUrl(sanitizedInfo.sitelogo || ''),
+            };
+            this.saveSession();
+
+            return of(user);
+          })
+        );
       })
     );
   }
@@ -1088,6 +1134,56 @@ export class MoodleService {
           status: false,
           warnings: [{ message: 'Unenrollment request failed' }],
         });
+      })
+    );
+  }
+
+  /**
+   * Get complete user information including profile picture using core_user_get_users_by_field
+   */
+  getUserDetailsByField(field: string, value: string, token: string, domain: string): Observable<any> {
+    const webServiceUrl = `${domain}/webservice/rest/server.php`;
+    
+    const params = new HttpParams()
+      .set('wstoken', token)
+      .set('wsfunction', 'core_user_get_users_by_field')
+      .set('moodlewsrestformat', 'json')
+      .set('field', field)
+      .set('values[0]', value);
+
+    console.log('MoodleService: Fetching user details using core_user_get_users_by_field:', {
+      field,
+      value,
+      url: webServiceUrl
+    });
+
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(users => {
+        console.log('MoodleService: Raw user details response:', users);
+        if (Array.isArray(users) && users.length > 0) {
+          const user = users[0];
+          console.log('MoodleService: User profile picture fields:', {
+            profileimageurl: user.profileimageurl,
+            profileimageurlsmall: user.profileimageurlsmall,
+            picture: user.picture,
+            imagealt: user.imagealt
+          });
+          
+          // Try to construct the proper profile picture URL based on Moodle's user_picture logic
+          // If the user has a custom picture (picture > 0), use the profileimageurl
+          // Otherwise, fall back to default avatar handling
+          if (user.picture && user.picture > 0 && user.profileimageurl) {
+            console.log('MoodleService: User has custom profile picture');
+            return user;
+          } else {
+            console.log('MoodleService: User has no custom profile picture, will use default');
+            // Set profileimageurl to empty so we fall back to default avatar
+            user.profileimageurl = '';
+            user.profileimageurlsmall = '';
+            return user;
+          }
+        }
+        return null;
       })
     );
   }

@@ -14,9 +14,10 @@ import { MatInputModule } from '@angular/material/input';
 import { debounceTime, distinctUntilChanged, finalize } from 'rxjs/operators';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
-import { MoodleModule } from '../../models/moodle.models';
+import { MoodleModule, MoodleUser } from '../../models/moodle.models';
 import { MoodleService } from '../../services/moodle.service';
 import { AuthService } from '../../services/auth.service';
+import { UserProfileService, ProfilePictureResult } from '../../services/user-profile.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -45,6 +46,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   successMessage = '';
   siteName = '';
   userName = '';
+  userProfilePicture: ProfilePictureResult | null = null;
+  currentUser: MoodleUser | null = null;
+  profilePictureError = false;
 
   // Course search properties
   searchControl = new FormControl('');
@@ -67,8 +71,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private sanitizer: DomSanitizer,
     private router: Router,
-    private elementRef: ElementRef
-  ) {}
+    private elementRef: ElementRef,
+    private userProfileService: UserProfileService
+  ) {
+    // Initialize profile picture properties to ensure default icon shows initially
+    this.userProfilePicture = null;
+    this.profilePictureError = false;
+    this.currentUser = null;
+  }
 
   ngOnInit(): void {
     this.loadModules();
@@ -86,7 +96,33 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     const user = this.moodleService.getCurrentUser();
     if (user) {
+      this.currentUser = user;
       this.userName = user.fullname || user.username;
+      
+      console.log('Dashboard: User loaded:', user);
+      console.log('Dashboard: User profile picture URL:', user.profilePictureUrl);
+      
+      try {
+        // Initialize profile picture using the UserProfileService
+        this.userProfilePicture = this.userProfileService.getProfilePicture(user, 'dashboard', {
+          size: 35,
+          link: false, // Don't make it clickable in the top bar for now
+          alttext: true,
+          class: 'userpicture-topbar',
+          includefullname: false,
+          includetoken: true // Include token for Moodle authentication
+        });
+        
+        console.log('Dashboard: Profile picture result:', this.userProfilePicture);
+      } catch (error) {
+        console.error('Dashboard: Error initializing profile picture:', error);
+        this.userProfilePicture = null;
+        this.profilePictureError = true;
+      }
+    } else {
+      console.log('Dashboard: No user found');
+      this.userProfilePicture = null;
+      this.profilePictureError = true;
     }
 
     // Set up search debounce with subscription management
@@ -396,17 +432,85 @@ export class DashboardComponent implements OnInit, OnDestroy {
    * This helps ensure the UI shows correct enrollment status
    */
   refreshEnrollmentStatus(): void {
-    if (this.moodleService.isLoggedIn()) {
-      const refreshSubscription = this.moodleService.getUserModules().subscribe({
-        next: modules => {
-          this.modules = modules;
-        },
-        error: err => {
-          console.error('Error refreshing enrollment status:', err);
-        },
-      });
+    // Silently refresh the enrollment status without showing loading indicators
+    const refreshSubscription = this.moodleService.getUserModules().subscribe({
+      next: modules => {
+        this.modules = modules;
+      },
+      error: err => {
+        // Don't show errors for background refresh
+        console.error('Error refreshing enrollment status:', err);
+      },
+    });
 
-      this.subscriptions.add(refreshSubscription);
-    }
+    this.subscriptions.add(refreshSubscription);
+  }
+
+  /**
+   * Handle profile picture loading errors by falling back to default icon
+   */
+  onProfilePictureError(): void {
+    console.log('Dashboard: Profile picture failed to load');
+    this.profilePictureError = true;
+  }
+
+  /**
+   * Handle successful profile picture loading
+   */
+  onProfilePictureLoad(): void {
+    console.log('Dashboard: Profile picture loaded successfully');
+    console.log('Dashboard: userProfilePicture object:', this.userProfilePicture);
+  }
+
+  /**
+   * Determine if we should show the profile picture or default icon
+   */
+  shouldShowProfilePicture(): boolean {
+    const shouldShow = !!this.userProfilePicture && !this.profilePictureError;
+    console.log('Dashboard: shouldShowProfilePicture:', shouldShow, {
+      userProfilePicture: !!this.userProfilePicture,
+      profilePictureError: this.profilePictureError
+    });
+    return shouldShow;
+  }
+
+  /**
+   * Getter to check if we have a valid profile picture to display
+   */
+  get hasValidProfilePicture(): boolean {
+    const isValid = this.userProfilePicture !== null && !this.profilePictureError;
+    console.log('Dashboard: hasValidProfilePicture getter:', isValid, {
+      userProfilePicture: !!this.userProfilePicture,
+      profilePictureError: this.profilePictureError,
+      imageUrl: this.userProfilePicture?.imageUrl,
+      userProfilePictureObject: this.userProfilePicture
+    });
+    return isValid;
+  }
+
+  /**
+   * Debug method to check template conditions
+   */
+  shouldShowImage(): boolean {
+    const result = !!(this.userProfilePicture && this.userProfilePicture.imageUrl && !this.profilePictureError);
+    console.log('Dashboard: shouldShowImage:', result, {
+      userProfilePicture: !!this.userProfilePicture,
+      imageUrl: this.userProfilePicture?.imageUrl,
+      profilePictureError: this.profilePictureError
+    });
+    return result;
+  }
+
+  /**
+   * Debug method to check if we should show the default icon
+   */
+  shouldShowIcon(): boolean {
+    const result = !this.userProfilePicture || !this.userProfilePicture.imageUrl || this.profilePictureError;
+    console.log('Dashboard: shouldShowIcon:', result, {
+      userProfilePicture: !!this.userProfilePicture,
+      imageUrl: this.userProfilePicture?.imageUrl,
+      profilePictureError: this.profilePictureError
+    });
+    return result;
   }
 }
