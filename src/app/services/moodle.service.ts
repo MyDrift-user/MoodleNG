@@ -10,6 +10,7 @@ import {
   MoodleCourseResult,
 } from '../models/moodle.models';
 import { ErrorHandlerService } from './error-handler.service';
+import { SanitizationService } from './sanitization.service';
 
 @Injectable({
   providedIn: 'root',
@@ -20,7 +21,8 @@ export class MoodleService {
 
   constructor(
     private http: HttpClient,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private sanitization: SanitizationService
   ) {
     // Try to restore session from localStorage
     this.restoreSession();
@@ -33,8 +35,22 @@ export class MoodleService {
    * @param password User's password
    */
   login(site: string, username: string, password: string): Observable<MoodleUser> {
+    // Sanitize inputs
+    const sanitizedSite = this.sanitization.sanitizeUrl(site);
+    const sanitizedUsername = this.sanitization.sanitizeUsername(username);
+    // Note: Don't sanitize password as it may contain special characters
+
+    // Validate inputs
+    if (!this.sanitization.isValidMoodleUrl(sanitizedSite)) {
+      throw new Error('Invalid Moodle URL format');
+    }
+
+    if (!this.sanitization.isValidUsername(sanitizedUsername)) {
+      throw new Error('Invalid username format');
+    }
+
     // Format the domain correctly
-    const formattedDomain = this.formatDomain(site);
+    const formattedDomain = this.formatDomain(sanitizedSite);
 
     // Store the site information
     this.currentSite = { domain: formattedDomain };
@@ -43,8 +59,8 @@ export class MoodleService {
     const loginUrl = `${formattedDomain}/login/token.php`;
     // Set up the parameters
     const params = new HttpParams()
-      .set('username', username)
-      .set('password', password)
+      .set('username', sanitizedUsername)
+      .set('password', password) // Don't sanitize password
       .set('service', 'moodle_mobile_app');
 
     return this.http.post<MoodleLoginResponse>(loginUrl, null, { params }).pipe(
@@ -76,23 +92,29 @@ export class MoodleService {
 
     return this.http.get<any>(webServiceUrl, { params }).pipe(
       map(info => {
+        // Sanitize user info from API
+        const sanitizedInfo = this.sanitization.sanitizeObject(info, {
+          allowBasicHtml: false,
+          trimWhitespace: true
+        });
+
         // Create user object
         const user: MoodleUser = {
-          id: info.userid,
-          username: info.username,
-          firstname: info.firstname,
-          lastname: info.lastname,
-          fullname: info.fullname,
-          email: info.email,
-          token: token,
+          id: sanitizedInfo.userid,
+          username: this.sanitization.sanitizeUsername(sanitizedInfo.username || ''),
+          firstname: this.sanitization.sanitizeText(sanitizedInfo.firstname || ''),
+          lastname: this.sanitization.sanitizeText(sanitizedInfo.lastname || ''),
+          fullname: this.sanitization.sanitizeText(sanitizedInfo.fullname || ''),
+          email: this.sanitization.sanitizeEmail(sanitizedInfo.email || ''),
+          token: token, // Don't sanitize token
         };
 
         // Store user in the service and localStorage
         this.setCurrentUser(user);
         this.currentSite = {
           domain: domain,
-          sitename: info.sitename,
-          logo: info.userpictureurl,
+          sitename: this.sanitization.sanitizeText(sanitizedInfo.sitename || ''),
+          logo: this.sanitization.sanitizeUrl(sanitizedInfo.userpictureurl || ''),
         };
         this.saveSession();
 
@@ -119,17 +141,34 @@ export class MoodleService {
 
     return this.http.get<any[]>(webServiceUrl, { params }).pipe(
       map(courses => {
-        // Map API response to our MoodleModule interface
-        return courses.map(course => ({
-          id: course.id,
-          name: course.fullname,
-          description: course.summary,
-          visible: course.visible === 1,
-          summary: course.summary,
-          lastAccess: course.lastaccess ? new Date(course.lastaccess * 1000) : undefined,
-          courseId: course.id,
-          courseName: course.shortname,
-        }));
+        // Sanitize course data from API
+        const sanitizedCourses = courses.map(course => {
+          const sanitizedCourse = this.sanitization.sanitizeObject(course, {
+            allowBasicHtml: true, // Allow basic HTML in course descriptions
+            trimWhitespace: true
+          });
+
+          return {
+            id: sanitizedCourse.id,
+            name: this.sanitization.sanitizeText(sanitizedCourse.fullname || ''),
+            description: this.sanitization.sanitizeHtml(sanitizedCourse.summary || '', {
+              allowBasicHtml: true,
+              allowLinks: true,
+              allowImages: false
+            }),
+            visible: sanitizedCourse.visible === 1,
+            summary: this.sanitization.sanitizeHtml(sanitizedCourse.summary || '', {
+              allowBasicHtml: true,
+              allowLinks: true,
+              allowImages: false
+            }),
+            lastAccess: sanitizedCourse.lastaccess ? new Date(sanitizedCourse.lastaccess * 1000) : undefined,
+            courseId: sanitizedCourse.id,
+            courseName: this.sanitization.sanitizeText(sanitizedCourse.shortname || ''),
+          };
+        });
+
+        return sanitizedCourses;
       }),
       // Sort by last access date (most recent first)
       map(modules =>
@@ -167,38 +206,62 @@ export class MoodleService {
         // Flatten all sections and modules into our content format
         const allContents: MoodleContent[] = [];
         sections.forEach(section => {
+          // Sanitize section data
+          const sanitizedSection = this.sanitization.sanitizeObject(section, {
+            allowBasicHtml: true,
+            allowLinks: true,
+            allowImages: true
+          });
+
           // Add section title as text content
-          if (section.name) {
+          if (sanitizedSection.name) {
             allContents.push({
-              id: section.id,
-              name: section.name,
+              id: sanitizedSection.id,
+              name: this.sanitization.sanitizeText(sanitizedSection.name),
               type: 'section',
-              content: section.summary || '',
+              content: this.sanitization.sanitizeHtml(sanitizedSection.summary || '', {
+                allowBasicHtml: true,
+                allowLinks: true,
+                allowImages: true
+              }),
               moduleId: courseId,
             });
           }
 
           // Process each module in the section
-          if (section.modules) {
-            section.modules.forEach((module: any) => {
+          if (sanitizedSection.modules) {
+            sanitizedSection.modules.forEach((module: any) => {
+              // Sanitize module data
+              const sanitizedModule = this.sanitization.sanitizeObject(module, {
+                allowBasicHtml: true,
+                allowLinks: true,
+                allowImages: true
+              });
+
               // Special handling for assignments and quizzes
-              if (module.modname === 'assign' || module.modname === 'quiz') {
+              if (sanitizedModule.modname === 'assign' || sanitizedModule.modname === 'quiz') {
                 // Create content object for the module
                 const specialContent: MoodleContent = {
-                  id: module.id,
-                  name: module.name,
-                  type: module.modname === 'assign' ? 'assignment' : 'quiz',
-                  content: module.description || '',
+                  id: sanitizedModule.id,
+                  name: this.sanitization.sanitizeText(sanitizedModule.name || ''),
+                  type: sanitizedModule.modname === 'assign' ? 'assignment' : 'quiz',
+                  content: this.sanitization.sanitizeHtml(sanitizedModule.description || '', {
+                    allowBasicHtml: true,
+                    allowLinks: true,
+                    allowImages: false
+                  }),
                   moduleId: courseId,
-                  modname: module.modname,
-                  timeModified: module.timemodified
-                    ? new Date(module.timemodified * 1000)
+                  modname: sanitizedModule.modname,
+                  timeModified: sanitizedModule.timemodified
+                    ? new Date(sanitizedModule.timemodified * 1000)
                     : undefined,
                 };
 
                 // Add direct link to Moodle activity
                 if (this.currentSite?.domain) {
-                  specialContent.fileUrl = `https://${this.currentSite.domain}/mod/${module.modname}/view.php?id=${module.id}`;
+                  specialContent.fileUrl = this.sanitization.sanitizeUrl(
+                    `https://${this.currentSite.domain}/mod/${sanitizedModule.modname}/view.php?id=${sanitizedModule.id}`
+                  );
                 }
 
                 // Always add this content
@@ -209,19 +272,23 @@ export class MoodleService {
               }
 
               // Skip modules without contents (except assignments and quizzes, handled above)
-              if (!module.contents || module.contents.length === 0) {
+              if (!sanitizedModule.contents || sanitizedModule.contents.length === 0) {
                 return;
               }
 
               // Handle special case for labels - integrate them directly into section
-              if (module.modname === 'label') {
+              if (sanitizedModule.modname === 'label') {
                 // Add label content directly to section without separate header
-                if (module.contents && module.contents.length > 0 && module.contents[0].content) {
+                if (sanitizedModule.contents && sanitizedModule.contents.length > 0 && sanitizedModule.contents[0].content) {
                   allContents.push({
-                    id: module.id,
+                    id: sanitizedModule.id,
                     name: '', // No name for labels
                     type: 'label',
-                    content: module.contents[0].content,
+                    content: this.sanitization.sanitizeHtml(sanitizedModule.contents[0].content, {
+                      allowBasicHtml: true,
+                      allowLinks: true,
+                      allowImages: true
+                    }),
                     moduleId: courseId,
                   });
                 }
@@ -230,47 +297,55 @@ export class MoodleService {
 
               // Create a main content object for each module
               const mainContent: MoodleContent = {
-                id: module.id,
-                name: module.name,
-                type: module.modname || 'unknown', // Use modname as the initial type
-                content: module.description,
+                id: sanitizedModule.id,
+                name: this.sanitization.sanitizeText(sanitizedModule.name || ''),
+                type: sanitizedModule.modname || 'unknown', // Use modname as the initial type
+                content: this.sanitization.sanitizeHtml(sanitizedModule.description || '', {
+                  allowBasicHtml: true,
+                  allowLinks: true,
+                  allowImages: false
+                }),
                 moduleId: courseId,
-                modname: module.modname, // Add the modname property
-                timeModified: module.timemodified
-                  ? new Date(module.timemodified * 1000)
+                modname: sanitizedModule.modname, // Add the modname property
+                timeModified: sanitizedModule.timemodified
+                  ? new Date(sanitizedModule.timemodified * 1000)
                   : undefined,
               };
 
               // Set specific types for special modules
-              if (module.modname === 'assign') {
+              if (sanitizedModule.modname === 'assign') {
                 mainContent.type = 'assignment';
-              } else if (module.modname === 'quiz') {
+              } else if (sanitizedModule.modname === 'quiz') {
                 mainContent.type = 'quiz';
               }
 
               // Process contents of the module
-              if (module.contents) {
+              if (sanitizedModule.contents) {
                 // For resources like files, combine all information into one entry
-                if (module.modname === 'resource' && module.contents.length > 0) {
-                  const fileContent = module.contents[0];
+                if (sanitizedModule.modname === 'resource' && sanitizedModule.contents.length > 0) {
+                  const fileContent = sanitizedModule.contents[0];
                   mainContent.fileUrl = fileContent.fileurl
-                    ? this.appendTokenToUrl(fileContent.fileurl)
+                    ? this.appendTokenToUrl(this.sanitization.sanitizeUrl(fileContent.fileurl))
                     : undefined;
-                  mainContent.mimeType = fileContent.mimetype;
+                  mainContent.mimeType = this.sanitization.sanitizeText(fileContent.mimetype || '');
                   mainContent.type = this.determineContentType(fileContent);
 
                   // If there's a description, add it to the main content
-                  const descriptionContent = module.contents.find(
+                  const descriptionContent = sanitizedModule.contents.find(
                     (c: any) => c.type === 'file' && c.content
                   );
                   if (descriptionContent) {
-                    mainContent.content = descriptionContent.content;
+                    mainContent.content = this.sanitization.sanitizeHtml(descriptionContent.content, {
+                      allowBasicHtml: true,
+                      allowLinks: true,
+                      allowImages: true
+                    });
                   }
 
                   allContents.push(mainContent);
                 } // Handle URLs properly
-                else if (module.modname === 'url' && module.contents.length > 0) {
-                  const urlContent = module.contents[0];
+                else if (sanitizedModule.modname === 'url' && sanitizedModule.contents.length > 0) {
+                  const urlContent = sanitizedModule.contents[0];
 
                   // For external URL modules, extract the correct URL
                   // from the fileurl parameter or externalurl
@@ -285,12 +360,16 @@ export class MoodleService {
                     }
                   }
 
-                  mainContent.fileUrl = externalUrl;
+                  mainContent.fileUrl = this.sanitization.sanitizeUrl(externalUrl);
                   mainContent.type = 'url';
 
                   // If there's a description, add it to the main content
                   if (urlContent.content) {
-                    mainContent.content = urlContent.content;
+                    mainContent.content = this.sanitization.sanitizeHtml(urlContent.content, {
+                      allowBasicHtml: true,
+                      allowLinks: true,
+                      allowImages: true
+                    });
                   }
 
                   allContents.push(mainContent);
@@ -300,18 +379,22 @@ export class MoodleService {
                   allContents.push(mainContent);
 
                   // Add subcontents as needed
-                  module.contents.forEach((content: any) => {
+                  sanitizedModule.contents.forEach((content: any) => {
                     // Skip content that's just metadata or already processed
                     if (content.type === 'file' && content.mimetype) {
                       allContents.push({
                         id: content.fileurl ? content.fileurl.hashCode() : Math.random(),
-                        name: content.filename || content.name || 'Content',
+                        name: this.sanitization.sanitizeText(content.filename || content.name || 'Content'),
                         type: this.determineContentType(content),
-                        content: content.content,
+                        content: this.sanitization.sanitizeHtml(content.content || '', {
+                          allowBasicHtml: true,
+                          allowLinks: true,
+                          allowImages: true
+                        }),
                         fileUrl: content.fileurl
-                          ? this.appendTokenToUrl(content.fileurl)
+                          ? this.appendTokenToUrl(this.sanitization.sanitizeUrl(content.fileurl))
                           : undefined,
-                        mimeType: content.mimetype,
+                        mimeType: this.sanitization.sanitizeText(content.mimetype || ''),
                         timeModified: content.timemodified
                           ? new Date(content.timemodified * 1000)
                           : undefined,
@@ -471,8 +554,18 @@ export class MoodleService {
 
         if (sessionValid) {
           console.log('Restoring user session from localStorage');
-          this.currentUser = parsedUser;
-          this.currentSite = parsedSite;
+          
+          // Sanitize restored data for security
+          this.currentUser = this.sanitization.sanitizeObject(parsedUser, {
+            allowBasicHtml: false,
+            trimWhitespace: true
+          });
+          
+          this.currentSite = this.sanitization.sanitizeObject(parsedSite, {
+            allowBasicHtml: false,
+            trimWhitespace: true
+          });
+          
           console.log('Session restored successfully');
         } else {
           console.warn('Invalid session data, clearing session');

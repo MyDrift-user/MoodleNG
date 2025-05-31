@@ -9,11 +9,20 @@
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <div class="form-field">
           <mat-form-field appearance="outline">
-            <mat-label>Moodle Domain</mat-label>
-            <input matInput formControlName="domain" placeholder="moodle.yourschoolcom" required />
+            <mat-label>Moodle Site URL</mat-label>
+            <input 
+              matInput 
+              formControlName="site" 
+              placeholder="https://moodle.yourschool.com" 
+              required
+              appSanitizeUrl
+              appPreventDangerousInput
+              (focus)="onFieldFocus('site')"
+            />
             <mat-icon matPrefix>language</mat-icon>
-            <mat-error *ngIf="loginForm.get('domain')?.errors?.['required']">
-              Domain is required
+            <mat-hint>Enter the full URL of your Moodle site</mat-hint>
+            <mat-error *ngIf="hasFieldError('site')">
+              {{ getFieldError('site') }}
             </mat-error>
           </mat-form-field>
         </div>
@@ -21,10 +30,18 @@
         <div class="form-field">
           <mat-form-field appearance="outline">
             <mat-label>Username</mat-label>
-            <input matInput formControlName="username" required />
+            <input 
+              matInput 
+              formControlName="username" 
+              required
+              appSanitizeUsername
+              appPreventDangerousInput
+              (focus)="onFieldFocus('username')"
+            />
             <mat-icon matPrefix>person</mat-icon>
-            <mat-error *ngIf="loginForm.get('username')?.errors?.['required']">
-              Username is required
+            <mat-hint>Enter your Moodle username</mat-hint>
+            <mat-error *ngIf="hasFieldError('username')">
+              {{ getFieldError('username') }}
             </mat-error>
           </mat-form-field>
         </div>
@@ -37,6 +54,8 @@
               formControlName="password"
               [type]="hidePassword ? 'password' : 'text'"
               required
+              appPreventDangerousInput
+              (focus)="onFieldFocus('password')"
             />
             <mat-icon matPrefix>lock</mat-icon>
             <button
@@ -48,8 +67,8 @@
             >
               <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
-            <mat-error *ngIf="loginForm.get('password')?.errors?.['required']">
-              Password is required
+            <mat-error *ngIf="hasFieldError('password')">
+              {{ getFieldError('password') }}
             </mat-error>
           </mat-form-field>
         </div>
@@ -63,13 +82,18 @@
             mat-raised-button
             color="primary"
             type="submit"
-            [disabled]="loginForm.invalid || loading"
+            [disabled]="loading"
           >
             <span *ngIf="!loading">Sign In</span>
             <mat-spinner *ngIf="loading" diameter="24"></mat-spinner>
           </button>
         </div>
       </form>
+
+      <div class="security-info">
+        <mat-icon class="security-icon">security</mat-icon>
+        <small>Your login data is automatically sanitized and validated for security.</small>
+      </div>
     </mat-card-content>
   </mat-card>
 </div>

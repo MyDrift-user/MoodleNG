@@ -64,6 +64,30 @@ mat-card-subtitle {
 .form-field {
   width: 100%;
   margin-bottom: 20px;
+
+  // Enhanced validation styling
+  mat-form-field {
+    width: 100%;
+
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      height: 28px; // Increased for error messages
+    }
+
+    // Success state (valid input)
+    &.mat-form-field-invalid {
+      ::ng-deep .mdc-text-field--outlined .mdc-notched-outline .mdc-notched-outline__leading,
+      ::ng-deep .mdc-text-field--outlined .mdc-notched-outline .mdc-notched-outline__notch,
+      ::ng-deep .mdc-text-field--outlined .mdc-notched-outline .mdc-notched-outline__trailing {
+        border-color: theme.$error-color !important;
+      }
+    }
+
+    // Approaching limit styling
+    ::ng-deep input.approaching-limit {
+      background-color: rgba(255, 193, 7, 0.1) !important;
+      border-color: #ffc107 !important;
+    }
+  }
 }
 
 mat-form-field {
@@ -101,6 +125,76 @@ mat-form-field {
   border-radius: 4px;
   text-align: center;
   border: 1px solid rgba(244, 67, 54, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    margin-right: 8px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.security-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 8px 12px;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  color: theme.$text-secondary-dark;
+
+  .security-icon {
+    margin-right: 8px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #4caf50;
+  }
+
+  small {
+    font-size: 12px;
+    line-height: 1.3;
+  }
+}
+
+// Input validation states
+::ng-deep {
+  // Valid input styling
+  .mat-mdc-form-field.ng-valid.ng-touched:not(.ng-pristine) {
+    .mdc-text-field--outlined .mdc-notched-outline .mdc-notched-outline__leading,
+    .mdc-text-field--outlined .mdc-notched-outline .mdc-notched-outline__notch,
+    .mdc-text-field--outlined .mdc-notched-outline .mdc-notched-outline__trailing {
+      border-color: #4caf50 !important;
+      border-width: 1px !important;
+    }
+  }
+
+  // Warning state for Moodle URL validation
+  .mat-mdc-form-field.warning {
+    .mdc-text-field--outlined .mdc-notched-outline .mdc-notched-outline__leading,
+    .mdc-text-field--outlined .mdc-notched-outline .mdc-notched-outline__notch,
+    .mdc-text-field--outlined .mdc-notched-outline .mdc-notched-outline__trailing {
+      border-color: #ff9800 !important;
+    }
+  }
+
+  // Custom error styling
+  .mat-mdc-form-field-error {
+    font-size: 13px !important;
+    margin-top: 4px !important;
+    line-height: 1.2 !important;
+  }
+
+  // Hint styling
+  .mat-mdc-form-field-hint {
+    font-size: 12px !important;
+    color: theme.$text-hint-dark !important;
+  }
 }
 
 /* Responsive adjustments */
@@ -116,5 +210,13 @@ mat-form-field {
 
   .button-container button {
     min-width: 140px;
+  }
+
+  .security-info {
+    padding: 6px 10px;
+
+    small {
+      font-size: 11px;
+    }
   }
 }

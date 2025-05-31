@@ -18,6 +18,12 @@ import { UserSettingsService } from '../../services/user-settings.service';
 import { Subscription } from 'rxjs';
 import { MoodleService } from '../../services/moodle.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
+import { ValidationService } from '../../services/validation.service';
+import { 
+  UrlSanitizerDirective, 
+  UsernameSanitizerDirective,
+  PreventDangerousInputDirective 
+} from '../../directives/input-sanitizer.directive';
 
 @Component({
   selector: 'app-login',
@@ -31,6 +37,9 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
     MatCardModule,
     MatProgressSpinnerModule,
     MatIconModule,
+    UrlSanitizerDirective,
+    UsernameSanitizerDirective,
+    PreventDangerousInputDirective,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
@@ -52,13 +61,32 @@ export class LoginComponent implements OnInit, OnDestroy {
     private router: Router,
     private userSettingsService: UserSettingsService,
     private moodleService: MoodleService,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private validationService: ValidationService
   ) {
-    // Initialize form
+    // Initialize form with custom validators
     this.loginForm = this.formBuilder.group({
-      site: ['', [Validators.required]],
-      username: ['', [Validators.required]],
-      password: ['', [Validators.required]],
+      site: [
+        '', 
+        [
+          Validators.required,
+          ValidationService.moodleUrlValidator()
+        ]
+      ],
+      username: [
+        '', 
+        [
+          Validators.required,
+          ValidationService.usernameValidator()
+        ]
+      ],
+      password: [
+        '', 
+        [
+          Validators.required,
+          Validators.minLength(1)
+        ]
+      ],
     });
   }
 
@@ -84,42 +112,100 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Get validation error message for a form field
+   */
+  getFieldError(fieldName: string): string {
+    const control = this.loginForm.get(fieldName);
+    if (control && control.invalid && (control.dirty || control.touched)) {
+      return this.validationService.getValidationMessage(control, fieldName);
+    }
+    return '';
+  }
+
+  /**
+   * Check if a form field has errors
+   */
+  hasFieldError(fieldName: string): boolean {
+    const control = this.loginForm.get(fieldName);
+    return !!(control && control.invalid && (control.dirty || control.touched));
+  }
+
   async onSubmit(): Promise<void> {
-    if (this.loginForm.valid && !this.loading) {
-      this.loading = true;
-      this.error = '';
+    // Clear any previous error
+    this.error = '';
 
-      const { site, username, password } = this.loginForm.value;
-
-      try {
-        const user = await this.moodleService.login(site, username, password).toPromise();
-        
-        if (user) {
-          console.log('Login successful:', user);
-          
-          // Reset and initialize user settings
-          this.userSettingsService.reset();
-          
-          // Navigate to dashboard
-          this.router.navigate(['/dashboard']);
-        }
-      } catch (error: any) {
-        // The error is already handled by the global error handler and HTTP interceptor
-        // We just need to handle any UI-specific logic here
-        this.error = 'Login failed. Please check your credentials and try again.';
-        this.loading = false;
-        
-        // Optionally provide more specific feedback based on error type
-        if (error?.status === 401) {
-          this.error = 'Invalid username or password.';
-        } else if (error?.status === 0) {
-          this.error = 'Cannot connect to Moodle server. Please check the URL and your internet connection.';
-        }
-      } finally {
-        this.loading = false;
+    // Validate form
+    if (this.loginForm.invalid) {
+      // Mark all fields as touched to show validation errors
+      this.loginForm.markAllAsTouched();
+      
+      // Show validation errors
+      const errors = this.validationService.getFormErrors(this.loginForm);
+      if (errors.length > 0) {
+        this.errorHandler.handleValidationError(errors.join('. '), 'Login form');
       }
-    } else {
-      this.errorHandler.handleValidationError('Please fill in all required fields.', 'Login form');
+      return;
+    }
+
+    if (this.loading) return;
+
+    this.loading = true;
+
+    try {
+      // Get form values and validate using business rules
+      const formData = this.loginForm.value;
+      const validationResult = this.validationService.validateMoodleLoginData(formData);
+
+      if (!validationResult.isValid) {
+        this.errorHandler.handleValidationError(
+          validationResult.errors.join('. '), 
+          'Login validation'
+        );
+        this.loading = false;
+        return;
+      }
+
+      // Use sanitized values for login
+      const { site, username, password } = validationResult.sanitizedValue;
+
+      const user = await this.moodleService.login(site, username, password).toPromise();
+      
+      if (user) {
+        console.log('Login successful:', user);
+        
+        // Reset and initialize user settings
+        this.userSettingsService.reset();
+        
+        // Navigate to dashboard
+        this.router.navigate(['/dashboard']);
+      }
+    } catch (error: any) {
+      // The error is already handled by the global error handler and HTTP interceptor
+      // We just need to handle any UI-specific logic here
+      this.error = 'Login failed. Please check your credentials and try again.';
+      
+      // Optionally provide more specific feedback based on error type
+      if (error?.status === 401) {
+        this.error = 'Invalid username or password.';
+      } else if (error?.status === 0) {
+        this.error = 'Cannot connect to Moodle server. Please check the URL and your internet connection.';
+      } else if (error?.message && error.message.includes('Invalid URL')) {
+        this.error = 'Invalid Moodle URL format. Please check the URL and try again.';
+      }
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  /**
+   * Handle form field focus to clear errors
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onFieldFocus(_fieldName: string): void {
+    // Clear the error when user starts typing
+    if (this.error && this.error.includes('Invalid')) {
+      this.error = '';
     }
   }
 }
