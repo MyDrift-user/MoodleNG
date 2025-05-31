@@ -109,6 +109,14 @@
                 class="course-summary"
                 [innerHTML]="sanitizeHtml(course.summary)"
               ></p>
+              
+              <!-- Course Subject Section in Search Results -->
+              <div *ngIf="course.subject" class="subject-section search-subject">
+                <div class="subject-pill">
+                  <mat-icon class="subject-icon">category</mat-icon>
+                  <span class="subject-name">{{ course.subject }}</span>
+                </div>
+              </div>
             </div>
             <button
               *ngIf="!isEnrolled(course.id)"
@@ -187,9 +195,20 @@
               class="module-summary"
               [innerHTML]="sanitizeHtml(module.summary)"
             ></p>
-            <div class="access-info">
-              <mat-icon class="access-icon">access_time</mat-icon>
-              <span class="last-access">{{ formatLastAccess(module.lastAccess) }}</span>
+            
+            <div class="bottom-info">
+              <div class="access-info">
+                <mat-icon class="access-icon">access_time</mat-icon>
+                <span class="last-access">{{ formatLastAccess(module.lastAccess) }}</span>
+              </div>
+              
+              <!-- Course Subject Section -->
+              <div *ngIf="module.subject" class="subject-section">
+                <div class="subject-pill">
+                  <mat-icon class="subject-icon">category</mat-icon>
+                  <span class="subject-name">{{ module.subject }}</span>
+                </div>
+              </div>
             </div>
           </mat-card-content>
 

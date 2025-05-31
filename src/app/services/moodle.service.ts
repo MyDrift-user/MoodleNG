@@ -186,7 +186,7 @@ export class MoodleService {
       .set('moodlewsrestformat', 'json');
 
     return this.http.get<any[]>(webServiceUrl, { params }).pipe(
-      map(courses => {
+      switchMap(courses => {
         // Sanitize course data from API
         const sanitizedCourses = courses.map(course => {
           const sanitizedCourse = this.sanitization.sanitizeObject(course, {
@@ -211,10 +211,39 @@ export class MoodleService {
             lastAccess: sanitizedCourse.lastaccess ? new Date(sanitizedCourse.lastaccess * 1000) : undefined,
             courseId: sanitizedCourse.id,
             courseName: this.sanitization.sanitizeText(sanitizedCourse.shortname || ''),
+            subject: '' // Initialize empty subject
           };
         });
 
-        return sanitizedCourses;
+        // If no courses, return empty array
+        if (sanitizedCourses.length === 0) {
+          return of([]);
+        }
+
+        // Fetch categories for all courses in parallel
+        const categoryRequests = sanitizedCourses.map(course => 
+          this.getCourseCategory(course.id).pipe(
+            map(subject => ({ courseId: course.id, subject })),
+            catchError(error => {
+              console.error(`Error loading category for course ${course.id}:`, error);
+              return of({ courseId: course.id, subject: '' });
+            })
+          )
+        );
+
+        return forkJoin(categoryRequests).pipe(
+          map(categoryResults => {
+            // Merge categories back into courses
+            const subjectsByCourseId = new Map(
+              categoryResults.map(result => [result.courseId, result.subject])
+            );
+
+            return sanitizedCourses.map(course => ({
+              ...course,
+              subject: subjectsByCourseId.get(course.id) || ''
+            }));
+          })
+        );
       }),
       // Sort by last access date (most recent first)
       map(modules =>
@@ -947,13 +976,13 @@ export class MoodleService {
       .set('moodlewsrestformat', 'json');
 
     return this.http.get<any>(webServiceUrl, { params }).pipe(
-      map(response => {
+      switchMap(response => {
         if (!response || !response.courses || response.courses.length === 0) {
-          return [];
+          return of([]);
         }
 
-        // Map API response to our MoodleModule interface
-        return response.courses.map((course: any) => ({
+        // Map API response to our MoodleModule interface without subject first
+        const courses: MoodleModule[] = response.courses.map((course: any) => ({
           id: course.id,
           name: course.fullname,
           description: course.summary,
@@ -962,7 +991,33 @@ export class MoodleService {
           lastAccess: undefined,
           courseId: course.id,
           courseName: course.shortname,
+          subject: '' // Initialize empty subject
         }));
+
+        // Fetch categories for all found courses
+        const categoryRequests = courses.map((course: MoodleModule) => 
+          this.getCourseCategory(course.id).pipe(
+            map(subject => ({ courseId: course.id, subject })),
+            catchError(error => {
+              console.error(`Error loading category for search result course ${course.id}:`, error);
+              return of({ courseId: course.id, subject: '' });
+            })
+          )
+        );
+
+        return forkJoin(categoryRequests).pipe(
+          map((categoryResults: { courseId: number; subject: string }[]) => {
+            // Merge categories back into courses
+            const subjectsByCourseId = new Map(
+              categoryResults.map((result: { courseId: number; subject: string }) => [result.courseId, result.subject])
+            );
+
+            return courses.map((course: MoodleModule) => ({
+              ...course,
+              subject: subjectsByCourseId.get(course.id) || ''
+            }));
+          })
+        );
       }),
       catchError(error => {
         console.error('Error searching by ID:', error);
@@ -1008,6 +1063,7 @@ export class MoodleService {
           lastAccess: undefined,
           courseId: course.id,
           courseName: course.shortname,
+          subject: '' // Initialize empty subject - could be populated later if needed
         }));
       }),
       catchError(error => {
@@ -1184,6 +1240,63 @@ export class MoodleService {
           }
         }
         return null;
+      })
+    );
+  }
+
+  /**
+   * Get the category/subject for a specific course
+   */
+  getCourseCategory(courseId: number): Observable<string> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of('');
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'core_course_get_courses_by_field')
+      .set('field', 'id')
+      .set('value', courseId.toString())
+      .set('moodlewsrestformat', 'json');
+
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      switchMap(response => {
+        if (!response || !response.courses || response.courses.length === 0) {
+          return of('');
+        }
+
+        const course = response.courses[0];
+        if (!course.categoryid) {
+          return of('');
+        }
+
+        // Ensure we still have a valid token and user
+        if (!this.currentUser?.token) {
+          return of('');
+        }
+
+        // Now get the category details
+        const categoryParams = new HttpParams()
+          .set('wstoken', this.currentUser.token)
+          .set('wsfunction', 'core_course_get_categories')
+          .set('criteria[0][key]', 'id')
+          .set('criteria[0][value]', course.categoryid.toString())
+          .set('moodlewsrestformat', 'json');
+
+        return this.http.get<any[]>(webServiceUrl, { params: categoryParams }).pipe(
+          map(categories => {
+            if (categories && categories.length > 0) {
+              return this.sanitization.sanitizeText(categories[0].name || '');
+            }
+            return '';
+          })
+        );
+      }),
+      catchError(error => {
+        console.error('Error loading course category:', error);
+        return of('');
       })
     );
   }

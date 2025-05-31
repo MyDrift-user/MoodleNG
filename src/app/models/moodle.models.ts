@@ -24,6 +24,7 @@ export interface MoodleModule {
   lastAccess?: Date;
   courseId: number;
   courseName?: string;
+  subject?: string; // Course category/subject (e.g., "Mathematics", "Computer Science")
 }
 
 export interface MoodleContent {
