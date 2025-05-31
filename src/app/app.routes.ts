@@ -13,5 +13,5 @@ export const routes: Routes = [
   { path: 'modules/:id', component: ModuleDetailsComponent, canActivate: [authGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [authGuard] },
   { path: 'api-explorer', component: ApiExplorerComponent, canActivate: [authGuard] },
-  { path: '**', redirectTo: '/login' }
+  { path: '**', redirectTo: '/login' },
 ];

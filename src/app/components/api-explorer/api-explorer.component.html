@@ -12,16 +12,23 @@
             <div class="request-form-container">
               <form [formGroup]="apiForm" (ngSubmit)="executeApiCall()" class="api-form">
                 <h3>API Request</h3>
-                
+
                 <div class="endpoint-selector">
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Select API Endpoint</mat-label>
                     <mat-select formControlName="endpoint">
-                      <mat-option *ngFor="let category of (groupedEndpoints | keyvalue)" [disabled]="true" class="category-header">
+                      <mat-option
+                        *ngFor="let category of groupedEndpoints | keyvalue"
+                        [disabled]="true"
+                        class="category-header"
+                      >
                         {{ category.key | titlecase }}
                       </mat-option>
-                      <ng-container *ngFor="let category of (groupedEndpoints | keyvalue)">
-                        <mat-option *ngFor="let endpoint of category.value" [value]="endpoint.function">
+                      <ng-container *ngFor="let category of groupedEndpoints | keyvalue">
+                        <mat-option
+                          *ngFor="let endpoint of category.value"
+                          [value]="endpoint.function"
+                        >
                           {{ endpoint.name }}
                         </mat-option>
                       </ng-container>
@@ -31,28 +38,43 @@
                     </mat-error>
                   </mat-form-field>
                 </div>
-                
+
                 <div *ngIf="selectedEndpoint" class="endpoint-description">
                   <p>{{ selectedEndpoint.description }}</p>
                   <p><strong>Function:</strong> {{ selectedEndpoint.function }}</p>
                 </div>
-                
-                <div *ngIf="selectedEndpoint && selectedEndpoint.parameters.length > 0" class="parameters-container" formGroupName="parameters">
+
+                <div
+                  *ngIf="selectedEndpoint && selectedEndpoint.parameters.length > 0"
+                  class="parameters-container"
+                  formGroupName="parameters"
+                >
                   <h4>Parameters</h4>
                   <div *ngFor="let param of selectedEndpoint.parameters" class="parameter-field">
                     <mat-form-field appearance="outline" class="full-width">
                       <mat-label>{{ param.name }}</mat-label>
-                      <input matInput [formControlName]="param.name" [placeholder]="param.description">
+                      <input
+                        matInput
+                        [formControlName]="param.name"
+                        [placeholder]="param.description"
+                      />
                       <mat-hint>{{ param.description }}</mat-hint>
-                      <mat-error *ngIf="apiForm.get('parameters')?.get(param.name)?.hasError('required')">
+                      <mat-error
+                        *ngIf="apiForm.get('parameters')?.get(param.name)?.hasError('required')"
+                      >
                         This parameter is required
                       </mat-error>
                     </mat-form-field>
                   </div>
                 </div>
-                
+
                 <div class="action-buttons">
-                  <button mat-raised-button color="primary" type="submit" [disabled]="apiForm.invalid || loading">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    type="submit"
+                    [disabled]="apiForm.invalid || loading"
+                  >
                     <mat-icon>send</mat-icon>
                     Execute
                   </button>
@@ -62,7 +84,7 @@
                   </button>
                 </div>
               </form>
-              
+
               <!-- Add Custom Endpoint -->
               <mat-expansion-panel class="custom-endpoint-panel">
                 <mat-expansion-panel-header>
@@ -70,33 +92,47 @@
                     <mat-icon>add</mat-icon>
                     Add Custom Endpoint
                   </mat-panel-title>
-                  <mat-panel-description>
-                    Define a new Moodle API endpoint
-                  </mat-panel-description>
+                  <mat-panel-description> Define a new Moodle API endpoint </mat-panel-description>
                 </mat-expansion-panel-header>
-                
-                <form [formGroup]="customEndpointForm" (ngSubmit)="addCustomEndpoint()" class="custom-endpoint-form">
+
+                <form
+                  [formGroup]="customEndpointForm"
+                  (ngSubmit)="addCustomEndpoint()"
+                  class="custom-endpoint-form"
+                >
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Display Name</mat-label>
-                    <input matInput formControlName="name" placeholder="Friendly name for the endpoint">
+                    <input
+                      matInput
+                      formControlName="name"
+                      placeholder="Friendly name for the endpoint"
+                    />
                     <mat-error *ngIf="customEndpointForm.get('name')?.hasError('required')">
                       Name is required
                     </mat-error>
                   </mat-form-field>
-                  
+
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Function Name</mat-label>
-                    <input matInput formControlName="function" placeholder="e.g. core_calendar_get_calendar_events">
+                    <input
+                      matInput
+                      formControlName="function"
+                      placeholder="e.g. core_calendar_get_calendar_events"
+                    />
                     <mat-error *ngIf="customEndpointForm.get('function')?.hasError('required')">
                       Function name is required
                     </mat-error>
                   </mat-form-field>
-                  
+
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Description</mat-label>
-                    <textarea matInput formControlName="description" placeholder="What does this endpoint do?"></textarea>
+                    <textarea
+                      matInput
+                      formControlName="description"
+                      placeholder="What does this endpoint do?"
+                    ></textarea>
                   </mat-form-field>
-                  
+
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Category</mat-label>
                     <mat-select formControlName="category">
@@ -113,9 +149,14 @@
                       <mat-option value="other">Other</mat-option>
                     </mat-select>
                   </mat-form-field>
-                  
+
                   <div class="action-buttons">
-                    <button mat-raised-button color="accent" type="submit" [disabled]="customEndpointForm.invalid">
+                    <button
+                      mat-raised-button
+                      color="accent"
+                      type="submit"
+                      [disabled]="customEndpointForm.invalid"
+                    >
                       <mat-icon>add</mat-icon>
                       Add Endpoint
                     </button>
@@ -124,7 +165,7 @@
               </mat-expansion-panel>
             </div>
           </mat-tab>
-          
+
           <!-- Response Tab -->
           <mat-tab label="Response" [disabled]="!currentResponse">
             <div *ngIf="currentResponse" class="response-container">
@@ -132,19 +173,22 @@
                 <h3>API Response</h3>
                 <div class="response-meta">
                   <mat-chip-set>
-                    <mat-chip [color]="currentResponse.status === 'success' ? 'primary' : 'warn'" selected>
+                    <mat-chip
+                      [color]="currentResponse.status === 'success' ? 'primary' : 'warn'"
+                      selected
+                    >
                       {{ currentResponse.status }}
                     </mat-chip>
                     <mat-chip>
                       {{ formatDuration(currentResponse.duration) }}
                     </mat-chip>
                     <mat-chip>
-                      {{ currentResponse.timestamp | date:'medium' }}
+                      {{ currentResponse.timestamp | date: 'medium' }}
                     </mat-chip>
                   </mat-chip-set>
                 </div>
               </div>
-              
+
               <div *ngIf="currentResponse.status === 'error'" class="error-container">
                 <mat-card appearance="outlined" class="error-card">
                   <mat-card-header>
@@ -156,71 +200,96 @@
                   </mat-card-content>
                 </mat-card>
               </div>
-              
+
               <div *ngIf="currentResponse.status === 'success'" class="success-container">
                 <mat-tab-group>
                   <mat-tab label="JSON">
                     <div class="json-viewer-container">
                       <div class="toolbar">
-                        <button mat-icon-button matTooltip="Copy JSON" (click)="copyToClipboard(JSON.stringify(currentResponse.rawResponse, null, 2))">
+                        <button
+                          mat-icon-button
+                          matTooltip="Copy JSON"
+                          (click)="
+                            copyToClipboard(JSON.stringify(currentResponse.rawResponse, null, 2))
+                          "
+                        >
                           <mat-icon>content_copy</mat-icon>
                         </button>
                         <span class="spacer"></span>
                       </div>
-                      
+
                       <pre class="json-content">{{ currentResponse.rawResponse | json }}</pre>
                     </div>
                   </mat-tab>
-                  
+
                   <mat-tab label="Interface">
                     <div class="interface-container">
                       <div class="toolbar">
-                        <button mat-icon-button matTooltip="Copy TypeScript interface" (click)="copyToClipboard(generatedInterface, 'Interface copied to clipboard')">
+                        <button
+                          mat-icon-button
+                          matTooltip="Copy TypeScript interface"
+                          (click)="
+                            copyToClipboard(generatedInterface, 'Interface copied to clipboard')
+                          "
+                        >
                           <mat-icon>content_copy</mat-icon>
                         </button>
                       </div>
-                      
+
                       <pre class="typescript-content">{{ generatedInterface }}</pre>
                     </div>
                   </mat-tab>
                 </mat-tab-group>
               </div>
             </div>
-            
+
             <div *ngIf="!currentResponse" class="no-response">
               <p>Execute an API call to see the response here</p>
             </div>
           </mat-tab>
-          
+
           <!-- History Tab -->
           <mat-tab label="History">
             <div class="history-container">
               <div class="history-header">
                 <h3>API Call History</h3>
-                <button mat-button color="warn" (click)="clearHistory()" *ngIf="apiHistory.length > 0">
+                <button
+                  mat-button
+                  color="warn"
+                  (click)="clearHistory()"
+                  *ngIf="apiHistory.length > 0"
+                >
                   <mat-icon>delete</mat-icon>
                   Clear History
                 </button>
               </div>
-              
+
               <div *ngIf="apiHistory.length === 0" class="no-history">
                 <p>No API calls in history</p>
               </div>
-              
+
               <mat-accordion *ngIf="apiHistory.length > 0" class="history-list">
                 <mat-expansion-panel *ngFor="let item of apiHistory" class="history-item">
                   <mat-expansion-panel-header>
                     <mat-panel-title>
-                      {{ apiExplorerService.getEndpoint(item.request.endpoint)?.name || item.request.endpoint }}
+                      {{
+                        apiExplorerService.getEndpoint(item.request.endpoint)?.name ||
+                          item.request.endpoint
+                      }}
                     </mat-panel-title>
                     <mat-panel-description>
-                      <span [ngClass]="{'success': item.response.status === 'success', 'error': item.response.status === 'error'}">
+                      <span
+                        [ngClass]="{
+                          success: item.response.status === 'success',
+                          error: item.response.status === 'error',
+                        }"
+                      >
                         {{ item.response.status }}
                       </span>
                       <span class="history-time">{{ formatDatetime(item.request.timestamp) }}</span>
                     </mat-panel-description>
                   </mat-expansion-panel-header>
-                  
+
                   <div class="history-details">
                     <div class="history-request">
                       <h4>Request</h4>
@@ -228,30 +297,30 @@
                       <div *ngIf="Object.keys(item.request.parameters).length > 0">
                         <p><strong>Parameters:</strong></p>
                         <ul>
-                          <li *ngFor="let param of (item.request.parameters | keyvalue)">
+                          <li *ngFor="let param of item.request.parameters | keyvalue">
                             {{ param.key }}: {{ param.value }}
                           </li>
                         </ul>
                       </div>
                     </div>
-                    
+
                     <mat-divider></mat-divider>
-                    
+
                     <div class="history-response">
                       <h4>Response</h4>
                       <p><strong>Status:</strong> {{ item.response.status }}</p>
                       <p><strong>Duration:</strong> {{ formatDuration(item.response.duration) }}</p>
-                      
+
                       <div *ngIf="item.response.status === 'error'">
                         <p><strong>Error:</strong> {{ item.response.error }}</p>
                       </div>
-                      
+
                       <div *ngIf="item.response.status === 'success'" class="response-preview">
                         <p><strong>Preview:</strong></p>
                         <pre class="preview-json">{{ item.response.rawResponse | json }}</pre>
                       </div>
                     </div>
-                    
+
                     <div class="history-actions">
                       <button mat-button color="primary" (click)="viewHistoryItem(item)">
                         <mat-icon>refresh</mat-icon>
@@ -267,9 +336,9 @@
       </div>
     </mat-card-content>
   </mat-card>
-  
+
   <!-- Loading overlay -->
   <div *ngIf="loading" class="loading-overlay">
     <mat-spinner diameter="50"></mat-spinner>
   </div>
-</div> 
+</div>

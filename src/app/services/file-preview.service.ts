@@ -10,11 +10,10 @@ export interface FilePreviewData {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class FilePreviewService {
-
-  constructor(private dialog: MatDialog) { }
+  constructor(private dialog: MatDialog) {}
 
   openPreview(fileData: FilePreviewData): void {
     const dialogConfig = new MatDialogConfig();
@@ -36,22 +35,19 @@ export class FilePreviewService {
     if (mimeType.includes('pdf')) {
       return 'pdf';
     } else if (
-      mimeType.includes('text/plain') || 
+      mimeType.includes('text/plain') ||
       mimeType.includes('text/html') ||
       mimeType.includes('application/json') ||
       mimeType.includes('text/csv')
     ) {
       return 'text';
-    } else if (
-      mimeType.includes('text/markdown') || 
-      mimeType.endsWith('.md')
-    ) {
+    } else if (mimeType.includes('text/markdown') || mimeType.endsWith('.md')) {
       return 'markdown';
     } else if (
-      mimeType.includes('word') || 
-      mimeType.includes('excel') || 
+      mimeType.includes('word') ||
+      mimeType.includes('excel') ||
       mimeType.includes('spreadsheet') ||
-      mimeType.includes('powerpoint') || 
+      mimeType.includes('powerpoint') ||
       mimeType.includes('presentation') ||
       mimeType.includes('officedocument') ||
       mimeType.includes('opendocument')
@@ -63,4 +59,4 @@ export class FilePreviewService {
       return 'other';
     }
   }
-} 
+}

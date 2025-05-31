@@ -11,6 +11,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
-    importProvidersFrom(MatDialogModule)
-  ]
+    importProvidersFrom(MatDialogModule),
+  ],
 };

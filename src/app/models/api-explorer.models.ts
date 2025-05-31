@@ -5,7 +5,18 @@ export interface ApiEndpoint {
   parameters: ApiParameter[];
   responseFields?: ApiResponseField[];
   sampleResponse?: any;
-  category: 'course' | 'user' | 'grades' | 'files' | 'other' | 'calendar' | 'forum' | 'assignment' | 'quiz' | 'competency' | 'message';
+  category:
+    | 'course'
+    | 'user'
+    | 'grades'
+    | 'files'
+    | 'other'
+    | 'calendar'
+    | 'forum'
+    | 'assignment'
+    | 'quiz'
+    | 'competency'
+    | 'message';
 }
 
 export interface ApiParameter {
@@ -45,4 +56,4 @@ export interface ApiResponse {
 export interface ApiHistory {
   request: ApiRequest;
   response: ApiResponse;
-} 
+}

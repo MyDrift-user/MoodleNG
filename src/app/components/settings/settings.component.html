@@ -1,6 +1,11 @@
 <div class="settings-container">
   <mat-toolbar color="primary" class="toolbar">
-    <button mat-icon-button routerLink="/dashboard" aria-label="Back to dashboard" matTooltip="Back to Dashboard">
+    <button
+      mat-icon-button
+      routerLink="/dashboard"
+      aria-label="Back to dashboard"
+      matTooltip="Back to Dashboard"
+    >
       <mat-icon>arrow_back</mat-icon>
     </button>
     <span>Theme Settings</span>
@@ -11,110 +16,139 @@
       <mat-card-title>Customize Appearance</mat-card-title>
       <mat-card-subtitle>Change colors to match your preferences</mat-card-subtitle>
     </mat-card-header>
-    
+
     <mat-card-content>
       <form [formGroup]="settingsForm" (ngSubmit)="onSaveSettings()">
         <div class="theme-preview">
           <h3>Theme Preview</h3>
           <div class="color-preview" [style.background-color]="settingsForm.value.backgroundColor">
             <!-- Header (Primary Color) -->
-            <div class="preview-header" [style.background-color]="settingsForm.value.primaryColor" [style.color]="settingsForm.value.textColor">
+            <div
+              class="preview-header"
+              [style.background-color]="settingsForm.value.primaryColor"
+              [style.color]="settingsForm.value.textColor"
+            >
               <mat-icon>menu</mat-icon>
               <span>Header (Primary Color)</span>
             </div>
-            
+
             <!-- Content Container -->
-            <div class="preview-content-container" [style.background-color]="settingsForm.value.contentContainerColor">
+            <div
+              class="preview-content-container"
+              [style.background-color]="settingsForm.value.contentContainerColor"
+            >
               <!-- Card -->
-              <div class="preview-card" [style.background-color]="settingsForm.value.cardColor" [style.color]="settingsForm.value.textColor">
+              <div
+                class="preview-card"
+                [style.background-color]="settingsForm.value.cardColor"
+                [style.color]="settingsForm.value.textColor"
+              >
                 <div class="preview-content">
                   <h4>Card Title</h4>
                   <p>This is sample content to preview the theme.</p>
                 </div>
                 <div class="preview-actions">
-                  <button class="preview-primary-button" [style.background-color]="settingsForm.value.primaryColor" [style.color]="settingsForm.value.textColor">Primary Button</button>
-                  <button class="preview-accent-button" [style.background-color]="settingsForm.value.accentColor" [style.color]="settingsForm.value.textColor">Accent Button</button>
+                  <button
+                    class="preview-primary-button"
+                    [style.background-color]="settingsForm.value.primaryColor"
+                    [style.color]="settingsForm.value.textColor"
+                  >
+                    Primary Button
+                  </button>
+                  <button
+                    class="preview-accent-button"
+                    [style.background-color]="settingsForm.value.accentColor"
+                    [style.color]="settingsForm.value.textColor"
+                  >
+                    Accent Button
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div class="color-pickers">
           <h3>Color Settings</h3>
-          
+
           <div class="color-field">
             <label>Background Color:</label>
-            <input 
-              type="color" 
+            <input
+              type="color"
               formControlName="backgroundColor"
               (change)="onColorChange('backgroundColor', $event)"
-            >
+            />
           </div>
-          
+
           <div class="color-field">
             <label>Content Container Color:</label>
-            <input 
-              type="color" 
+            <input
+              type="color"
               formControlName="contentContainerColor"
               (change)="onColorChange('contentContainerColor', $event)"
-            >
+            />
           </div>
-          
+
           <div class="color-field">
             <label>Card Color:</label>
-            <input 
-              type="color" 
+            <input
+              type="color"
               formControlName="cardColor"
               (change)="onColorChange('cardColor', $event)"
-            >
+            />
           </div>
-          
+
           <div class="color-field">
             <label>Primary Color (Header):</label>
-            <input 
-              type="color" 
+            <input
+              type="color"
               formControlName="primaryColor"
               (change)="onColorChange('primaryColor', $event)"
-            >
+            />
           </div>
-          
+
           <div class="color-field">
             <label>Accent Color (Buttons & Highlights):</label>
-            <input 
-              type="color" 
+            <input
+              type="color"
               formControlName="accentColor"
               (change)="onColorChange('accentColor', $event)"
-            >
+            />
           </div>
-          
+
           <div class="color-field">
             <label>Text Color:</label>
-            <input 
-              type="color" 
+            <input
+              type="color"
               formControlName="textColor"
               (change)="onColorChange('textColor', $event)"
-            >
+            />
           </div>
         </div>
-        
+
         <div class="server-settings">
           <h3>Save Settings to Server (Optional)</h3>
           <p class="privacy-note">
-            Your settings can be stored securely on the server to be accessible across all your devices.
-            We use encrypted hashes of your username and Moodle URL to protect your privacy.
+            Your settings can be stored securely on the server to be accessible across all your
+            devices. We use encrypted hashes of your username and Moodle URL to protect your
+            privacy.
           </p>
-          
+
           <div *ngIf="!themeService.isDatabaseAvailable()" class="service-unavailable-warning">
             <mat-icon color="warn">cloud_off</mat-icon>
-            <span>Database service is currently unavailable. Settings will be saved to this device only.</span>
+            <span
+              >Database service is currently unavailable. Settings will be saved to this device
+              only.</span
+            >
           </div>
-          
+
           <div *ngIf="!isLoggedIn" class="login-required-warning">
             <mat-icon color="warn">warning</mat-icon>
-            <span>You need to be logged in to save settings to the server. Please log in first.</span>
+            <span
+              >You need to be logged in to save settings to the server. Please log in first.</span
+            >
           </div>
-          
+
           <div *ngIf="isLoggedIn && (!username || !moodleDomain)" class="login-required-warning">
             <mat-icon color="warn">warning</mat-icon>
             <span>Could not retrieve your user information automatically. You can either:</span>
@@ -123,74 +157,92 @@
               <li>Or manually enter your information below</li>
             </ul>
           </div>
-          
+
           <div *ngIf="isLoggedIn && (!username || !moodleDomain)" class="manual-info-form">
             <mat-form-field appearance="outline" class="form-field">
               <mat-label>Your Moodle Username</mat-label>
-              <input matInput formControlName="username" placeholder="username">
+              <input matInput formControlName="username" placeholder="username" />
               <mat-error *ngIf="settingsForm.get('username')?.hasError('required')">
                 Username is required
               </mat-error>
             </mat-form-field>
-            
+
             <mat-form-field appearance="outline" class="form-field">
               <mat-label>Your Moodle URL</mat-label>
-              <input matInput formControlName="moodleUrl" placeholder="https://moodle.example.com">
+              <input
+                matInput
+                formControlName="moodleUrl"
+                placeholder="https://moodle.example.com"
+              />
             </mat-form-field>
-            
-            <button mat-stroked-button color="primary" (click)="applyManualUserInfo()" 
-                    [disabled]="!settingsForm.get('username')?.valid || !settingsForm.get('moodleUrl')?.value">
+
+            <button
+              mat-stroked-button
+              color="primary"
+              (click)="applyManualUserInfo()"
+              [disabled]="
+                !settingsForm.get('username')?.valid || !settingsForm.get('moodleUrl')?.value
+              "
+            >
               Apply Information
             </button>
           </div>
-          
+
           <div *ngIf="isLoggedIn && username && moodleDomain" class="user-info-display">
-            <p><strong>Username:</strong> {{username}}</p>
-            <p><strong>Moodle URL:</strong> {{moodleDomain}}</p>
+            <p><strong>Username:</strong> {{ username }}</p>
+            <p><strong>Moodle URL:</strong> {{ moodleDomain }}</p>
             <p class="save-status">
-              <mat-icon *ngIf="saveToServer && themeService.isDatabaseAvailable()" color="accent">cloud_done</mat-icon>
-              <mat-icon *ngIf="saveToServer && !themeService.isDatabaseAvailable()" color="warn">cloud_off</mat-icon>
+              <mat-icon *ngIf="saveToServer && themeService.isDatabaseAvailable()" color="accent"
+                >cloud_done</mat-icon
+              >
+              <mat-icon *ngIf="saveToServer && !themeService.isDatabaseAvailable()" color="warn"
+                >cloud_off</mat-icon
+              >
               <mat-icon *ngIf="!saveToServer" color="primary">storage</mat-icon>
-              <span *ngIf="saveToServer && themeService.isDatabaseAvailable()">Settings will sync across devices</span>
-              <span *ngIf="saveToServer && !themeService.isDatabaseAvailable()">Settings will sync when service is available</span>
+              <span *ngIf="saveToServer && themeService.isDatabaseAvailable()"
+                >Settings will sync across devices</span
+              >
+              <span *ngIf="saveToServer && !themeService.isDatabaseAvailable()"
+                >Settings will sync when service is available</span
+              >
               <span *ngIf="!saveToServer">Settings saved to this device only</span>
             </p>
           </div>
-          
-          <mat-slide-toggle [(ngModel)]="saveToServer" [ngModelOptions]="{standalone: true}" (change)="onSaveToServerChange($event)" [disabled]="!isLoggedIn || !username || !moodleDomain">
+
+          <mat-slide-toggle
+            [(ngModel)]="saveToServer"
+            [ngModelOptions]="{ standalone: true }"
+            (change)="onSaveToServerChange($event)"
+            [disabled]="!isLoggedIn || !username || !moodleDomain"
+          >
             Save settings across devices
           </mat-slide-toggle>
         </div>
       </form>
     </mat-card-content>
-    
+
     <mat-card-actions>
       <div class="button-row">
         <button mat-stroked-button color="warn" type="button" (click)="onResetTheme()">
           Reset to Default
         </button>
-        
+
         <div class="spacer"></div>
-        
-        <button 
-          mat-stroked-button 
-          color="warn" 
-          type="button" 
-          (click)="onDeleteSettings()" 
+
+        <button
+          mat-stroked-button
+          color="warn"
+          type="button"
+          (click)="onDeleteSettings()"
           *ngIf="saveToServer"
         >
           Delete My Data
         </button>
-        
-        <button 
-          mat-raised-button 
-          color="primary" 
-          type="submit" 
-          (click)="onSaveSettings()"
-        >
+
+        <button mat-raised-button color="primary" type="submit" (click)="onSaveSettings()">
           Save Settings
         </button>
       </div>
     </mat-card-actions>
   </mat-card>
-</div> 
+</div>

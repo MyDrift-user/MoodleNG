@@ -19,13 +19,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatIconModule,
     MatProgressSpinnerModule,
     NgxDocViewerModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="file-preview-container">
       <div class="preview-header">
-        <h2>{{fileData.name}}</h2>
+        <h2>{{ fileData.name }}</h2>
         <div class="spacer"></div>
         <div class="button-container">
           <button mat-icon-button [matTooltip]="'Download'" (click)="downloadFile()">
@@ -46,12 +46,16 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
         <!-- PDF preview -->
         <div *ngIf="fileData.fileType === 'pdf' && !loading" class="pdf-container">
-          <iframe [src]="safeUrl" frameborder="0" style="width:100%; height:100%; position:absolute; top:0; left:0; right:0; bottom:0;"></iframe>
+          <iframe
+            [src]="safeUrl"
+            frameborder="0"
+            style="width:100%; height:100%; position:absolute; top:0; left:0; right:0; bottom:0;"
+          ></iframe>
         </div>
 
         <!-- Text file preview -->
         <div *ngIf="fileData.fileType === 'text' && !loading" class="text-preview">
-          <pre>{{textContent}}</pre>
+          <pre>{{ textContent }}</pre>
         </div>
 
         <!-- Markdown preview -->
@@ -62,15 +66,15 @@ import { MatTooltipModule } from '@angular/material/tooltip';
         <!-- Office documents preview -->
         <div *ngIf="fileData.fileType === 'office' && !loading" class="office-preview">
           <ngx-doc-viewer
-            [url]="fileData.url" 
-            viewer="office" 
+            [url]="fileData.url"
+            viewer="office"
             [viewerUrl]="'https://view.officeapps.live.com/op/embed.aspx?src='"
           ></ngx-doc-viewer>
         </div>
 
         <!-- Image preview -->
         <div *ngIf="fileData.fileType === 'image' && !loading" class="image-preview">
-          <img [src]="safeUrl" alt="Image preview">
+          <img [src]="safeUrl" alt="Image preview" />
         </div>
 
         <!-- Fallback for unsupported files -->
@@ -82,192 +86,194 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       </div>
     </div>
   `,
-  styles: [`
-    :host {
-      display: block;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      min-width: 100%;
-      min-height: 100%;
-    }
+  styles: [
+    `
+      :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        min-width: 100%;
+        min-height: 100%;
+      }
 
-    .file-preview-container {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #303030;
-      min-width: 100%;
-      min-height: 100%;
-    }
+      .file-preview-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #303030;
+        min-width: 100%;
+        min-height: 100%;
+      }
 
-    .preview-header {
-      display: flex;
-      align-items: center;
-      padding: 0 12px 0 16px;
-      background-color: #212121;
-      color: white;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      height: 48px;
-      min-height: 48px;
-      max-height: 48px;
-      flex: 0 0 auto;
-      width: 100%;
-      box-sizing: border-box;
-    }
+      .preview-header {
+        display: flex;
+        align-items: center;
+        padding: 0 12px 0 16px;
+        background-color: #212121;
+        color: white;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        height: 48px;
+        min-height: 48px;
+        max-height: 48px;
+        flex: 0 0 auto;
+        width: 100%;
+        box-sizing: border-box;
+      }
 
-    .preview-header h2 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 400;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 80%;
-    }
+      .preview-header h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 400;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 80%;
+      }
 
-    .button-container {
-      display: flex;
-      align-items: center;
-      margin-right: 4px;
-    }
+      .button-container {
+        display: flex;
+        align-items: center;
+        margin-right: 4px;
+      }
 
-    .button-container button {
-      margin-left: 4px;
-    }
+      .button-container button {
+        margin-left: 4px;
+      }
 
-    .spacer {
-      flex: 1 1 auto;
-    }
+      .spacer {
+        flex: 1 1 auto;
+      }
 
-    .preview-content {
-      flex: 1 1 auto;
-      height: calc(100% - 48px);
-      position: relative;
-      background-color: #424242;
-      overflow: hidden;
-      width: 100%;
-    }
+      .preview-content {
+        flex: 1 1 auto;
+        height: calc(100% - 48px);
+        position: relative;
+        background-color: #424242;
+        overflow: hidden;
+        width: 100%;
+      }
 
-    .loading-container,
-    .pdf-container,
-    .text-preview,
-    .markdown-preview,
-    .office-preview,
-    .image-preview,
-    .unsupported-file {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-    }
+      .loading-container,
+      .pdf-container,
+      .text-preview,
+      .markdown-preview,
+      .office-preview,
+      .image-preview,
+      .unsupported-file {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+      }
 
-    .loading-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
+      .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
 
-    .loading-container p {
-      margin-top: 16px;
-      color: rgba(255, 255, 255, 0.7);
-    }
+      .loading-container p {
+        margin-top: 16px;
+        color: rgba(255, 255, 255, 0.7);
+      }
 
-    .pdf-container {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      display: block;
-      position: relative;
-    }
+      .pdf-container {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        display: block;
+        position: relative;
+      }
 
-    .pdf-container iframe {
-      display: block;
-      border: none;
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-    }
+      .pdf-container iframe {
+        display: block;
+        border: none;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
 
-    .text-preview {
-      padding: 16px;
-      background-color: #303030;
-      color: rgba(255, 255, 255, 0.87);
-    }
+      .text-preview {
+        padding: 16px;
+        background-color: #303030;
+        color: rgba(255, 255, 255, 0.87);
+      }
 
-    .text-preview pre {
-      margin: 0;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      font-family: 'Roboto Mono', monospace;
-      font-size: 14px;
-      line-height: 1.5;
-    }
+      .text-preview pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-family: 'Roboto Mono', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+      }
 
-    .markdown-preview {
-      padding: 16px;
-      background-color: #303030;
-      color: rgba(255, 255, 255, 0.87);
-      overflow: auto;
-    }
+      .markdown-preview {
+        padding: 16px;
+        background-color: #303030;
+        color: rgba(255, 255, 255, 0.87);
+        overflow: auto;
+      }
 
-    .office-preview {
-      width: 100%;
-      height: 100%;
-    }
+      .office-preview {
+        width: 100%;
+        height: 100%;
+      }
 
-    /* Target the ngx-doc-viewer component and its iframe */
-    .office-preview ::ng-deep ngx-doc-viewer,
-    .office-preview ::ng-deep iframe {
-      width: 100% !important;
-      height: 100% !important;
-      border: none;
-      display: block;
-    }
+      /* Target the ngx-doc-viewer component and its iframe */
+      .office-preview ::ng-deep ngx-doc-viewer,
+      .office-preview ::ng-deep iframe {
+        width: 100% !important;
+        height: 100% !important;
+        border: none;
+        display: block;
+      }
 
-    .image-preview {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #212121;
-      padding: 0;
-    }
+      .image-preview {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #212121;
+        padding: 0;
+      }
 
-    .image-preview img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
+      .image-preview img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
 
-    .unsupported-file {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: rgba(255, 255, 255, 0.7);
-    }
+      .unsupported-file {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.7);
+      }
 
-    .unsupported-file mat-icon {
-      font-size: 48px;
-      height: 48px;
-      width: 48px;
-      margin-bottom: 16px;
-      color: rgba(255, 255, 255, 0.5);
-    }
+      .unsupported-file mat-icon {
+        font-size: 48px;
+        height: 48px;
+        width: 48px;
+        margin-bottom: 16px;
+        color: rgba(255, 255, 255, 0.5);
+      }
 
-    .unsupported-file button {
-      margin: 8px;
-    }
-  `]
+      .unsupported-file button {
+        margin: 8px;
+      }
+    `,
+  ],
 })
 export class FilePreviewDialogComponent implements OnInit, AfterViewInit {
   safeUrl!: SafeResourceUrl;
@@ -310,14 +316,14 @@ export class FilePreviewDialogComponent implements OnInit, AfterViewInit {
     try {
       const response = await fetch(this.fileData.url);
       const text = await response.text();
-      
+
       if (this.fileData.fileType === 'text') {
         this.textContent = text;
       } else if (this.fileData.fileType === 'markdown') {
         // Very simple markdown parser (for a more robust solution, use a proper markdown library)
         this.markdownContent = this.parseMarkdown(text);
       }
-      
+
       this.loading = false;
     } catch (error) {
       console.error('Error loading text content:', error);
@@ -332,17 +338,17 @@ export class FilePreviewDialogComponent implements OnInit, AfterViewInit {
     text = text.replace(/^### (.*$)/gim, '<h3>$1</h3>');
     text = text.replace(/^## (.*$)/gim, '<h2>$1</h2>');
     text = text.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-    
+
     // Convert bold and italic
     text = text.replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>');
     text = text.replace(/\*(.*)\*/gim, '<em>$1</em>');
-    
+
     // Convert links
     text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>');
-    
+
     // Convert line breaks
     text = text.replace(/\n/gim, '<br>');
-    
+
     return text;
   }
 
@@ -353,4 +359,4 @@ export class FilePreviewDialogComponent implements OnInit, AfterViewInit {
   close(): void {
     this.dialogRef.close();
   }
-} 
+}

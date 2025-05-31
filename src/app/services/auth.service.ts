@@ -5,7 +5,7 @@ import { MoodleService } from './moodle.service';
 import { MoodleUser } from '../models/moodle.models';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private loginInProgress = false;
@@ -21,7 +21,7 @@ export class AuthService {
    */
   login(site: string, username: string, password: string): Observable<MoodleUser> {
     this.loginInProgress = true;
-    
+
     return this.moodleService.login(site, username, password).pipe(
       tap(() => {
         console.log('Login successful, navigating to dashboard');
@@ -39,15 +39,15 @@ export class AuthService {
    */
   logout(): void {
     if (this.logoutInProgress) return;
-    
+
     this.logoutInProgress = true;
     try {
       console.log('Logging out user');
       this.moodleService.logout();
-      
+
       // Clear settings-related storage
       localStorage.removeItem('saveThemeToServer');
-      
+
       // Navigate to login
       this.router.navigate(['/login']);
     } finally {

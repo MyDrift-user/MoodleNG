@@ -15,7 +15,7 @@
   align-items: center;
   padding: 0 8px;
   height: 64px;
-  
+
   /* Styling for the download all button */
   .download-all-btn-container {
     margin-right: 8px;
@@ -25,18 +25,18 @@
     align-items: center;
     justify-content: center;
   }
-  
+
   .download-all-btn {
     width: 40px;
     height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     &:hover {
       background-color: rgba(255, 255, 255, 0.1);
     }
-    
+
     mat-icon {
       color: white;
       font-size: 24px;
@@ -87,7 +87,9 @@
   }
 }
 
-.loading-container, .error-container, .empty-state {
+.loading-container,
+.error-container,
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -96,12 +98,12 @@
   text-align: center;
   color: rgba(255, 255, 255, 0.7);
   margin: 16px 0; // Reduced from 32px
-  
+
   p {
     margin: 12px 0; // Reduced from 16px
     font-size: 16px;
   }
-  
+
   button {
     margin-top: 12px; // Reduced from 16px
   }
@@ -127,23 +129,23 @@
   min-height: 20px;
   display: flex;
   flex-direction: column;
-  
+
   &:hover {
     transform: translateY(-1px);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); /* Very subtle hover shadow */
   }
-  
+
   &.label-card {
     padding: 6px 10px;
     background-color: rgba(66, 66, 66, 0.5);
     box-shadow: none;
-    
+
     &:hover {
       transform: none;
       box-shadow: none;
     }
   }
-  
+
   &.resource-card {
     background-color: rgba(66, 66, 66, 0.8);
   }
@@ -162,12 +164,17 @@
 }
 
 /* Force text content to have the same base height */
-.text-content, .url-content, .image-content, 
-.video-content, .audio-content, .file-content, 
-.default-content, .resource-content {
+.text-content,
+.url-content,
+.image-content,
+.video-content,
+.audio-content,
+.file-content,
+.default-content,
+.resource-content {
   padding: 0 0 0 12px; /* Further reduced from 24px */
   min-height: 36px;
-  
+
   h3 {
     display: flex;
     align-items: center;
@@ -176,10 +183,10 @@
     margin: 0 0 3px 0;
     line-height: 1.3;
     min-height: 36px;
-    
+
     mat-icon {
       margin-right: 8px; /* Reduced from 12px */
-      color: #7986CB;
+      color: #7986cb;
       font-size: 16px; /* Smaller icon size */
       width: 28px; /* Reduced from 32px */
       height: 28px; /* Reduced from 32px */
@@ -193,31 +200,34 @@
       padding: 4px; /* Reduced padding */
       box-sizing: border-box;
     }
-    
+
     .content-title {
       flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    
+
     .expand-icon {
       flex-shrink: 0;
     }
   }
-  
+
   ::ng-deep {
-    p, div, span, li {
+    p,
+    div,
+    span,
+    li {
       color: rgba(255, 255, 255, 0.7);
       margin: 3px 0;
       line-height: 1.3;
       font-size: 13px;
     }
-    
+
     a {
-      color: #90CAF9;
+      color: #90caf9;
       text-decoration: none;
-      
+
       &:hover {
         text-decoration: underline;
       }
@@ -225,11 +235,13 @@
   }
 }
 
-.image-container, .video-container {
+.image-container,
+.video-container {
   max-width: 100%;
   margin: 8px 0; // Reduced from 12px
-  
-  img, video {
+
+  img,
+  video {
     max-width: 100%;
     height: auto;
     border-radius: 6px; // Reduced from 8px
@@ -267,7 +279,7 @@ audio {
   background-color: rgba(244, 67, 54, 0.1);
   border-radius: 8px;
   padding: 24px;
-  
+
   p {
     color: #f44336;
   }
@@ -276,29 +288,37 @@ audio {
 /* Styles for label and resource content types */
 .label-content {
   margin: 8px 0; // Reduced from 16px
-  
+
   ::ng-deep {
-    p, div, span, li {
+    p,
+    div,
+    span,
+    li {
       color: rgba(255, 255, 255, 0.9);
       font-size: 14px; // Reduced from 16px
     }
-    
-    h1, h2, h3, h4, h5, h6 {
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
       color: rgba(255, 255, 255, 1);
       margin: 6px 0 3px; // Reduced top margin
       font-weight: 500;
       font-size: 15px; // Smaller font size for headings
     }
-    
+
     a {
-      color: #90CAF9;
+      color: #90caf9;
       text-decoration: none;
-      
+
       &:hover {
         text-decoration: underline;
       }
     }
-    
+
     img {
       max-width: 100%;
       height: auto;
@@ -315,7 +335,7 @@ audio {
     font-size: 14px; // Reduced from 18px
     color: rgba(255, 255, 255, 0.87);
     margin-top: 0;
-    
+
     mat-icon {
       margin-right: 8px;
       width: 28px;
@@ -326,21 +346,23 @@ audio {
       border-radius: 4px;
     }
   }
-  
+
   .text-container {
     margin-bottom: 12px; // Reduced from 16px
   }
-  
-  .image-container, .video-container, .audio-container {
+
+  .image-container,
+  .video-container,
+  .audio-container {
     margin: 12px 0; // Reduced from 16px
   }
-  
+
   .image-container img {
     max-width: 100%;
     height: auto;
     border-radius: 6px; // Reduced from 8px
   }
-  
+
   button {
     margin-top: 6px; // Reduced from 8px
   }
@@ -354,7 +376,7 @@ audio {
   margin-bottom: 0;
   min-height: 36px;
   padding: 0;
-  
+
   h3 {
     margin: 0;
     flex: 1;
@@ -362,18 +384,18 @@ audio {
     font-size: 14px;
     display: flex;
     align-items: center;
-    
+
     &.clickable {
       cursor: pointer;
       border-radius: 4px;
       padding: 4px;
       transition: background-color 0.2s ease;
-      
+
       &:hover {
         background-color: rgba(255, 255, 255, 0.05);
       }
     }
-    
+
     /* Boxed and centered icons */
     mat-icon {
       display: flex;
@@ -391,7 +413,7 @@ audio {
       box-sizing: border-box;
     }
   }
-  
+
   /* Centered buttons with consistent layout */
   .actions-container {
     display: flex;
@@ -402,8 +424,9 @@ audio {
     height: 28px;
     min-width: 32px;
   }
-  
-  button, a[mat-icon-button] {
+
+  button,
+  a[mat-icon-button] {
     flex-shrink: 0;
     display: flex;
     justify-content: center;
@@ -417,7 +440,7 @@ audio {
     margin: 0;
     position: relative;
     overflow: visible; /* Changed from hidden to ensure hover covers full height */
-    
+
     /* Full-coverage hover effect with absolute positioning */
     &::after {
       content: '';
@@ -432,11 +455,11 @@ audio {
       z-index: 0;
       pointer-events: none; /* Allow clicks to pass through */
     }
-    
+
     &:hover {
       background-color: rgba(121, 134, 203, 0.24); /* Direct background change */
     }
-    
+
     mat-icon {
       font-size: 16px;
       width: 16px;
@@ -454,7 +477,7 @@ audio {
   .mat-mdc-icon-button .mat-mdc-button-ripple {
     border-radius: 4px !important;
   }
-  
+
   /* Override material button shape */
   .mat-mdc-icon-button {
     --mdc-icon-button-state-layer-size: 28px !important;
@@ -466,41 +489,45 @@ audio {
 .text-container {
   padding: 3px 0; // Reduced from 4px
   margin-bottom: 8px; // Reduced from 12px
-  
+
   ::ng-deep {
     a {
-      color: #90CAF9;
+      color: #90caf9;
       text-decoration: none;
-      
+
       &:hover {
         text-decoration: underline;
       }
     }
-    
+
     img {
       max-width: 100%;
       height: auto;
       border-radius: 4px;
       margin: 6px 0; // Reduced from 8px
     }
-    
-    p, li, span, div {
+
+    p,
+    li,
+    span,
+    div {
       color: rgba(255, 255, 255, 0.7);
       margin: 4px 0; // Reduced from 6px
       font-size: 13px; // Smaller font size
     }
-    
+
     table {
       border-collapse: collapse;
       width: 100%;
       margin: 8px 0; // Reduced from 12px
       font-size: 13px; // Smaller font size
-      
-      th, td {
+
+      th,
+      td {
         border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 4px; // Reduced from 6px
       }
-      
+
       th {
         background-color: rgba(255, 255, 255, 0.05);
       }
@@ -517,7 +544,7 @@ audio {
 .clickable-media {
   cursor: pointer;
   transition: transform 0.3s ease;
-  
+
   &:hover {
     transform: scale(1.02);
   }
@@ -531,11 +558,11 @@ audio {
   border-radius: 4px;
   display: flex;
   align-items: center;
-  
+
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .expand-icon {
     transition: transform 0.3s ease;
     margin-left: 8px;
@@ -553,14 +580,14 @@ audio {
 .section-header {
   width: 100%;
   cursor: pointer;
-  
+
   h2 {
     margin: 0;
-    color: #7986CB;
+    color: #7986cb;
     font-size: 20px;
     font-weight: 500;
   }
-  
+
   mat-divider {
     margin: 12px 0 8px;
     background-color: rgba(255, 255, 255, 0.12);
@@ -580,24 +607,24 @@ audio {
   justify-content: space-between;
   align-items: center;
   padding: 0 8px;
-  
+
   h2 {
     font-size: 20px;
     font-weight: 500;
     margin: 12px 0;
-    color: #90CAF9; 
+    color: #90caf9;
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  
+
   .section-actions {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
-    
+
     .section-download-container {
       position: relative;
       display: flex;
@@ -605,7 +632,7 @@ audio {
       justify-content: center;
       width: 36px;
       height: 36px;
-      
+
       button {
         width: 36px;
         height: 36px;
@@ -617,28 +644,28 @@ audio {
         transition: background-color 0.3s ease;
         padding: 0;
         margin: 0;
-        
+
         &:hover {
           background-color: rgba(90, 139, 214, 0.2);
         }
-        
+
         mat-icon {
-          color: #90CAF9;
+          color: #90caf9;
           font-size: 20px;
           width: 20px;
           height: 20px;
           line-height: 20px;
         }
-        
+
         .progress-text {
           font-weight: 500;
           text-align: center;
           font-size: 14px;
-          color: #90CAF9;
+          color: #90caf9;
         }
       }
     }
-    
+
     .expand-icon {
       background-color: rgba(121, 134, 203, 0.12);
       border-radius: 4px;
@@ -659,7 +686,7 @@ audio {
   display: flex;
   justify-content: center;
   align-items: center;
-  
+
   &.expanded {
     transform: rotate(180deg) !important; /* Force rotation with !important */
   }
@@ -681,7 +708,7 @@ audio {
   overflow: hidden;
   transition: all 0.3s ease;
   padding: 10px; /* Further reduced padding */
-  
+
   &:hover {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); /* Very subtle hover shadow */
   }
@@ -724,73 +751,82 @@ audio {
   .content-container {
     padding: 8px; /* Further reduced */
   }
-  
+
   .content-card {
     padding: 8px 10px; /* Further reduced */
   }
-  
+
   .section-header h2 {
     font-size: 18px;
   }
-  
+
   .content-header {
     min-height: 28px; /* Further reduced */
-    
+
     h3 mat-icon {
       width: 24px; /* Smaller for mobile */
       height: 24px;
       margin-right: 6px;
     }
   }
-  
-  .text-content, .url-content, .image-content, 
-  .video-content, .audio-content, .file-content, 
-  .default-content, .resource-content {
+
+  .text-content,
+  .url-content,
+  .image-content,
+  .video-content,
+  .audio-content,
+  .file-content,
+  .default-content,
+  .resource-content {
     padding: 0 0 0 10px; /* Minimal padding for mobile */
   }
-  
-  .text-content h3, 
-  .url-content h3, 
-  .image-content h3, 
-  .video-content h3, 
-  .audio-content h3, 
-  .file-content h3, 
+
+  .text-content h3,
+  .url-content h3,
+  .image-content h3,
+  .video-content h3,
+  .audio-content h3,
+  .file-content h3,
   .default-content h3 {
     font-size: 13px; /* Smaller font */
   }
-  
-  button, a[mat-icon-button] {
+
+  button,
+  a[mat-icon-button] {
     width: 24px; /* Even smaller */
     height: 24px;
   }
 }
 
 ::ng-deep {
-  img, video, iframe {
+  img,
+  video,
+  iframe {
     max-width: 100% !important;
     height: auto !important;
   }
-  
+
   // Style text content from Moodle
   table {
     border-collapse: collapse;
     width: 100%;
     margin: 16px 0;
-    
-    th, td {
+
+    th,
+    td {
       border: 1px solid #e0e0e0;
       padding: 8px;
     }
-    
+
     th {
       background-color: #f5f5f5;
     }
   }
-  
+
   a {
     color: #3f51b5;
     text-decoration: none;
-    
+
     &:hover {
       text-decoration: underline;
     }
@@ -803,7 +839,7 @@ audio {
   display: flex;
   justify-content: center;
   align-items: center;
-  
+
   mat-spinner {
     position: absolute;
     top: 50%;
@@ -815,13 +851,13 @@ audio {
 .section-actions {
   display: flex;
   align-items: center;
-  
+
   button {
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    
+
     mat-spinner {
       position: absolute;
       top: 50%;
@@ -840,7 +876,7 @@ audio {
   justify-content: center;
   height: 40px;
   width: 40px;
-  
+
   .download-all-btn {
     position: relative;
     z-index: 2;
@@ -849,11 +885,11 @@ audio {
     align-items: center;
     width: 40px;
     height: 40px;
-    
+
     &:hover {
       background-color: rgba(255, 255, 255, 0.1);
     }
-    
+
     mat-icon {
       color: white;
       font-size: 24px;
@@ -861,7 +897,7 @@ audio {
       height: 24px;
       line-height: 24px;
     }
-    
+
     .progress-text {
       font-weight: 500;
       text-align: center;
@@ -875,12 +911,12 @@ audio {
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   .section-download-container {
     position: relative;
     display: flex;
     align-items: center;
-    
+
     button {
       width: 36px;
       height: 36px;
@@ -891,24 +927,24 @@ audio {
       border-radius: 6px;
       transition: background-color 0.3s ease;
       z-index: 2;
-      
+
       &:hover {
         background-color: rgba(90, 139, 214, 0.2);
       }
-      
+
       mat-icon {
-        color: #90CAF9;
+        color: #90caf9;
       }
-      
+
       .progress-text {
         font-weight: 500;
         text-align: center;
         font-size: 14px;
-        color: #90CAF9;
+        color: #90caf9;
       }
     }
   }
-  
+
   .expand-icon {
     background-color: rgba(121, 134, 203, 0.12);
     border-radius: 4px;
@@ -967,17 +1003,17 @@ audio {
   border-collapse: separate;
   border-spacing: 0;
   font-size: 14px;
-  
+
   .header-row {
     background-color: rgba(var(--primary-color-rgb), 0.2);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-    
+
     th {
       font-weight: 600;
       color: rgba(255, 255, 255, 0.95);
     }
   }
-  
+
   th {
     background-color: transparent;
     color: var(--text-color);
@@ -991,49 +1027,49 @@ audio {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 2px solid rgba(var(--primary-color-rgb), 0.5);
-    
+
     &:first-child {
       border-top-left-radius: 8px;
       padding-left: 20px;
     }
-    
+
     &:last-child {
       border-top-right-radius: 8px;
       padding-right: 20px;
     }
   }
-  
+
   td {
     padding: 14px 16px;
     border-top: 1px solid rgba(var(--primary-color-rgb), 0.1);
     color: var(--text-color);
     vertical-align: middle;
     font-size: 14px;
-    
+
     &:first-child {
       padding-left: 20px;
     }
-    
+
     &:last-child {
       padding-right: 20px;
     }
   }
-  
+
   tr {
     transition: background-color 0.2s ease;
-    
+
     &:hover {
       background-color: rgba(255, 255, 255, 0.05);
     }
-    
+
     &:last-child td {
       border-bottom: none;
     }
-    
+
     /* Category row styling */
     &.category-row {
       background-color: rgba(var(--primary-color-rgb), 0.08);
-      
+
       td {
         font-weight: 500;
         color: var(--text-color);
@@ -1042,73 +1078,73 @@ audio {
         border-top: 1px solid rgba(var(--primary-color-rgb), 0.15);
         border-bottom: 1px solid rgba(var(--primary-color-rgb), 0.15);
       }
-      
+
       &:hover {
         background-color: rgba(var(--primary-color-rgb), 0.12);
       }
     }
-    
+
     /* Summary row styling */
     &.category-summary-row {
       background-color: rgba(var(--accent-color-rgb), 0.08);
       font-weight: 500;
-      
+
       td {
         border-top: 1px solid rgba(var(--accent-color-rgb), 0.2);
         border-bottom: 1px solid rgba(var(--accent-color-rgb), 0.2);
         padding-top: 12px;
         padding-bottom: 12px;
       }
-      
+
       &:hover {
         background-color: rgba(var(--accent-color-rgb), 0.12);
       }
     }
-    
+
     /* Overall summary row styling */
     &.overall-summary-row {
       background-color: rgba(var(--primary-color-rgb), 0.12);
       font-weight: 600;
-      
+
       td {
         border-top: 1px solid rgba(var(--primary-color-rgb), 0.3);
         border-bottom: 1px solid rgba(var(--primary-color-rgb), 0.3);
         padding-top: 16px;
         padding-bottom: 16px;
       }
-      
+
       &:hover {
         background-color: rgba(var(--primary-color-rgb), 0.18);
       }
     }
   }
-  
+
   /* Column widths and styles */
   .name-column {
     min-width: 300px;
     max-width: 400px;
   }
-  
+
   .grade-column {
     width: 100px;
     white-space: nowrap;
   }
-  
+
   .percentage-column {
     width: 120px;
     white-space: nowrap;
   }
-  
+
   .weight-column {
     width: 100px;
     white-space: nowrap;
   }
-  
+
   .range-column {
     width: 120px;
     white-space: nowrap;
   }
-  
+
   .feedback-column {
     min-width: 150px;
     max-width: 250px;
@@ -1120,7 +1156,7 @@ audio {
   display: flex;
   align-items: center;
   gap: 10px;
-  
+
   .category-toggle-btn {
     width: 30px;
     height: 30px;
@@ -1128,11 +1164,11 @@ audio {
     line-height: 24px;
     margin-right: 0;
     background-color: rgba(var(--primary-color-rgb), 0.05);
-    
+
     &:hover {
       background-color: rgba(var(--primary-color-rgb), 0.15);
     }
-    
+
     mat-icon {
       font-size: 18px;
       width: 18px;
@@ -1140,12 +1176,12 @@ audio {
       line-height: 18px;
     }
   }
-  
+
   .item-icon-spacer {
     width: 30px;
     flex-shrink: 0;
   }
-  
+
   .result-icon {
     width: 32px;
     height: 32px;
@@ -1157,18 +1193,18 @@ audio {
     background-color: rgba(var(--primary-color-rgb), 0.12);
     color: var(--primary-color);
     flex-shrink: 0;
-    
+
     &.category-icon {
       background-color: rgba(var(--primary-color-rgb), 0.25);
       color: var(--primary-light);
     }
   }
-  
+
   .result-name-container {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    
+
     .result-name {
       white-space: nowrap;
       overflow: hidden;
@@ -1176,7 +1212,7 @@ audio {
       line-height: 1.3;
       font-size: 14px;
     }
-    
+
     .result-type {
       font-size: 12px;
       color: var(--text-secondary);
@@ -1192,7 +1228,10 @@ audio {
   opacity: 0.6;
 }
 
-.grade-value, .percentage-value, .weight-value, .range-value {
+.grade-value,
+.percentage-value,
+.weight-value,
+.range-value {
   font-weight: 500;
   font-family: 'Roboto Mono', monospace;
   padding: 5px 10px;
@@ -1248,11 +1287,11 @@ audio {
   padding: 6px;
   background-color: rgba(255, 255, 255, 0.03);
   border-radius: 4px;
-  
+
   p {
     margin: 0 0 6px 0;
   }
-  
+
   p:last-child {
     margin-bottom: 0;
   }
@@ -1264,31 +1303,35 @@ audio {
     padding: 10px 12px;
     font-size: 12px;
   }
-  
+
   .results-table td {
     padding: 8px 12px;
     font-size: 13px;
   }
-  
+
   .results-container {
     padding: 12px;
   }
-  
+
   .results-title {
     font-size: 18px;
   }
-  
-  .grade-value, .percentage-value, .weight-value, .range-value, .summary-grade {
+
+  .grade-value,
+  .percentage-value,
+  .weight-value,
+  .range-value,
+  .summary-grade {
     padding: 3px 6px;
     font-size: 13px;
   }
-  
+
   .name-cell .result-icon {
     width: 28px;
     height: 28px;
     font-size: 16px;
   }
-  
+
   .item-icon-spacer {
     width: 28px;
   }
@@ -1310,23 +1353,23 @@ audio {
     border-radius: 8px 8px 0 0;
     margin-bottom: 16px;
   }
-  
+
   .mat-mdc-tab-labels {
     padding: 0 16px;
   }
-  
+
   .mat-mdc-tab {
     flex-grow: 0;
     padding: 0 24px;
     height: 48px;
     opacity: 0.7;
     transition: opacity 0.2s ease;
-    
+
     &.mat-mdc-tab-active {
       opacity: 1;
     }
   }
-  
+
   .mat-mdc-tab-body-content {
     overflow: visible;
   }
@@ -1344,26 +1387,26 @@ audio {
 /* Styles for assignment content */
 .assignment-content {
   margin-bottom: 16px;
-  
+
   .content-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
-    
+
     h3 {
       display: flex;
       align-items: center;
       margin: 0;
       font-weight: 500;
-      
+
       mat-icon {
         margin-right: 8px;
         color: #673ab7; /* Accent color for assignments */
       }
     }
   }
-  
+
   .empty-description {
     background-color: rgba(103, 58, 183, 0.05);
     padding: 12px;
@@ -1383,20 +1426,20 @@ audio {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
-    
+
     h3 {
       display: flex;
       align-items: center;
       margin: 0;
       font-weight: 500;
-      
+
       mat-icon {
         margin-right: 8px;
         color: #ff5722; /* Accent color for quizzes */
       }
     }
   }
-  
+
   .empty-description {
     background-color: rgba(255, 87, 34, 0.05);
     padding: 12px;
@@ -1429,12 +1472,12 @@ audio {
   &:hover:not([disabled]) {
     background-color: rgba(255, 82, 82, 0.1);
     transform: scale(1.1);
-    
+
     &::before {
       background-color: rgba(255, 82, 82, 0.05);
     }
   }
-  
+
   &[disabled] {
     opacity: 0.5;
   }
@@ -1451,7 +1494,7 @@ audio {
   animation: pulse 1.5s infinite;
   position: relative;
   overflow: visible;
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -1467,12 +1510,12 @@ audio {
   &:hover:not([disabled]) {
     background-color: rgba(255, 152, 0, 0.2);
     transform: scale(1.1);
-    
+
     &::before {
       background-color: rgba(255, 152, 0, 0.15);
     }
   }
-  
+
   &[disabled] {
     opacity: 0.5;
   }
@@ -1511,5 +1554,3 @@ audio {
     transform: scale(1.05);
   }
 }
-
-

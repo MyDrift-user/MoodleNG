@@ -1,13 +1,18 @@
 <div class="dashboard-container">
   <mat-toolbar color="primary" class="toolbar">
     <span class="app-title">MoodleNG</span>
-    <span *ngIf="siteName" class="site-name">{{siteName}}</span>
+    <span *ngIf="siteName" class="site-name">{{ siteName }}</span>
     <span class="spacer"></span>
     <span class="user-info" *ngIf="userName">
       <mat-icon>account_circle</mat-icon>
-      {{userName}}
+      {{ userName }}
     </span>
-    <button mat-icon-button routerLink="/api-explorer" aria-label="API Explorer" matTooltip="API Explorer">
+    <button
+      mat-icon-button
+      routerLink="/api-explorer"
+      aria-label="API Explorer"
+      matTooltip="API Explorer"
+    >
       <mat-icon>code</mat-icon>
     </button>
     <button mat-icon-button routerLink="/settings" aria-label="Settings" matTooltip="Settings">
@@ -26,61 +31,85 @@
     <div class="search-input-container">
       <mat-form-field appearance="fill" class="search-field dark-theme-search">
         <mat-label>Search for courses</mat-label>
-        <input matInput [formControl]="searchControl" placeholder="Enter course name or course ID">
+        <input
+          matInput
+          [formControl]="searchControl"
+          placeholder="Enter course name or course ID"
+        />
         <mat-icon matPrefix>search</mat-icon>
-        <button *ngIf="searchControl.value" matSuffix mat-icon-button aria-label="Clear" 
-                (click)="searchControl.setValue(''); clearSearch(); $event.stopPropagation()">
+        <button
+          *ngIf="searchControl.value"
+          matSuffix
+          mat-icon-button
+          aria-label="Clear"
+          (click)="searchControl.setValue(''); clearSearch(); $event.stopPropagation()"
+        >
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
-      
+
       <!-- Search Results -->
       <div *ngIf="showSearchResults" class="search-results">
         <div *ngIf="searching" class="searching-indicator">
           <mat-spinner diameter="24"></mat-spinner>
           <span>Searching...</span>
         </div>
-        
+
         <div *ngIf="!searching && searchResults.length === 0" class="no-results">
           <mat-icon>info</mat-icon>
           <span>No courses found. Try a different search term.</span>
         </div>
-        
+
         <div *ngIf="error" class="error-notification">
           <mat-icon>error</mat-icon>
-          <span>{{error}}</span>
+          <span>{{ error }}</span>
         </div>
-        
+
         <div *ngIf="successMessage" class="success-notification">
           <mat-icon>check_circle</mat-icon>
-          <span>{{successMessage}}</span>
+          <span>{{ successMessage }}</span>
         </div>
-        
+
         <div *ngIf="!searching && searchResults.length > 0" class="results-list">
           <div class="results-header">
             <h3>Available Courses</h3>
           </div>
           <mat-divider></mat-divider>
-          
-          <div *ngFor="let course of searchResults" class="search-result-item" 
-               [class.enrolled]="isEnrolled(course.id)" 
-               [class.clickable]="isEnrolled(course.id)"
-               (click)="openCourse(course.id)">
+
+          <div
+            *ngFor="let course of searchResults"
+            class="search-result-item"
+            [class.enrolled]="isEnrolled(course.id)"
+            [class.clickable]="isEnrolled(course.id)"
+            (click)="openCourse(course.id)"
+          >
             <div class="course-info">
               <div class="course-header">
-                <h4>{{course.name}}</h4>
+                <h4>{{ course.name }}</h4>
                 <div *ngIf="isEnrolled(course.id)" class="enrolled-badge animated-badge">
                   <mat-icon>check_circle</mat-icon>
                   <span>Enrolled</span>
                 </div>
               </div>
-              <p *ngIf="course.summary && !isEmptyHtml(course.summary)" class="course-summary" [innerHTML]="sanitizeHtml(course.summary)"></p>
+              <p
+                *ngIf="course.summary && !isEmptyHtml(course.summary)"
+                class="course-summary"
+                [innerHTML]="sanitizeHtml(course.summary)"
+              ></p>
             </div>
-            <button *ngIf="!isEnrolled(course.id)" mat-button color="accent" 
-                    (click)="enrollInCourse(course.id); $event.stopPropagation()" 
-                    class="enroll-button"
-                    [disabled]="isEnrolling(course.id)">
-              <mat-spinner *ngIf="isEnrolling(course.id)" diameter="20" class="button-spinner"></mat-spinner>
+            <button
+              *ngIf="!isEnrolled(course.id)"
+              mat-button
+              color="accent"
+              (click)="enrollInCourse(course.id); $event.stopPropagation()"
+              class="enroll-button"
+              [disabled]="isEnrolling(course.id)"
+            >
+              <mat-spinner
+                *ngIf="isEnrolling(course.id)"
+                diameter="20"
+                class="button-spinner"
+              ></mat-spinner>
               <ng-container *ngIf="!isEnrolling(course.id)">
                 <mat-icon>add_circle</mat-icon>
                 Enroll
@@ -99,7 +128,13 @@
           <h1>My Courses</h1>
           <p class="subtitle">Access your enrolled courses</p>
         </div>
-        <button mat-raised-button color="primary" (click)="loadModules()" [disabled]="loading" class="refresh-button">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="loadModules()"
+          [disabled]="loading"
+          class="refresh-button"
+        >
           <mat-icon>refresh</mat-icon> Refresh
         </button>
       </div>
@@ -111,7 +146,7 @@
 
       <div *ngIf="error" class="error-container">
         <mat-icon class="error-icon">error_outline</mat-icon>
-        <p>{{error}}</p>
+        <p>{{ error }}</p>
         <button mat-raised-button color="primary" (click)="loadModules()">Try Again</button>
       </div>
 
@@ -119,29 +154,41 @@
         <mat-icon>school</mat-icon>
         <p>You are not enrolled in any courses</p>
       </div>
-      
+
       <div *ngIf="!loading && !error && modules.length > 0" class="modules-grid">
-        <mat-card *ngFor="let module of modules; let i = index" class="module-card fade-in" 
-                  [class.hidden-module]="!module.visible"
-                  [style.animation-delay]="i * 0.05 + 's'">
+        <mat-card
+          *ngFor="let module of modules; let i = index"
+          class="module-card fade-in"
+          [class.hidden-module]="!module.visible"
+          [style.animation-delay]="i * 0.05 + 's'"
+        >
           <div class="card-decoration"></div>
           <mat-card-header>
-            <mat-card-title [matTooltip]="module.name">{{module.name}}</mat-card-title>
-            <mat-card-subtitle *ngIf="module.courseName">{{module.courseName}}</mat-card-subtitle>
+            <mat-card-title [matTooltip]="module.name">{{ module.name }}</mat-card-title>
+            <mat-card-subtitle *ngIf="module.courseName">{{ module.courseName }}</mat-card-subtitle>
           </mat-card-header>
-          
+
           <mat-card-content>
-            <p *ngIf="module.summary && !isEmptyHtml(module.summary)" class="module-summary" [innerHTML]="sanitizeHtml(module.summary)"></p>
+            <p
+              *ngIf="module.summary && !isEmptyHtml(module.summary)"
+              class="module-summary"
+              [innerHTML]="sanitizeHtml(module.summary)"
+            ></p>
             <div class="access-info">
               <mat-icon class="access-icon">access_time</mat-icon>
-              <span class="last-access">{{formatLastAccess(module.lastAccess)}}</span>
+              <span class="last-access">{{ formatLastAccess(module.lastAccess) }}</span>
             </div>
           </mat-card-content>
-          
+
           <mat-divider></mat-divider>
-          
+
           <mat-card-actions align="end">
-            <button mat-button color="accent" [routerLink]="['/modules', module.id]" class="view-button">
+            <button
+              mat-button
+              color="accent"
+              [routerLink]="['/modules', module.id]"
+              class="view-button"
+            >
               <mat-icon>visibility</mat-icon> View Contents
             </button>
           </mat-card-actions>

@@ -1,5 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  FormsModule,
+} from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
@@ -38,10 +44,10 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatSnackBarModule,
-    JsonPipe
+    JsonPipe,
   ],
   templateUrl: './api-explorer.component.html',
-  styleUrls: ['./api-explorer.component.scss']
+  styleUrls: ['./api-explorer.component.scss'],
 })
 export class ApiExplorerComponent implements OnInit, OnDestroy {
   apiForm: FormGroup;
@@ -56,7 +62,7 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
   groupedEndpoints: { [key: string]: ApiEndpoint[] } = {};
   JSON = JSON;
   Object = Object;
-  
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -67,14 +73,14 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
   ) {
     this.apiForm = this.fb.group({
       endpoint: ['', Validators.required],
-      parameters: this.fb.group({})
+      parameters: this.fb.group({}),
     });
 
     this.customEndpointForm = this.fb.group({
       name: ['', Validators.required],
       function: ['', Validators.required],
       description: [''],
-      category: ['other', Validators.required]
+      category: ['other', Validators.required],
     });
   }
 
@@ -84,15 +90,14 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
     this.groupEndpoints();
 
     // Subscribe to history changes
-    this.apiExplorerService.apiHistory$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(history => {
-        this.apiHistory = history;
-      });
+    this.apiExplorerService.apiHistory$.pipe(takeUntil(this.destroy$)).subscribe(history => {
+      this.apiHistory = history;
+    });
 
     // Handle endpoint selection changes
-    this.apiForm.get('endpoint')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
+    this.apiForm
+      .get('endpoint')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe(value => {
         if (value) {
           this.onEndpointSelected(value);
@@ -108,19 +113,19 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
   groupEndpoints() {
     // Initialize all categories with empty arrays
     this.groupedEndpoints = {
-      'course': [],
-      'user': [],
-      'grades': [],
-      'files': [],
-      'calendar': [],
-      'forum': [],
-      'assignment': [],
-      'quiz': [],
-      'competency': [],
-      'message': [],
-      'other': []
+      course: [],
+      user: [],
+      grades: [],
+      files: [],
+      calendar: [],
+      forum: [],
+      assignment: [],
+      quiz: [],
+      competency: [],
+      message: [],
+      other: [],
     };
-    
+
     // Add endpoints to their respective categories
     this.endpoints.forEach(endpoint => {
       this.groupedEndpoints[endpoint.category].push(endpoint);
@@ -132,12 +137,12 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
     if (!endpoint) {
       return;
     }
-    
+
     this.selectedEndpoint = endpoint;
 
     // Reset the parameter form
     const paramGroup = this.fb.group({});
-    
+
     // Add form controls for each parameter
     this.selectedEndpoint.parameters.forEach(param => {
       // Get current user ID for userids
@@ -148,13 +153,13 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
           defaultValue = currentUser.id;
         }
       }
-      
+
       paramGroup.addControl(
-        param.name, 
+        param.name,
         this.fb.control(defaultValue, param.required ? Validators.required : null)
       );
     });
-    
+
     this.apiForm.setControl('parameters', paramGroup);
   }
 
@@ -167,28 +172,29 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
     const parameters = this.apiForm.get('parameters')?.value;
 
     this.loading = true;
-    this.apiExplorerService.executeApiCall(endpoint, parameters)
+    this.apiExplorerService
+      .executeApiCall(endpoint, parameters)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response) => {
+        next: response => {
           this.loading = false;
           this.currentResponse = response;
           this.activePanelIndex = 1; // Switch to the response tab
-          
+
           // Generate interface for this response
           if (response.status === 'success') {
             this.generatedInterface = this.apiExplorerService.generateTypeDefinition(
-              response.rawResponse, 
+              response.rawResponse,
               endpoint
             );
           }
         },
-        error: (error) => {
+        error: error => {
           this.loading = false;
           this.snackBar.open('Error executing API call: ' + error.message, 'Close', {
-            duration: 5000
+            duration: 5000,
           });
-        }
+        },
       });
   }
 
@@ -199,17 +205,17 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
   copyToClipboard(text: string, message: string = 'Copied to clipboard') {
     navigator.clipboard.writeText(text).then(() => {
       this.snackBar.open(message, 'Close', {
-        duration: 2000
+        duration: 2000,
       });
     });
   }
 
   viewHistoryItem(historyItem: ApiHistory) {
     this.currentResponse = historyItem.response;
-    
+
     // Set the form values to match the history item
     this.apiForm.get('endpoint')?.setValue(historyItem.request.endpoint);
-    
+
     // Wait for endpoint selection to update the form
     setTimeout(() => {
       const parameterFormGroup = this.apiForm.get('parameters') as FormGroup;
@@ -221,7 +227,7 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
         });
       }
     }, 0);
-    
+
     // Generate interface
     if (historyItem.response.status === 'success') {
       this.generatedInterface = this.apiExplorerService.generateTypeDefinition(
@@ -229,7 +235,7 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
         historyItem.request.endpoint
       );
     }
-    
+
     this.activePanelIndex = 1; // Switch to response tab
   }
 
@@ -239,25 +245,25 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
     }
 
     const formValue = this.customEndpointForm.value;
-    
+
     const newEndpoint: ApiEndpoint = {
       name: formValue.name,
       function: formValue.function,
       description: formValue.description || '',
       parameters: [],
-      category: formValue.category
+      category: formValue.category,
     };
 
     this.apiExplorerService.addEndpoint(newEndpoint);
     this.endpoints = this.apiExplorerService.availableEndpoints;
     this.groupEndpoints();
-    
+
     this.snackBar.open('Custom endpoint added', 'Close', {
-      duration: 3000
+      duration: 3000,
     });
-    
+
     this.customEndpointForm.reset({
-      category: 'other'
+      category: 'other',
     });
   }
 
@@ -271,4 +277,4 @@ export class ApiExplorerComponent implements OnInit, OnDestroy {
     }
     return `${(ms / 1000).toFixed(2)}s`;
   }
-} 
+}

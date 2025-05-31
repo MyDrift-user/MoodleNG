@@ -2,7 +2,7 @@ import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { BehaviorSubject, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
 export interface ThemeSettings {
   primaryColor: string;
@@ -14,7 +14,7 @@ export interface ThemeSettings {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ThemeService {
   private defaultSettings: ThemeSettings = {
@@ -23,7 +23,7 @@ export class ThemeService {
     cardColor: '#424242',
     accentColor: '#ff4081',
     contentContainerColor: '#424242',
-    textColor: '#ffffff'
+    textColor: '#ffffff',
   };
 
   private themeSettingsSubject = new BehaviorSubject<ThemeSettings>(this.defaultSettings);
@@ -33,7 +33,7 @@ export class ThemeService {
   private debounceTimer: any = null;
   private lastApplied: number = 0;
   private readonly THROTTLE_DELAY = 1000; // 1 second throttle
-  
+
   // Flag to track if database service is available
   private isDbAvailable: boolean = true;
 
@@ -44,18 +44,21 @@ export class ThemeService {
     this.isBrowser = isPlatformBrowser(platformId);
     if (this.isBrowser) {
       this.loadSavedTheme();
-      
+
       // Apply theme once when page loads and then on specific events
-      window.addEventListener('DOMContentLoaded', () => this.applyTheme(this.themeSettingsSubject.value));
+      window.addEventListener('DOMContentLoaded', () =>
+        this.applyTheme(this.themeSettingsSubject.value)
+      );
       window.addEventListener('load', () => this.applyTheme(this.themeSettingsSubject.value));
-      
+
       // Check if the database service is available
       this.checkServerStatus();
     }
   }
-  
+
   private checkServerStatus(): void {
-    this.http.get<any>('/api/settings/status')
+    this.http
+      .get<any>('/api/settings/status')
       .pipe(
         catchError(err => {
           console.error('Error checking server status:', err);
@@ -90,12 +93,12 @@ export class ThemeService {
   public updateTheme(settings: Partial<ThemeSettings>): void {
     const currentSettings = this.themeSettingsSubject.value;
     const newSettings = { ...currentSettings, ...settings };
-    
+
     this.themeSettingsSubject.next(newSettings);
-    
+
     // Apply theme immediately
     this.applyTheme(newSettings);
-    
+
     if (this.isBrowser) {
       localStorage.setItem('user-theme', JSON.stringify(newSettings));
     }
@@ -104,7 +107,7 @@ export class ThemeService {
   public resetTheme(): void {
     this.themeSettingsSubject.next(this.defaultSettings);
     this.applyTheme(this.defaultSettings);
-    
+
     if (this.isBrowser) {
       localStorage.removeItem('user-theme');
     }
@@ -116,15 +119,16 @@ export class ThemeService {
       console.warn('Database service unavailable. Theme will be saved to local storage only.');
       return false;
     }
-    
+
     // Only save to database if user explicitly wants to save settings
     const settings = {
       username,
       moodleUrl,
-      themeSettings: this.themeSettingsSubject.value
+      themeSettings: this.themeSettingsSubject.value,
     };
 
-    this.http.post<any>('/api/settings/theme', settings)
+    this.http
+      .post<any>('/api/settings/theme', settings)
       .pipe(
         catchError(err => {
           console.error('Error saving theme settings to server:', err);
@@ -142,7 +146,7 @@ export class ThemeService {
         }
         console.log('Theme settings saved to server successfully');
       });
-      
+
     return this.isDbAvailable;
   }
 
@@ -152,8 +156,11 @@ export class ThemeService {
       console.warn('Database service unavailable. Cannot delete remote settings.');
       return false;
     }
-    
-    this.http.delete<any>(`/api/settings/theme/${encodeURIComponent(username)}?moodleUrl=${encodeURIComponent(moodleUrl)}`)
+
+    this.http
+      .delete<any>(
+        `/api/settings/theme/${encodeURIComponent(username)}?moodleUrl=${encodeURIComponent(moodleUrl)}`
+      )
       .pipe(
         catchError(err => {
           console.error('Error deleting user settings:', err);
@@ -172,7 +179,7 @@ export class ThemeService {
         console.log('User settings deleted from server');
         this.resetTheme();
       });
-      
+
     return this.isDbAvailable;
   }
 
@@ -184,7 +191,10 @@ export class ThemeService {
       return;
     }
 
-    this.http.get<any>(`/api/settings/theme/${encodeURIComponent(username)}?moodleUrl=${encodeURIComponent(moodleUrl)}`)
+    this.http
+      .get<any>(
+        `/api/settings/theme/${encodeURIComponent(username)}?moodleUrl=${encodeURIComponent(moodleUrl)}`
+      )
       .pipe(
         catchError(err => {
           console.error('Error loading user theme:', err);
@@ -200,18 +210,18 @@ export class ThemeService {
           console.log('No saved theme found on server or error loading theme');
           return;
         }
-        
+
         // Settings exist on server - apply them
         console.log('Found saved settings on server - applying theme');
         const themeSettings = response.data.theme_settings;
         this.themeSettingsSubject.next(themeSettings);
         this.applyTheme(themeSettings);
-        
+
         // Save to local storage
         if (this.isBrowser) {
           localStorage.setItem('user-theme', JSON.stringify(themeSettings));
-          
-          // If the saveThemeToServer preference wasn't explicitly set to false, 
+
+          // If the saveThemeToServer preference wasn't explicitly set to false,
           // set it to true since we found settings on the server
           const savedPreference = localStorage.getItem('saveThemeToServer');
           if (savedPreference !== 'false') {
@@ -219,11 +229,11 @@ export class ThemeService {
             localStorage.setItem('saveThemeToServer', 'true');
           }
         }
-        
+
         console.log('Theme loaded from server successfully');
       });
   }
-  
+
   // Returns whether the database service is available
   public isDatabaseAvailable(): boolean {
     return this.isDbAvailable;
@@ -231,7 +241,7 @@ export class ThemeService {
 
   private applyTheme(settings: ThemeSettings): void {
     if (!this.isBrowser) return;
-    
+
     // Throttle theme application to prevent performance issues
     const now = Date.now();
     if (now - this.lastApplied < this.THROTTLE_DELAY) {
@@ -239,101 +249,108 @@ export class ThemeService {
       if (this.debounceTimer) {
         clearTimeout(this.debounceTimer);
       }
-      
+
       // Debounce to apply theme only after a delay
       this.debounceTimer = setTimeout(() => {
         this.actuallyApplyTheme(settings);
       }, this.THROTTLE_DELAY);
-      
+
       return;
     }
-    
+
     this.actuallyApplyTheme(settings);
   }
-  
+
   private actuallyApplyTheme(settings: ThemeSettings): void {
     this.lastApplied = Date.now();
-    
+
     // Apply CSS variables to document root
     document.documentElement.style.setProperty('--primary-color', settings.primaryColor);
     document.documentElement.style.setProperty('--background-color', settings.backgroundColor);
     document.documentElement.style.setProperty('--card-color', settings.cardColor);
     document.documentElement.style.setProperty('--accent-color', settings.accentColor);
-    document.documentElement.style.setProperty('--content-container-color', settings.contentContainerColor);
+    document.documentElement.style.setProperty(
+      '--content-container-color',
+      settings.contentContainerColor
+    );
     document.documentElement.style.setProperty('--text-color', settings.textColor);
-    
+
     // Apply to body element directly
     document.body.style.backgroundColor = settings.backgroundColor;
     document.body.style.color = settings.textColor;
-    
+
     // Apply to all Material components
     this.applyMaterialTheming(settings);
   }
-  
+
   private applyMaterialTheming(settings: ThemeSettings): void {
     // Apply primary color to all toolbar elements
     const toolbars = document.querySelectorAll('.mat-toolbar.mat-primary');
     toolbars.forEach(toolbar => {
       (toolbar as HTMLElement).style.backgroundColor = settings.primaryColor;
     });
-    
+
     // Apply card background to all cards
     const cards = document.querySelectorAll('.mat-mdc-card');
     cards.forEach(card => {
       (card as HTMLElement).style.backgroundColor = settings.cardColor;
     });
-    
+
     // Apply to form fields
     const formFields = document.querySelectorAll('.mdc-text-field--filled');
     formFields.forEach(field => {
       (field as HTMLElement).style.backgroundColor = settings.cardColor;
     });
-    
+
     // Apply accent color to input focus states
     const focusRipples = document.querySelectorAll('.mdc-line-ripple::after');
     focusRipples.forEach(ripple => {
       (ripple as HTMLElement).style.borderBottomColor = settings.accentColor;
     });
-    
+
     // Apply to accent elements
-    const accentButtons = document.querySelectorAll('.mat-mdc-raised-button.mat-accent, .mat-mdc-unelevated-button.mat-accent');
+    const accentButtons = document.querySelectorAll(
+      '.mat-mdc-raised-button.mat-accent, .mat-mdc-unelevated-button.mat-accent'
+    );
     accentButtons.forEach(button => {
       (button as HTMLElement).style.backgroundColor = settings.accentColor;
     });
-    
+
     // Apply background color to root containers
-    const backgroundContainers = document.querySelectorAll('.app-container, .dashboard-container, .login-container, .settings-container, .module-details-container');
+    const backgroundContainers = document.querySelectorAll(
+      '.app-container, .dashboard-container, .login-container, .settings-container, .module-details-container'
+    );
     backgroundContainers.forEach(container => {
       (container as HTMLElement).style.backgroundColor = settings.backgroundColor;
     });
-    
+
     // Apply to content containers safely
     this.applyContentContainerColor(settings);
-    
+
     // Ensure content wrappers use background color
     const contentWrappers = document.querySelectorAll('.content-wrapper');
     contentWrappers.forEach(wrapper => {
       (wrapper as HTMLElement).style.backgroundColor = settings.backgroundColor;
     });
-    
+
     // Apply styles to module detail components
     const contentCards = document.querySelectorAll('.content-card');
     contentCards.forEach(card => {
       (card as HTMLElement).style.backgroundColor = settings.cardColor;
     });
-    
+
     // Apply styles to section cards
     const sectionCards = document.querySelectorAll('.section-card');
     sectionCards.forEach(card => {
       (card as HTMLElement).style.backgroundColor = settings.contentContainerColor;
     });
   }
-  
+
   private applyContentContainerColor(settings: ThemeSettings): void {
     // Only apply to a limited number of content containers to prevent performance issues
     const contentContainers = document.querySelectorAll('.content-container');
     const maxContainers = Math.min(contentContainers.length, 10); // Limit to 10 containers
-    
+
     for (let i = 0; i < maxContainers; i++) {
       (contentContainers[i] as HTMLElement).style.backgroundColor = settings.contentContainerColor;
     }
@@ -345,10 +362,10 @@ export class ThemeService {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = null;
     }
-    
+
     if (this.mutationObserver) {
       this.mutationObserver.disconnect();
       this.mutationObserver = null;
     }
   }
-} 
+}

@@ -1,5 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  FormsModule,
+} from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -35,8 +41,8 @@ import { environment } from '../../../environments/environment';
     MatSlideToggleModule,
     MatToolbarModule,
     MatIconModule,
-    MatTooltipModule
-  ]
+    MatTooltipModule,
+  ],
 })
 export class SettingsComponent implements OnInit, OnDestroy {
   settingsForm: FormGroup;
@@ -45,10 +51,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
   username: string = '';
   moodleDomain: string = '';
   isLoggedIn: boolean = false;
-  
+
   // Subscription management
   private subscriptions = new Subscription();
-  
+
   // Debugging flags
   userDataLoaded: boolean = false;
   loginChecked: boolean = false;
@@ -68,37 +74,37 @@ export class SettingsComponent implements OnInit, OnDestroy {
       contentContainerColor: ['', Validators.required],
       textColor: ['', Validators.required],
       username: ['', [Validators.required]],
-      moodleUrl: ['']
+      moodleUrl: [''],
     });
 
     // Check login status - this should happen first
     this.isLoggedIn = this.authService.isAuthenticated();
     this.loginChecked = true;
-    
+
     // Load user data
     this.loadUserData();
-    
+
     // Force-check localStorage directly for debugging - only in development
     if (!environment.production) {
       this.checkLocalStorage();
     }
-    
+
     // Load save preference from localStorage
     this.loadSavePreference();
   }
-  
+
   private checkLocalStorage(): void {
     // Only log in development mode
     if (!environment.production) {
       try {
         const rawUserData = localStorage.getItem('moodleUser');
         const rawSiteData = localStorage.getItem('moodleSite');
-        
+
         if (rawUserData) {
           const userData = JSON.parse(rawUserData);
           console.log('localStorage user data available:', !!userData?.username);
         }
-        
+
         if (rawSiteData) {
           const siteData = JSON.parse(rawSiteData);
           console.log('localStorage site data available:', !!siteData?.domain);
@@ -111,7 +117,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   private loadUserData(): void {
     console.log('Loading user data...');
-    
+
     // First try getting from MoodleService directly
     const user = this.moodleService.getCurrentUser();
     const site = this.moodleService.getCurrentSite();
@@ -126,7 +132,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
       this.userDataLoaded = true;
     } else {
       console.warn('User data not found from MoodleService');
-      
+
       // Try getting from localStorage directly as fallback
       const storedUser = localStorage.getItem('moodleUser');
       if (storedUser) {
@@ -137,7 +143,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
             this.username = parsedUser.username;
             this.settingsForm.get('username')?.setValue(parsedUser.username);
             this.userDataLoaded = true;
-            
+
             // Restore user data to MoodleService if needed
             if (!user) {
               console.log('Restoring user data to MoodleService from localStorage');
@@ -156,7 +162,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
       this.settingsForm.get('moodleUrl')?.setValue(site.domain);
     } else {
       console.warn('Site data not found from MoodleService');
-      
+
       // Try getting from localStorage directly as fallback
       const storedSite = localStorage.getItem('moodleSite');
       if (storedSite) {
@@ -166,7 +172,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
           if (parsedSite && parsedSite.domain) {
             this.moodleDomain = parsedSite.domain;
             this.settingsForm.get('moodleUrl')?.setValue(parsedSite.domain);
-            
+
             // Restore site data to MoodleService if needed
             if (!site) {
               console.log('Restoring site data to MoodleService from localStorage');
@@ -178,18 +184,18 @@ export class SettingsComponent implements OnInit, OnDestroy {
         }
       }
     }
-    
+
     console.log('User data loading complete. Results:', {
       username: this.username,
       moodleDomain: this.moodleDomain,
-      isLoggedIn: this.isLoggedIn
+      isLoggedIn: this.isLoggedIn,
     });
   }
 
   private loadSavePreference(): void {
     // Load save preference from localStorage
     const savedPreference = localStorage.getItem('saveThemeToServer');
-    
+
     // If preference is explicitly set in either direction, use that value
     if (savedPreference === 'true') {
       console.log('Loading saved preference: save to server enabled');
@@ -210,7 +216,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     // Subscribe to theme settings changes and manage subscription
     const themeSubscription = this.themeService.themeSettings$.subscribe(settings => {
       this.themeSettings = settings;
-      
+
       // Update form with current theme settings
       this.settingsForm.patchValue({
         primaryColor: settings.primaryColor,
@@ -218,12 +224,12 @@ export class SettingsComponent implements OnInit, OnDestroy {
         backgroundColor: settings.backgroundColor,
         cardColor: settings.cardColor,
         contentContainerColor: settings.contentContainerColor,
-        textColor: settings.textColor
+        textColor: settings.textColor,
       });
     });
-    
+
     this.subscriptions.add(themeSubscription);
-    
+
     // If we're logged in but no user data was found during construction,
     // try once more to load the data with a minimal delay
     if (this.isLoggedIn && (!this.username || !this.moodleDomain)) {
@@ -232,24 +238,24 @@ export class SettingsComponent implements OnInit, OnDestroy {
     // DO NOT automatically check for saved settings here, as it may re-enable sync
     // when the user has specifically disabled it
   }
-  
+
   ngOnDestroy(): void {
     // Clean up all subscriptions to prevent memory leaks
     this.subscriptions.unsubscribe();
   }
-  
+
   private checkForSavedSettings(): void {
     if (!this.isLoggedIn || !this.username || !this.moodleDomain) {
       console.log('Cannot check for saved settings: user not logged in or missing user data');
       return;
     }
-    
+
     // Only try to load from server if database service is available
     if (!this.themeService.isDatabaseAvailable()) {
       console.log('Database service unavailable, skipping check for saved settings');
       return;
     }
-    
+
     // Only load settings if the user has explicitly enabled saving to server
     if (this.saveToServer) {
       console.log('Attempting to load user theme from server');
@@ -262,31 +268,31 @@ export class SettingsComponent implements OnInit, OnDestroy {
   onColorChange(colorType: keyof ThemeSettings, event: Event): void {
     const input = event.target as HTMLInputElement;
     const color = input.value;
-    
+
     // Update the theme immediately for preview
     this.themeService.updateTheme({ [colorType]: color } as Partial<ThemeSettings>);
   }
 
   onSaveToServerChange(event: any): void {
     console.log('onSaveToServerChange called, checked:', event.checked);
-    
+
     // Save preference to localStorage
     localStorage.setItem('saveThemeToServer', event.checked.toString());
-    
+
     // If enabling save to server, use the user's username and Moodle URL from login
     if (event.checked) {
       if (!this.isLoggedIn) {
         this.snackBar.open('You need to be logged in to save settings to the server.', 'Close', {
-          duration: 3000
+          duration: 3000,
         });
         this.saveToServer = false;
         return;
       }
-      
+
       if (this.username && this.moodleDomain) {
         this.settingsForm.get('username')?.setValue(this.username);
         this.settingsForm.get('moodleUrl')?.setValue(this.moodleDomain);
-        
+
         // When enabling save to server, check if there are any settings to load
         this.checkForSavedSettings();
       } else {
@@ -294,17 +300,21 @@ export class SettingsComponent implements OnInit, OnDestroy {
         // Try reloading user data before showing error
         this.loadUserData();
         this.checkLocalStorage();
-        
+
         if (this.username && this.moodleDomain) {
           this.settingsForm.get('username')?.setValue(this.username);
           this.settingsForm.get('moodleUrl')?.setValue(this.moodleDomain);
-          
+
           // When enabling save to server, check if there are any settings to load
           this.checkForSavedSettings();
         } else {
-          this.snackBar.open('Could not retrieve user information. Make sure you are logged in.', 'Close', {
-            duration: 3000
-          });
+          this.snackBar.open(
+            'Could not retrieve user information. Make sure you are logged in.',
+            'Close',
+            {
+              duration: 3000,
+            }
+          );
           this.saveToServer = false;
         }
       }
@@ -312,54 +322,67 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   onSaveSettings(): void {
-    const { primaryColor, accentColor, backgroundColor, cardColor, contentContainerColor } = this.settingsForm.value;
-    
+    const { primaryColor, accentColor, backgroundColor, cardColor, contentContainerColor } =
+      this.settingsForm.value;
+
     // Always save theme to localStorage
     this.themeService.updateTheme({
       primaryColor,
       accentColor,
       backgroundColor,
       cardColor,
-      contentContainerColor
+      contentContainerColor,
     });
 
     // Only save to server if user has opted in
     if (this.saveToServer) {
       // Check if database service is available
       if (!this.themeService.isDatabaseAvailable()) {
-        this.snackBar.open('Database service is unavailable. Settings saved to this device only.', 'Close', {
-          duration: 3000
-        });
+        this.snackBar.open(
+          'Database service is unavailable. Settings saved to this device only.',
+          'Close',
+          {
+            duration: 3000,
+          }
+        );
         // We still save the preference in localStorage so when service becomes available it will try to sync
         localStorage.setItem('saveThemeToServer', 'true');
         return;
       }
-      
+
       if (!this.username || !this.moodleDomain) {
         // Try reloading user data before showing error
         this.loadUserData();
         this.checkLocalStorage();
       }
-      
+
       if (this.username && this.moodleDomain) {
         const saveSuccess = this.themeService.saveThemeSettings(this.username, this.moodleDomain);
-        
+
         // Explicitly set save preference to true - user has actively chosen to save
         localStorage.setItem('saveThemeToServer', 'true');
-        
+
         if (saveSuccess) {
           this.snackBar.open('Settings saved and will be preserved across devices', 'Close', {
-            duration: 3000
+            duration: 3000,
           });
         } else {
-          this.snackBar.open('Settings saved to this device only. Server sync unavailable.', 'Close', {
-            duration: 3000
-          });
+          this.snackBar.open(
+            'Settings saved to this device only. Server sync unavailable.',
+            'Close',
+            {
+              duration: 3000,
+            }
+          );
         }
       } else {
-        this.snackBar.open('Could not save to server: Missing user information. Using local storage only.', 'Close', {
-          duration: 3000
-        });
+        this.snackBar.open(
+          'Could not save to server: Missing user information. Using local storage only.',
+          'Close',
+          {
+            duration: 3000,
+          }
+        );
         this.saveToServer = false;
         localStorage.setItem('saveThemeToServer', 'false');
       }
@@ -367,9 +390,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
       // User has explicitly chosen to disable syncing - set to false, not null/undefined
       // to prevent auto-enable even if settings exist on the server
       localStorage.setItem('saveThemeToServer', 'false');
-      
+
       this.snackBar.open('Settings saved to this device only', 'Close', {
-        duration: 3000
+        duration: 3000,
       });
     }
   }
@@ -381,10 +404,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
       accentColor: this.themeSettings?.accentColor,
       backgroundColor: this.themeSettings?.backgroundColor,
       cardColor: this.themeSettings?.cardColor,
-      contentContainerColor: this.themeSettings?.contentContainerColor
+      contentContainerColor: this.themeSettings?.contentContainerColor,
     });
     this.snackBar.open('Theme has been reset to default', 'Close', {
-      duration: 3000
+      duration: 3000,
     });
   }
 
@@ -392,43 +415,51 @@ export class SettingsComponent implements OnInit, OnDestroy {
     if (this.username && this.moodleDomain) {
       // Check if database service is available
       if (!this.themeService.isDatabaseAvailable()) {
-        this.snackBar.open('Database service is unavailable. Cannot delete remote settings.', 'Close', {
-          duration: 3000
-        });
+        this.snackBar.open(
+          'Database service is unavailable. Cannot delete remote settings.',
+          'Close',
+          {
+            duration: 3000,
+          }
+        );
         return;
       }
-      
+
       const deleteSuccess = this.themeService.deleteUserSettings(this.username, this.moodleDomain);
       this.saveToServer = false;
-      
+
       // Reset save preference after deleting settings
       localStorage.setItem('saveThemeToServer', 'false');
-      
+
       if (deleteSuccess) {
         this.snackBar.open('Your data has been deleted from the server', 'Close', {
-          duration: 3000
+          duration: 3000,
         });
       } else {
         this.snackBar.open('Cannot delete data: Server unavailable', 'Close', {
-          duration: 3000
+          duration: 3000,
         });
       }
     } else {
-      this.snackBar.open('Could not delete your data. Username or Moodle domain information is missing.', 'Close', {
-        duration: 3000
-      });
+      this.snackBar.open(
+        'Could not delete your data. Username or Moodle domain information is missing.',
+        'Close',
+        {
+          duration: 3000,
+        }
+      );
     }
   }
-  
+
   applyManualUserInfo(): void {
     console.log('Applying manual user info');
     const username = this.settingsForm.get('username')?.value;
     const moodleUrl = this.settingsForm.get('moodleUrl')?.value;
-    
+
     if (username && moodleUrl) {
       this.username = username;
       this.moodleDomain = moodleUrl;
-      
+
       // Mock creation of user/site objects for MoodleService
       const userObj = {
         id: 0,
@@ -437,25 +468,25 @@ export class SettingsComponent implements OnInit, OnDestroy {
         lastname: 'Entry',
         fullname: 'Manual Entry',
         email: 'manual@entry.com',
-        token: 'manual-entry'
+        token: 'manual-entry',
       };
-      
+
       const siteObj = {
         domain: moodleUrl,
         sitename: 'Manually Configured Site',
       };
-      
+
       // Update the service with manual information using proper methods
       this.moodleService.setUser(userObj);
       this.moodleService.setSite(siteObj);
-      
+
       this.snackBar.open('User information applied successfully', 'Close', {
-        duration: 3000
+        duration: 3000,
       });
     } else {
       this.snackBar.open('Please provide both username and Moodle URL', 'Close', {
-        duration: 3000
+        duration: 3000,
       });
     }
   }
-} 
+}

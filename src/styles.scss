@@ -8,23 +8,23 @@
   --primary-color: #{theme.$primary-color};
   --primary-light: #{theme.$primary-light};
   --primary-dark: #{theme.$primary-dark};
-  
+
   --accent-color: #{theme.$accent-color};
   --accent-light: #{theme.$accent-light};
   --accent-dark: #{theme.$accent-dark};
-  
+
   --background-color: #{theme.$background-dark};
   --card-color: #{theme.$card-color-dark};
   --content-container-color: #{theme.$card-color-dark};
   --elevated-color: #{theme.$dark-elevated};
-  
+
   --text-color: #{theme.$text-color-dark};
   --text-secondary: #{theme.$text-secondary-dark};
   --text-hint: #{theme.$text-hint-dark};
-  
+
   --divider-color: #{theme.$divider-color};
   --border-color: #{theme.$border-color};
-  
+
   --success-color: #{theme.$success-color};
   --info-color: #{theme.$info-color};
   --warning-color: #{theme.$warning-color};
@@ -36,7 +36,7 @@ html body {
   background-color: var(--background-color) !important;
   color: var(--text-color) !important;
   margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
   height: 100%;
 }
 
@@ -135,7 +135,7 @@ html {
 }
 
 /* Background elements */
-.dashboard-container, 
+.dashboard-container,
 .login-container,
 .module-details-container,
 .settings-container {
@@ -164,11 +164,11 @@ div.content-container {
   .mat-mdc-text-field-wrapper {
     background-color: rgba(255, 255, 255, 0.05) !important;
   }
-  
+
   .mat-mdc-input-element {
     color: var(--text-color) !important;
   }
-  
+
   .mat-mdc-form-field-label {
     color: var(--text-secondary) !important;
   }
@@ -183,8 +183,8 @@ div.content-container {
     right: auto !important;
     left: 1vw !important;
   }
-  
-  mat-dialog-container, 
+
+  mat-dialog-container,
   .mat-mdc-dialog-container,
   .mdc-dialog__container,
   .mdc-dialog__surface {
@@ -197,12 +197,12 @@ div.content-container {
     width: 98vw !important;
     background-color: var(--card-color) !important;
   }
-  
+
   .mat-mdc-dialog-container {
     width: 100% !important;
     height: 100% !important;
   }
-    
+
   .mdc-dialog__surface {
     width: 100% !important;
     height: 100% !important;
@@ -210,7 +210,7 @@ div.content-container {
     flex-direction: column !important;
     min-height: 100% !important;
   }
-  
+
   .mat-mdc-dialog-content,
   mat-dialog-content {
     display: flex !important;
@@ -220,13 +220,13 @@ div.content-container {
     width: 100% !important;
     height: 100% !important;
   }
-  
+
   /* Make sure buttons are fully clickable */
   .button-container {
     position: relative;
     z-index: 10;
   }
-  
+
   button.mat-icon-button {
     margin-left: 4px !important;
     margin-right: 0 !important;
@@ -234,7 +234,7 @@ div.content-container {
 
   /* Ensure PDF iframe uses full height */
   .pdf-container {
-    height: 100% !important; 
+    height: 100% !important;
     width: 100% !important;
     display: block !important;
     position: relative !important;
@@ -255,38 +255,44 @@ div.content-container {
 /* Rich text content from Moodle */
 .moodle-content {
   color: var(--text-color);
-  
-  img, video, iframe {
+
+  img,
+  video,
+  iframe {
     max-width: 100%;
     height: auto;
     border-radius: 4px;
   }
-  
+
   a {
     color: var(--primary-light);
     text-decoration: none;
-    
+
     &:hover {
       text-decoration: underline;
     }
   }
-  
+
   table {
     border-collapse: collapse;
     width: 100%;
     margin: 16px 0;
-    
-    th, td {
+
+    th,
+    td {
       border: 1px solid var(--divider-color);
       padding: 8px;
     }
-    
+
     th {
       background-color: rgba(255, 255, 255, 0.05);
     }
   }
-  
-  p, li, span, div {
+
+  p,
+  li,
+  span,
+  div {
     color: var(--text-color);
   }
 }
@@ -312,15 +318,15 @@ div.content-container {
   .content-container {
     padding: 16px !important;
   }
-  
+
   h1 {
     font-size: 24px !important;
   }
-  
+
   h2 {
     font-size: 20px !important;
   }
-  
+
   h3 {
     font-size: 18px !important;
   }
