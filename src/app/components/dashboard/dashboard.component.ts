@@ -12,6 +12,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatChipsModule } from '@angular/material/chips';
 import { debounceTime, distinctUntilChanged, finalize } from 'rxjs/operators';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
@@ -37,12 +39,15 @@ import { UserProfileService, ProfilePictureResult } from '../../services/user-pr
     MatFormFieldModule,
     MatInputModule,
     MatMenuModule,
+    MatButtonToggleModule,
+    MatChipsModule,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   modules: MoodleModule[] = [];
+  filteredAndSortedModules: MoodleModule[] = [];
   loading = true;
   error = '';
   successMessage = '';
@@ -58,6 +63,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   searchResults: MoodleModule[] = [];
   showSearchResults = false;
   enrollingCourseId: number | null = null; // Track which course is being enrolled
+
+  // Sorting and filtering properties
+  sortOption: 'default' | 'alphabetical' = 'default';
+  selectedSubjects: string[] = [];
+  availableSubjects: string[] = [];
+  showFilters = false;
 
   // Subscription management
   private subscriptions = new Subscription();
@@ -188,6 +199,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const loadSubscription = this.moodleService.getUserModules().subscribe({
       next: modules => {
         this.modules = modules;
+        this.updateAvailableSubjects();
+        this.applyFiltersAndSorting();
         this.loading = false;
       },
       error: err => {
@@ -412,13 +425,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
    */
   @HostListener('document:click', ['$event'])
   onClickOutside(event: MouseEvent) {
-    // Check if the clicked element is outside the search container
     const target = event.target as HTMLElement;
+    
+    // Check if the clicked element is outside the search container to close search results
     if (
       this.showSearchResults &&
       !this.elementRef.nativeElement.querySelector('.course-search-container').contains(target)
     ) {
       this.clearSearch();
+    }
+    
+    // Check if the clicked element is outside the filter dropdown to close it
+    if (
+      this.showFilters &&
+      !this.elementRef.nativeElement.querySelector('.filter-dropdown-container').contains(target)
+    ) {
+      this.showFilters = false;
     }
   }
 
@@ -514,5 +536,110 @@ export class DashboardComponent implements OnInit, OnDestroy {
       profilePictureError: this.profilePictureError
     });
     return result;
+  }
+
+  /**
+   * Update the list of available subjects from loaded modules
+   */
+  updateAvailableSubjects(): void {
+    const subjects = new Set<string>();
+    this.modules.forEach(module => {
+      if (module.subject && module.subject.trim()) {
+        subjects.add(module.subject.trim());
+      }
+    });
+    this.availableSubjects = Array.from(subjects).sort();
+    
+    // Close filters dropdown if no subjects are available
+    if (this.availableSubjects.length === 0) {
+      this.showFilters = false;
+      this.selectedSubjects = []; // Also clear any selected subjects
+    }
+  }
+
+  /**
+   * Apply current filters and sorting to the modules list
+   */
+  applyFiltersAndSorting(): void {
+    let filtered = [...this.modules];
+
+    // Apply subject filters
+    if (this.selectedSubjects.length > 0) {
+      filtered = filtered.filter(module => 
+        module.subject && this.selectedSubjects.includes(module.subject)
+      );
+    }
+
+    // Apply sorting
+    switch (this.sortOption) {
+      case 'alphabetical':
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'default':
+      default:
+        // Keep the default sorting (by last access date, most recent first)
+        filtered.sort((a, b) => {
+          if (!a.lastAccess) return 1;
+          if (!b.lastAccess) return -1;
+          return b.lastAccess.getTime() - a.lastAccess.getTime();
+        });
+        break;
+    }
+
+    this.filteredAndSortedModules = filtered;
+  }
+
+  /**
+   * Change the sorting option
+   */
+  onSortChange(value: 'default' | 'alphabetical'): void {
+    this.sortOption = value;
+    this.applyFiltersAndSorting();
+  }
+
+  /**
+   * Toggle subject filter
+   */
+  toggleSubjectFilter(subject: string): void {
+    const index = this.selectedSubjects.indexOf(subject);
+    if (index > -1) {
+      this.selectedSubjects.splice(index, 1);
+    } else {
+      this.selectedSubjects.push(subject);
+    }
+    this.applyFiltersAndSorting();
+  }
+
+  /**
+   * Check if a subject is currently selected
+   */
+  isSubjectSelected(subject: string): boolean {
+    return this.selectedSubjects.includes(subject);
+  }
+
+  /**
+   * Clear all filters
+   */
+  clearAllFilters(): void {
+    this.selectedSubjects = [];
+    this.applyFiltersAndSorting();
+  }
+
+  /**
+   * Get count of active filters
+   */
+  getActiveFiltersCount(): number {
+    return this.selectedSubjects.length;
+  }
+
+  /**
+   * Toggle filters dropdown visibility
+   */
+  toggleFilters(): void {
+    // Don't toggle if there are no subjects available
+    if (this.availableSubjects.length === 0) {
+      return;
+    }
+    this.showFilters = !this.showFilters;
   }
 }

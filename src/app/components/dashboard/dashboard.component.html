@@ -164,15 +164,77 @@
           <h1>My Courses</h1>
           <p class="subtitle">Access your enrolled courses</p>
         </div>
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="loadModules()"
-          [disabled]="loading"
-          class="refresh-button"
-        >
-          <mat-icon>refresh</mat-icon> Refresh
-        </button>
+        <div class="controls-section">
+          <!-- Sorting Controls -->
+          <div class="sort-controls">
+            <mat-button-toggle-group 
+              [value]="sortOption" 
+              (change)="onSortChange($event.value)"
+              class="sort-toggle-group"
+              aria-label="Sort courses"
+            >
+              <mat-button-toggle value="default" matTooltip="Sort by last accessed">
+                <mat-icon>schedule</mat-icon>
+                <span class="toggle-label">Recent</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="alphabetical" matTooltip="Sort alphabetically">
+                <mat-icon>sort_by_alpha</mat-icon>
+                <span class="toggle-label">A-Z</span>
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
+          <!-- Filter Dropdown Button -->
+          <div class="filter-dropdown-container">
+            <button 
+              mat-button 
+              class="filter-dropdown-button"
+              (click)="toggleFilters()"
+              [class.active]="showFilters"
+              [disabled]="availableSubjects.length === 0"
+            >
+              <div class="filter-icon-slot">
+                <mat-icon *ngIf="getActiveFiltersCount() === 0">filter_list</mat-icon>
+                <span *ngIf="getActiveFiltersCount() > 0" class="filter-badge">{{ getActiveFiltersCount() }}</span>
+              </div>
+              <span>Filter</span>
+              <mat-icon class="dropdown-arrow" [class.rotated]="showFilters">expand_more</mat-icon>
+            </button>
+            
+            <!-- Filter Dropdown Menu -->
+            <div *ngIf="showFilters && availableSubjects.length > 0" class="filter-dropdown-menu">
+              <div class="filter-dropdown-header">
+                <span>Filter by Subject</span>
+                <button 
+                  *ngIf="getActiveFiltersCount() > 0"
+                  mat-icon-button 
+                  (click)="clearAllFilters()"
+                  class="clear-filters-icon"
+                  matTooltip="Clear all filters"
+                >
+                  <mat-icon>clear</mat-icon>
+                </button>
+              </div>
+              <div class="filter-dropdown-content">
+                <mat-chip-set class="filter-chips">
+                  <mat-chip-option 
+                    *ngFor="let subject of availableSubjects"
+                    [selected]="isSubjectSelected(subject)"
+                    (click)="toggleSubjectFilter(subject)"
+                    class="dropdown-filter-chip"
+                  >
+                    {{ subject }}
+                  </mat-chip-option>
+                </mat-chip-set>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Summary (only when filters are active) -->
+      <div *ngIf="getActiveFiltersCount() > 0" class="filter-summary-bar">
+        <span>Showing {{ filteredAndSortedModules.length }} of {{ modules.length }} courses</span>
       </div>
 
       <div *ngIf="loading" class="loading-container">
@@ -191,9 +253,19 @@
         <p>You are not enrolled in any courses</p>
       </div>
 
-      <div *ngIf="!loading && !error && modules.length > 0" class="modules-grid">
+      <!-- No results after filtering -->
+      <div *ngIf="!loading && !error && modules.length > 0 && filteredAndSortedModules.length === 0" class="empty-state">
+        <mat-icon>filter_list_off</mat-icon>
+        <p>No courses match your current filters</p>
+        <button mat-stroked-button (click)="clearAllFilters()" class="clear-filters-btn">
+          <mat-icon>clear</mat-icon>
+          Clear Filters
+        </button>
+      </div>
+
+      <div *ngIf="!loading && !error && filteredAndSortedModules.length > 0" class="modules-grid">
         <mat-card
-          *ngFor="let module of modules; let i = index"
+          *ngFor="let module of filteredAndSortedModules; let i = index"
           class="module-card fade-in"
           [class.hidden-module]="!module.visible"
           [style.animation-delay]="i * 0.05 + 's'"

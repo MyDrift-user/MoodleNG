@@ -15,5 +15,4 @@ export const routes: Routes = [
   { path: 'settings', component: SettingsComponent, canActivate: [authGuard] },
   { path: 'api-explorer', component: ApiExplorerComponent, canActivate: [authGuard] },
   { path: 'file-storage', component: FileStorageComponent, canActivate: [authGuard] },
-  { path: '**', redirectTo: '/login' },
 ];
