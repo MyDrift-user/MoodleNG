@@ -94,6 +94,9 @@
 /* Toolbar */
 .mat-toolbar.mat-primary {
   background-color: var(--primary-color) !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  max-height: 56px !important;
 }
 
 /* Lists */
