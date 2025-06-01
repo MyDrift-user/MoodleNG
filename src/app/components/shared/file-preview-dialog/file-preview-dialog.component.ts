@@ -137,10 +137,35 @@ import { MatTooltipModule } from '@angular/material/tooltip';
         display: flex;
         align-items: center;
         margin-right: 4px;
+        gap: 4px;
       }
 
       .button-container button {
-        margin-left: 4px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        margin: 0;
+        border-radius: 50%;
+        background: transparent;
+        transition: background-color 0.2s ease;
+      }
+
+      .button-container button:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .button-container button mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        color: rgba(255, 255, 255, 0.87);
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .spacer {

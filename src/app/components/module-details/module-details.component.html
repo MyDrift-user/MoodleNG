@@ -275,9 +275,25 @@
                               <mat-icon>{{ getFileIcon(file.mimetype) }}</mat-icon>
                               <span class="file-name">{{ file.filename }}</span>
                               <span class="file-size">({{ formatFileSize(file.filesize) }})</span>
-                              <button mat-icon-button color="accent" (click)="openInNewTab(file.fileurl)" matTooltip="Download File">
-                                <mat-icon>download</mat-icon>
-                              </button>
+                              <div class="file-actions">
+                                <button
+                                  *ngIf="canPreviewSubmittedFile(file)"
+                                  mat-icon-button
+                                  color="accent"
+                                  (click)="previewSubmittedFile(file)"
+                                  matTooltip="Preview File"
+                                >
+                                  <mat-icon>visibility</mat-icon>
+                                </button>
+                                <button
+                                  mat-icon-button
+                                  color="accent"
+                                  (click)="openInNewTab(file.fileurl)"
+                                  matTooltip="Download File"
+                                >
+                                  <mat-icon>download</mat-icon>
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -433,9 +449,25 @@
                               <mat-icon>{{ getFileIcon(file.mimetype) }}</mat-icon>
                               <span class="file-name">{{ file.filename }}</span>
                               <span class="file-size">({{ formatFileSize(file.filesize) }})</span>
-                              <button mat-icon-button color="accent" (click)="openInNewTab(file.fileurl)" matTooltip="Download File">
-                                <mat-icon>download</mat-icon>
-                              </button>
+                              <div class="file-actions">
+                                <button
+                                  *ngIf="canPreviewSubmittedFile(file)"
+                                  mat-icon-button
+                                  color="accent"
+                                  (click)="previewSubmittedFile(file)"
+                                  matTooltip="Preview File"
+                                >
+                                  <mat-icon>visibility</mat-icon>
+                                </button>
+                                <button
+                                  mat-icon-button
+                                  color="accent"
+                                  (click)="openInNewTab(file.fileurl)"
+                                  matTooltip="Download File"
+                                >
+                                  <mat-icon>download</mat-icon>
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>

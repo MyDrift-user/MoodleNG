@@ -685,6 +685,42 @@ export class ModuleDetailsComponent implements OnInit {
     );
   }
 
+  // Helper methods for submitted file preview
+  previewSubmittedFile(file: any): void {
+    if (!file.fileurl) return;
+
+    const fileType = this.filePreviewService.detectFileType(file.mimetype || '');
+
+    this.filePreviewService.openPreview({
+      url: file.fileurl,
+      name: file.filename || 'Submitted File',
+      mimeType: file.mimetype || '',
+      fileType: fileType,
+    });
+  }
+
+  canPreviewSubmittedFile(file: any): boolean {
+    if (!file.fileurl) return false;
+
+    const mimeType = file.mimetype || '';
+
+    // File types that can be previewed
+    return (
+      mimeType.includes('pdf') ||
+      mimeType.includes('text/') ||
+      mimeType.includes('application/json') ||
+      mimeType.includes('text/markdown') ||
+      mimeType.endsWith('.md') ||
+      mimeType.includes('word') ||
+      mimeType.includes('excel') ||
+      mimeType.includes('powerpoint') ||
+      mimeType.includes('officedocument') ||
+      mimeType.includes('opendocument') ||
+      mimeType.startsWith('image/') ||
+      mimeType.startsWith('video/')
+    );
+  }
+
   // Load course results
   loadCourseResults(): void {
     if (this.activeTabIndex !== 1) {

@@ -502,7 +502,7 @@ export class MoodleService {
                               filename: file.filename,
                               filepath: file.filepath,
                               filesize: file.filesize,
-                              fileurl: file.fileurl,
+                              fileurl: this.appendTokenToUrl(this.sanitization.sanitizeUrl(file.fileurl)),
                               mimetype: file.mimetype,
                               timemodified: new Date(file.timemodified * 1000)
                             }));
