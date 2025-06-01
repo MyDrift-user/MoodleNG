@@ -36,6 +36,7 @@ yarn-error.log
 /libpeerconnection.log
 testem.log
 /typings
+api-explorer-result.txt
 
 # System files
 .DS_Store

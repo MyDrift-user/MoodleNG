@@ -202,7 +202,50 @@ export class ModuleDetailsComponent implements OnInit {
   }
   // Helper methods for content display
   sanitizeHtml(html: string): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(html);
+    // Clean up the HTML to remove excessive whitespace
+    const cleanedHtml = this.cleanHtmlContent(html);
+    return this.sanitizer.bypassSecurityTrustHtml(cleanedHtml);
+  }
+
+  // Clean up HTML content to reduce excessive vertical spacing
+  private cleanHtmlContent(html: string): string {
+    if (!html) return html;
+    
+    return html
+      // Remove empty paragraphs first (multiple passes to catch nested ones)
+      .replace(/<p>\s*<\/p>/gi, '')
+      .replace(/<p><\/p>/gi, '')
+      .replace(/<p>\s*<\/p>/gi, '') // Second pass
+      // Remove paragraphs that only contain whitespace and breaks
+      .replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '')
+      .replace(/<p>\s*<br>\s*<\/p>/gi, '')
+      // Remove paragraphs with only bold breaks: <p><b><br></b></p>
+      .replace(/<p>\s*<b>\s*<br\s*\/?>\s*<\/b>\s*<\/p>/gi, '')
+      // Remove breaks that come immediately after headings (this is the key fix)
+      .replace(/(<\/h[1-6]>)\s*<br\s*\/?>/gi, '$1')
+      .replace(/(<\/h[1-6]>)\s*<br>/gi, '$1')
+      // Remove trailing breaks from headings (inside the heading)
+      .replace(/(<h[1-6][^>]*>.*?)<br\s*\/?>\s*(<\/h[1-6]>)/gi, '$1$2')
+      // Remove consecutive breaks (more than 1)
+      .replace(/(<br\s*\/?>){3,}/gi, '<br>')
+      .replace(/(<br\s*\/?>){2,}/gi, '<br>')
+      // Remove leading/trailing whitespace from paragraph content
+      .replace(/<p>\s+/gi, '<p>')
+      .replace(/\s+<\/p>/gi, '</p>')
+      // Clean up no-overflow containers with leading/trailing empty paragraphs
+      .replace(/(<div[^>]*class="no-overflow"[^>]*>)\s*<p>\s*<\/p>/gi, '$1')
+      .replace(/<p>\s*<\/p>\s*(<\/div>)/gi, '$1')
+      // Remove empty paragraphs at the start/end of any div
+      .replace(/(<div[^>]*>)\s*<p>\s*<\/p>/gi, '$1')
+      .replace(/<p>\s*<\/p>\s*(<\/div>)/gi, '$1')
+      // More aggressive removal of breaks after headings with any whitespace/paragraphs in between
+      .replace(/(<\/h[1-6]>)\s*<br\s*\/?>\s*<p>\s*<\/p>/gi, '$1')
+      .replace(/(<\/h[1-6]>)\s*<p>\s*<\/p>\s*<br\s*\/?>/gi, '$1')
+      // Remove standalone breaks at the end of containers
+      .replace(/<br\s*\/?>\s*(<\/div>)/gi, '$1')
+      // Clean up multiple consecutive whitespace
+      .replace(/\s{2,}/g, ' ')
+      .trim();
   }
 
   sanitizeUrl(url: string): SafeResourceUrl {

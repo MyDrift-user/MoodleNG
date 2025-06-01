@@ -126,7 +126,7 @@
   overflow: hidden;
   transition: transform 0.2s ease;
   margin-bottom: 2px; /* Minimal spacing between cards */
-  min-height: 20px;
+  min-height: 16px; /* Reduced from 20px */
   display: flex;
   flex-direction: column;
 
@@ -136,7 +136,7 @@
   }
 
   &.label-card {
-    padding: 6px 10px;
+    padding: 4px 8px;
     background-color: rgba(66, 66, 66, 0.5);
     box-shadow: none;
 
@@ -296,15 +296,57 @@ audio {
 
 /* Styles for label and resource content types */
 .label-content {
-  margin: 8px 0; // Reduced from 16px
+  margin: 4px 0; // Reduced from 8px
+  min-height: auto; // Override any inherited min-height
+  padding: 2px 0; // Minimal padding
+  
+  // Set a base color for all content to override any inline styles
+  color: rgba(255, 255, 255, 0.9) !important;
 
   ::ng-deep {
+    // Apply color to text elements only (excluding images and media)
     p,
     div,
     span,
-    li {
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 14px; // Reduced from 16px
+    li,
+    text,
+    strong,
+    b,
+    em,
+    i,
+    u {
+      color: rgba(255, 255, 255, 0.9) !important; // Use !important to override inline styles
+      font-size: 14px;
+      margin: 1px 0; // Further reduced from 2px 0
+      line-height: 1.3; // Tighter line height
+      
+      // Remove margin from empty elements
+      &:empty {
+        margin: 0;
+        display: none; // Hide completely empty elements
+      }
+    }
+
+    // Separate styling for images to ensure they display properly
+    img {
+      display: block !important; // Ensure images are visible
+      max-width: 100% !important;
+      height: auto !important;
+      border-radius: 4px;
+      margin: 4px 0 !important; // Specific margin for images
+      opacity: 1 !important; // Ensure visibility
+      visibility: visible !important; // Ensure visibility
+    }
+
+    // Be more aggressive with break tags
+    br {
+      line-height: 1;
+      display: none; // Hide all break tags in labels to prevent spacing
+    }
+    
+    // Remove spacing between consecutive breaks
+    br + br {
+      display: none; // Hide consecutive breaks
     }
 
     h1,
@@ -313,26 +355,76 @@ audio {
     h4,
     h5,
     h6 {
-      color: rgba(255, 255, 255, 1);
-      margin: 6px 0 3px; // Reduced top margin
+      color: rgba(255, 255, 255, 1) !important; // Use !important for headings too
+      margin: 2px 0 1px; // Further reduced from 4px 0 2px
       font-weight: 500;
-      font-size: 15px; // Smaller font size for headings
+      font-size: 15px;
+      line-height: 1.2; // Tighter line height
+      
+      // Remove trailing breaks from headings
+      br:last-child {
+        display: none;
+      }
+      
+      // Remove any breaks after headings
+      + br {
+        display: none;
+      }
     }
 
     a {
-      color: #90caf9;
+      color: #90caf9 !important; // Ensure links are visible
       text-decoration: none;
 
       &:hover {
         text-decoration: underline;
       }
     }
-
-    img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 4px;
-      margin: 6px 0; // Reduced from 8px
+    
+    // Special handling for the no-overflow container
+    .no-overflow {
+      // Ensure all text content in no-overflow containers has correct color
+      p,
+      div,
+      span,
+      li,
+      text,
+      strong,
+      b,
+      em,
+      i,
+      u {
+        color: rgba(255, 255, 255, 0.9) !important;
+      }
+      
+      // Ensure images in no-overflow containers are visible
+      img {
+        display: block !important;
+        max-width: 100% !important;
+        height: auto !important;
+        margin: 4px 0 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+      
+      p:empty {
+        display: none; // Hide empty paragraphs completely
+      }
+      
+      // Remove extra spacing from first elements
+      > *:first-child {
+        margin-top: 0;
+      }
+      
+      // Remove extra spacing from last elements
+      > *:last-child {
+        margin-bottom: 0;
+      }
+      
+      // Hide any break tags in no-overflow containers
+      br {
+        display: none !important;
+      }
     }
   }
 }
