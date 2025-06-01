@@ -46,9 +46,6 @@ export class AppComponent implements OnInit, OnDestroy {
         this.userSettingsService.initialize();
         this.initializationTimeout = null;
       }, 200);
-
-      // Check if we're returning from a Moodle unenrollment page
-      this.checkForUnenrollmentReturn();
     }
   }
 
@@ -67,44 +64,5 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Clean up user settings service resources
     this.userSettingsService.destroy();
-  }
-
-  /**
-   * Check if the app is being loaded after returning from a Moodle unenrollment page
-   */
-  private checkForUnenrollmentReturn(): void {
-    const unenrollingCourseId = localStorage.getItem('unenrolling_course_id');
-    const unenrollingTimestamp = localStorage.getItem('unenrolling_timestamp');
-
-    if (unenrollingCourseId && unenrollingTimestamp) {
-      // Check if we're within a reasonable timeframe (10 minutes)
-      const timestamp = parseInt(unenrollingTimestamp);
-      const now = Date.now();
-      const timeElapsed = now - timestamp;
-      const maxTimeWindow = 10 * 60 * 1000; // 10 minutes in milliseconds
-
-      if (timeElapsed < maxTimeWindow) {
-        // We've returned from the unenrollment page within a reasonable time
-        // Assume unenrollment was successful
-
-        // Show a success message
-        this.snackBar.open('You have been unenrolled from the course', 'Close', {
-          duration: 5000,
-        });
-
-        // Make sure we're on the dashboard
-        if (this.router.url.includes('/modules/')) {
-          this.router.navigate(['/']);
-        }
-
-        // Refresh the user's modules to reflect the unenrollment
-        const refreshSubscription = this.moodleService.getUserModules().subscribe();
-        this.subscriptions.add(refreshSubscription);
-      }
-
-      // Clear the unenrollment state regardless of time elapsed
-      localStorage.removeItem('unenrolling_course_id');
-      localStorage.removeItem('unenrolling_timestamp');
-    }
   }
 }

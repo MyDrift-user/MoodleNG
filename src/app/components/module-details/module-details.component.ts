@@ -118,12 +118,6 @@ export class ModuleDetailsComponent implements OnInit {
   // Track all sections in order
   sections: MoodleContent[] = [];
 
-  // Track unenrollment state
-  unenrolling = false;
-
-  // Add a property to track the confirmation state
-  confirmingUnenroll = false;
-
   constructor(
     private route: ActivatedRoute,
     public moodleService: MoodleService,
@@ -834,71 +828,5 @@ export class ModuleDetailsComponent implements OnInit {
   // Helper method to check if a value is NaN for use in the template
   isNaN(value: any): boolean {
     return Number.isNaN(value);
-  }
-
-  /**
-   * Handles the unenroll button click with a double-click confirmation pattern
-   */
-  unenrollFromCourse(): void {
-    // Don't allow unenrollment if already in progress
-    if (this.unenrolling) return;
-
-    // First click - enter confirmation state
-    if (!this.confirmingUnenroll) {
-      this.confirmingUnenroll = true;
-
-      // Auto-reset after 3 seconds if the user doesn't confirm
-      setTimeout(() => {
-        this.confirmingUnenroll = false;
-      }, 3000);
-
-      return;
-    }
-
-    // Second click - proceed with unenrollment
-    this.unenrolling = true;
-    this.confirmingUnenroll = false;
-
-    // Get the current site domain from the Moodle service
-    const site = this.moodleService.getCurrentSite();
-
-    if (!site || !site.domain) {
-      this.snackBar.open('Unable to unenroll: site information not available', 'Close', {
-        duration: 5000,
-      });
-      this.unenrolling = false;
-      return;
-    }
-
-    // Since the API approach isn't working, we'll try several possible URLs for Moodle unenrollment
-    // Note: Different Moodle versions and configurations use different URLs
-
-    // Try redirecting to the enrollment management page first
-    const unenrollOptions = [
-      // Most common URL for self-unenrollment page
-      `${site.domain}/enrol/index.php?id=${this.moduleId}`,
-      // Try Moodle 3.9+ unenrollment link
-      `${site.domain}/enrol/self/unenrolself.php?id=${this.moduleId}`,
-      // Direct course page as fallback
-      `${site.domain}/course/view.php?id=${this.moduleId}#section-0`,
-    ];
-
-    // Use the first option as the redirect URL
-    const unenrollUrl = unenrollOptions[0];
-
-    this.snackBar.open(`Redirecting to the enrollment page where you can unenroll`, 'Close', {
-      duration: 3000,
-    });
-
-    // After showing the message, redirect to Moodle
-    setTimeout(() => {
-      // Navigate to the unenrollment page
-      window.location.href = unenrollUrl;
-
-      // Also handle the redirect back to our app once the user is done
-      // Store some information in localStorage to help handle the return flow
-      localStorage.setItem('unenrolling_course_id', this.moduleId.toString());
-      localStorage.setItem('unenrolling_timestamp', Date.now().toString());
-    }, 1000);
   }
 }
