@@ -149,6 +149,15 @@
   &.resource-card {
     background-color: rgba(66, 66, 66, 0.8);
   }
+
+  &.indented {
+    border-left: 3px solid rgba(121, 134, 203, 0.3);
+    background-color: rgba(66, 66, 66, 0.6);
+    
+    &:hover {
+      border-left-color: rgba(121, 134, 203, 0.5);
+    }
+  }
 }
 
 /* Ensure all content types have consistent heights */
@@ -1447,5 +1456,36 @@ audio {
     font-style: italic;
     color: rgba(0, 0, 0, 0.7);
     border-left: 3px solid #ff5722;
+  }
+}
+
+/* Forum content styling */
+.forum-content {
+  margin: 8px 0;
+  
+  .content-header {
+    h3 mat-icon {
+      color: #ff9800; // Orange color for forum icon
+      background-color: rgba(255, 152, 0, 0.1);
+    }
+  }
+
+  ::ng-deep {
+    p,
+    div,
+    span,
+    li {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+    }
+
+    a {
+      color: #90caf9;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 }

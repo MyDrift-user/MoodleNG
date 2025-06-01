@@ -110,14 +110,40 @@
                   *ngFor="let content of groupedContents[section.id]; let j = index"
                   class="content-card fade-in"
                   [style.animation-delay]="i * 0.05 + j * 0.02 + 's'"
+                  [style.margin-left]="(content.indent || 0) * 20 + 'px'"
                   [ngClass]="{
                     'label-card': content.type === 'label',
                     'resource-card': content.type === 'resource',
+                    'indented': (content.indent || 0) > 0
                   }"
                 >
                   <ng-container [ngSwitch]="content.type">
                     <!-- Label (rendered directly without header) -->
                     <div *ngSwitchCase="'label'" class="label-content">
+                      <div
+                        *ngIf="content.content"
+                        [innerHTML]="sanitizeHtml(content.content)"
+                      ></div>
+                    </div>
+
+                    <!-- Forum Content -->
+                    <div *ngSwitchCase="'forum'" class="forum-content">
+                      <div class="content-header">
+                        <h3>
+                          <mat-icon>forum</mat-icon>
+                          <span class="content-title">{{ content.name }}</span>
+                        </h3>
+                        <div class="actions-container">
+                          <button
+                            mat-icon-button
+                            color="primary"
+                            (click)="openInNewTab(content.fileUrl || content.url)"
+                            matTooltip="Open Forum"
+                          >
+                            <mat-icon>open_in_new</mat-icon>
+                          </button>
+                        </div>
+                      </div>
                       <div
                         *ngIf="content.content"
                         [innerHTML]="sanitizeHtml(content.content)"

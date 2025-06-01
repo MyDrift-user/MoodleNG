@@ -38,6 +38,19 @@ export interface MoodleContent {
   timeModified?: Date;
   moduleId: number;
   modname?: string; // Added to track Moodle module type ('assign', 'quiz', etc.)
+  
+  // Additional fields from API response
+  description?: string; // Module description from API
+  url?: string; // Direct URL to the module
+  visible?: boolean; // Whether the module is visible
+  uservisible?: boolean; // Whether the module is visible to current user
+  visibleoncoursepage?: boolean; // Whether the module is visible on course page
+  modicon?: string; // URL to module icon
+  purpose?: string; // Purpose of the module (content, assessment, etc.)
+  indent?: number; // Indentation level
+  noviewlink?: boolean; // Whether to show view link
+  summary?: string; // Summary for sections
+  summaryformat?: number; // Summary format for sections
 }
 
 export interface MoodleLoginResponse {

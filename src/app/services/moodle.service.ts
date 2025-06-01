@@ -299,6 +299,14 @@ export class MoodleService {
                 allowLinks: true,
                 allowImages: true
               }),
+              summary: this.sanitization.sanitizeHtml(sanitizedSection.summary || '', {
+                allowBasicHtml: true,
+                allowLinks: true,
+                allowImages: true
+              }),
+              summaryformat: sanitizedSection.summaryformat,
+              visible: sanitizedSection.visible,
+              uservisible: sanitizedSection.uservisible,
               moduleId: courseId,
             });
           }
@@ -313,171 +321,152 @@ export class MoodleService {
                 allowImages: true
               });
 
-              // Special handling for assignments and quizzes
-              if (sanitizedModule.modname === 'assign' || sanitizedModule.modname === 'quiz') {
-                // Create content object for the module
-                const specialContent: MoodleContent = {
-                  id: sanitizedModule.id,
-                  name: this.sanitization.sanitizeText(sanitizedModule.name || ''),
-                  type: sanitizedModule.modname === 'assign' ? 'assignment' : 'quiz',
-                  content: this.sanitization.sanitizeHtml(sanitizedModule.description || '', {
-                    allowBasicHtml: true,
-                    allowLinks: true,
-                    allowImages: false
-                  }),
-                  moduleId: courseId,
-                  modname: sanitizedModule.modname,
-                  timeModified: sanitizedModule.timemodified
-                    ? new Date(sanitizedModule.timemodified * 1000)
-                    : undefined,
-                };
-
-                // Add direct link to Moodle activity
-                if (this.currentSite?.domain) {
-                  specialContent.fileUrl = this.sanitization.sanitizeUrl(
-                    `https://${this.currentSite.domain}/mod/${sanitizedModule.modname}/view.php?id=${sanitizedModule.id}`
-                  );
-                }
-
-                // Always add this content
-                allContents.push(specialContent);
-
-                // Continue to next module
+              // Skip invisible modules unless they should be shown
+              if (!sanitizedModule.uservisible && !sanitizedModule.visible) {
                 return;
               }
 
-              // Skip modules without contents (except assignments and quizzes, handled above)
-              if (!sanitizedModule.contents || sanitizedModule.contents.length === 0) {
-                return;
-              }
-
-              // Handle special case for labels - integrate them directly into section
-              if (sanitizedModule.modname === 'label') {
-                // Add label content directly to section without separate header
-                if (sanitizedModule.contents && sanitizedModule.contents.length > 0 && sanitizedModule.contents[0].content) {
-                  allContents.push({
-                    id: sanitizedModule.id,
-                    name: '', // No name for labels
-                    type: 'label',
-                    content: this.sanitization.sanitizeHtml(sanitizedModule.contents[0].content, {
-                      allowBasicHtml: true,
-                      allowLinks: true,
-                      allowImages: true
-                    }),
-                    moduleId: courseId,
-                  });
-                }
-                return;
-              }
-
-              // Create a main content object for each module
-              const mainContent: MoodleContent = {
+              // Create base content object for each module
+              const baseContent: MoodleContent = {
                 id: sanitizedModule.id,
                 name: this.sanitization.sanitizeText(sanitizedModule.name || ''),
-                type: sanitizedModule.modname || 'unknown', // Use modname as the initial type
-                content: this.sanitization.sanitizeHtml(sanitizedModule.description || '', {
+                type: sanitizedModule.modname || 'unknown',
+                description: this.sanitization.sanitizeHtml(sanitizedModule.description || '', {
                   allowBasicHtml: true,
                   allowLinks: true,
-                  allowImages: false
+                  allowImages: true
                 }),
+                url: sanitizedModule.url ? this.sanitization.sanitizeUrl(sanitizedModule.url) : undefined,
+                visible: sanitizedModule.visible,
+                uservisible: sanitizedModule.uservisible,
+                visibleoncoursepage: sanitizedModule.visibleoncoursepage,
+                modicon: sanitizedModule.modicon ? this.sanitization.sanitizeUrl(sanitizedModule.modicon) : undefined,
+                purpose: this.sanitization.sanitizeText(sanitizedModule.purpose || ''),
+                indent: sanitizedModule.indent || 0,
+                noviewlink: sanitizedModule.noviewlink,
                 moduleId: courseId,
-                modname: sanitizedModule.modname, // Add the modname property
+                modname: sanitizedModule.modname,
                 timeModified: sanitizedModule.timemodified
                   ? new Date(sanitizedModule.timemodified * 1000)
                   : undefined,
               };
 
-              // Set specific types for special modules
-              if (sanitizedModule.modname === 'assign') {
-                mainContent.type = 'assignment';
-              } else if (sanitizedModule.modname === 'quiz') {
-                mainContent.type = 'quiz';
-              }
+              // Handle different module types
+              switch (sanitizedModule.modname) {
+                case 'label':
+                  // Labels have their content in the description field
+                  baseContent.type = 'label';
+                  baseContent.content = baseContent.description; // Use description as content
+                  allContents.push(baseContent);
+                  break;
 
-              // Process contents of the module
-              if (sanitizedModule.contents) {
-                // For resources like files, combine all information into one entry
-                if (sanitizedModule.modname === 'resource' && sanitizedModule.contents.length > 0) {
-                  const fileContent = sanitizedModule.contents[0];
-                  mainContent.fileUrl = fileContent.fileurl
-                    ? this.appendTokenToUrl(this.sanitization.sanitizeUrl(fileContent.fileurl))
-                    : undefined;
-                  mainContent.mimeType = this.sanitization.sanitizeText(fileContent.mimetype || '');
-                  mainContent.type = this.determineContentType(fileContent);
-
-                  // If there's a description, add it to the main content
-                  const descriptionContent = sanitizedModule.contents.find(
-                    (c: any) => c.type === 'file' && c.content
-                  );
-                  if (descriptionContent) {
-                    mainContent.content = this.sanitization.sanitizeHtml(descriptionContent.content, {
-                      allowBasicHtml: true,
-                      allowLinks: true,
-                      allowImages: true
-                    });
+                case 'assign':
+                  baseContent.type = 'assignment';
+                  baseContent.content = baseContent.description;
+                  // Add direct link to assignment
+                  if (this.currentSite?.domain) {
+                    baseContent.fileUrl = this.sanitization.sanitizeUrl(
+                      `${this.currentSite.domain}/mod/assign/view.php?id=${sanitizedModule.id}`
+                    );
                   }
+                  allContents.push(baseContent);
+                  break;
 
-                  allContents.push(mainContent);
-                } // Handle URLs properly
-                else if (sanitizedModule.modname === 'url' && sanitizedModule.contents.length > 0) {
-                  const urlContent = sanitizedModule.contents[0];
+                case 'quiz':
+                  baseContent.type = 'quiz';
+                  baseContent.content = baseContent.description;
+                  // Add direct link to quiz
+                  if (this.currentSite?.domain) {
+                    baseContent.fileUrl = this.sanitization.sanitizeUrl(
+                      `${this.currentSite.domain}/mod/quiz/view.php?id=${sanitizedModule.id}`
+                    );
+                  }
+                  allContents.push(baseContent);
+                  break;
 
-                  // For external URL modules, extract the correct URL
-                  // from the fileurl parameter or externalurl
-                  let externalUrl = '';
-                  if (urlContent.fileurl) {
-                    // The URL is often embedded as a parameter in the fileurl
-                    const urlMatch = urlContent.fileurl.match(/url=([^&]+)/);
-                    if (urlMatch && urlMatch[1]) {
-                      externalUrl = decodeURIComponent(urlMatch[1]);
-                    } else {
-                      externalUrl = urlContent.fileurl;
+                case 'forum':
+                  baseContent.type = 'forum';
+                  baseContent.content = baseContent.description;
+                  baseContent.fileUrl = baseContent.url; // Use the URL from the module
+                  allContents.push(baseContent);
+                  break;
+
+                case 'resource':
+                  // Handle file resources
+                  if (sanitizedModule.contents && sanitizedModule.contents.length > 0) {
+                    const fileContent = sanitizedModule.contents[0];
+                    baseContent.fileUrl = fileContent.fileurl
+                      ? this.appendTokenToUrl(this.sanitization.sanitizeUrl(fileContent.fileurl))
+                      : undefined;
+                    baseContent.mimeType = this.sanitization.sanitizeText(fileContent.mimetype || '');
+                    baseContent.type = this.determineContentType(fileContent);
+                    baseContent.content = baseContent.description; // Use description for resource content
+                    baseContent.timeCreated = fileContent.timecreated
+                      ? new Date(fileContent.timecreated * 1000)
+                      : undefined;
+                    baseContent.timeModified = fileContent.timemodified
+                      ? new Date(fileContent.timemodified * 1000)
+                      : undefined;
+                  } else {
+                    baseContent.type = 'resource';
+                    baseContent.content = baseContent.description;
+                  }
+                  allContents.push(baseContent);
+                  break;
+
+                case 'url':
+                  // Handle URL resources
+                  baseContent.type = 'url';
+                  baseContent.content = baseContent.description;
+                  if (sanitizedModule.contents && sanitizedModule.contents.length > 0) {
+                    const urlContent = sanitizedModule.contents[0];
+                    // Extract external URL from fileurl parameter
+                    if (urlContent.fileurl) {
+                      const urlMatch = urlContent.fileurl.match(/url=([^&]+)/);
+                      if (urlMatch && urlMatch[1]) {
+                        baseContent.fileUrl = this.sanitization.sanitizeUrl(decodeURIComponent(urlMatch[1]));
+                      } else {
+                        baseContent.fileUrl = this.sanitization.sanitizeUrl(urlContent.fileurl);
+                      }
                     }
+                  } else if (baseContent.url) {
+                    // Use the module URL if no contents
+                    baseContent.fileUrl = baseContent.url;
                   }
+                  allContents.push(baseContent);
+                  break;
 
-                  mainContent.fileUrl = this.sanitization.sanitizeUrl(externalUrl);
-                  mainContent.type = 'url';
-
-                  // If there's a description, add it to the main content
-                  if (urlContent.content) {
-                    mainContent.content = this.sanitization.sanitizeHtml(urlContent.content, {
-                      allowBasicHtml: true,
-                      allowLinks: true,
-                      allowImages: true
+                default:
+                  // Handle any other module types
+                  baseContent.content = baseContent.description;
+                  // If module has contents, process them
+                  if (sanitizedModule.contents && sanitizedModule.contents.length > 0) {
+                    sanitizedModule.contents.forEach((content: any) => {
+                      if (content.type === 'file' && content.mimetype) {
+                        const subContent: MoodleContent = {
+                          ...baseContent,
+                          id: content.fileurl ? content.fileurl.hashCode() : Math.random(),
+                          name: this.sanitization.sanitizeText(content.filename || content.name || baseContent.name),
+                          type: this.determineContentType(content),
+                          fileUrl: content.fileurl
+                            ? this.appendTokenToUrl(this.sanitization.sanitizeUrl(content.fileurl))
+                            : undefined,
+                          mimeType: this.sanitization.sanitizeText(content.mimetype || ''),
+                          timeCreated: content.timecreated
+                            ? new Date(content.timecreated * 1000)
+                            : undefined,
+                          timeModified: content.timemodified
+                            ? new Date(content.timemodified * 1000)
+                            : undefined,
+                        };
+                        allContents.push(subContent);
+                      }
                     });
+                  } else {
+                    // No contents, just add the base module
+                    allContents.push(baseContent);
                   }
-
-                  allContents.push(mainContent);
-                }
-                // Handle other module types (assignments and quizzes now handled earlier)
-                else {
-                  allContents.push(mainContent);
-
-                  // Add subcontents as needed
-                  sanitizedModule.contents.forEach((content: any) => {
-                    // Skip content that's just metadata or already processed
-                    if (content.type === 'file' && content.mimetype) {
-                      allContents.push({
-                        id: content.fileurl ? content.fileurl.hashCode() : Math.random(),
-                        name: this.sanitization.sanitizeText(content.filename || content.name || 'Content'),
-                        type: this.determineContentType(content),
-                        content: this.sanitization.sanitizeHtml(content.content || '', {
-                          allowBasicHtml: true,
-                          allowLinks: true,
-                          allowImages: true
-                        }),
-                        fileUrl: content.fileurl
-                          ? this.appendTokenToUrl(this.sanitization.sanitizeUrl(content.fileurl))
-                          : undefined,
-                        mimeType: this.sanitization.sanitizeText(content.mimetype || ''),
-                        timeModified: content.timemodified
-                          ? new Date(content.timemodified * 1000)
-                          : undefined,
-                        moduleId: courseId,
-                      });
-                    }
-                  });
-                }
+                  break;
               }
             });
           }
