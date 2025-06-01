@@ -212,6 +212,7 @@
     display: flex;
     align-items: center;
     padding: 4px;
+    gap: 4px;
     box-sizing: border-box;
 
     .mat-button-toggle {
@@ -1249,6 +1250,22 @@ mat-card-content {
       border-color: rgba(121, 134, 203, 0.6);
       transform: translateY(-1px);
       box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    }
+    
+    &.clickable-pill {
+      cursor: pointer;
+      
+      &:hover {
+        background: linear-gradient(135deg, rgba(121, 134, 203, 1), rgba(97, 110, 179, 1));
+        border-color: rgba(121, 134, 203, 0.8);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+      }
+      
+      &:active {
+        transform: translateY(0px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
     }
     
     .subject-icon {

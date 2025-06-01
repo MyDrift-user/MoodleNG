@@ -127,7 +127,7 @@
               
               <!-- Course Subject Section in Search Results -->
               <div *ngIf="course.subject" class="subject-section search-subject">
-                <div class="subject-pill">
+                <div class="subject-pill clickable-pill" (click)="filterBySubject(course.subject); $event.stopPropagation()">
                   <mat-icon class="subject-icon">category</mat-icon>
                   <span class="subject-name">{{ course.subject }}</span>
                 </div>
@@ -291,7 +291,7 @@
               
               <!-- Course Subject Section -->
               <div *ngIf="module.subject" class="subject-section">
-                <div class="subject-pill">
+                <div class="subject-pill clickable-pill" (click)="filterBySubject(module.subject); $event.stopPropagation()">
                   <mat-icon class="subject-icon">category</mat-icon>
                   <span class="subject-name">{{ module.subject }}</span>
                 </div>

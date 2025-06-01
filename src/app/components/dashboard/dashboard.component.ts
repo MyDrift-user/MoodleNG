@@ -642,4 +642,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
     this.showFilters = !this.showFilters;
   }
+
+  /**
+   * Filter by a specific subject when clicking on a subject pill (toggle behavior)
+   */
+  filterBySubject(subject: string): void {
+    if (!subject || !this.availableSubjects.includes(subject)) {
+      return;
+    }
+
+    // Check if this subject is already being filtered
+    const isCurrentlyFiltered = this.selectedSubjects.includes(subject);
+    
+    if (isCurrentlyFiltered) {
+      // Remove the filter (toggle off)
+      this.selectedSubjects = this.selectedSubjects.filter(s => s !== subject);
+    } else {
+      // Clear any existing filters and add this one (toggle on)
+      this.selectedSubjects = [subject];
+    }
+    
+    this.applyFiltersAndSorting();
+  }
 }
