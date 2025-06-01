@@ -1,0 +1,191 @@
+<div class="file-storage-container">
+  <!-- Toolbar -->
+  <mat-toolbar color="primary" class="toolbar">
+    <button mat-icon-button (click)="goBack()" aria-label="Back" matTooltip="Back to Dashboard">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span class="app-title">Private File Storage</span>
+    <span class="spacer"></span>
+    <button
+      mat-raised-button
+      color="accent"
+      (click)="triggerFileUpload()"
+      [disabled]="uploading"
+      class="upload-button"
+    >
+      <mat-icon>cloud_upload</mat-icon>
+      {{ uploading ? 'Uploading...' : 'Upload File' }}
+    </button>
+  </mat-toolbar>
+
+  <!-- Hidden file input -->
+  <input
+    #fileInput
+    type="file"
+    style="display: none"
+    (change)="onFileSelected($event)"
+    multiple="false"
+  />
+
+  <div class="content-wrapper">
+    <div class="content-container">
+      <!-- Storage Information -->
+      <mat-card class="storage-info-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>storage</mat-icon>
+            Storage Usage
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="storage-details">
+            <div class="storage-text">
+              {{ formatFileSize(storageInfo.used) }} of {{ formatFileSize(storageInfo.quota) }} used
+              ({{ getStoragePercentage().toFixed(1) }}%)
+            </div>
+            <mat-progress-bar
+              [value]="getStoragePercentage()"
+              [color]="getStorageColor()"
+              class="storage-bar"
+            ></mat-progress-bar>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Upload Area -->
+      <mat-card 
+        class="upload-area"
+        (drop)="onFileDrop($event)"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        [class.uploading]="uploading"
+      >
+        <mat-card-content>
+          <div class="upload-content">
+            <mat-icon class="upload-icon">cloud_upload</mat-icon>
+            <div class="upload-text">
+              <ng-container *ngIf="!uploading">
+                <h3>Drop files here or click to upload</h3>
+                <p>Drag and drop files here, or click the upload button above</p>
+              </ng-container>
+              <ng-container *ngIf="uploading">
+                <mat-spinner diameter="40"></mat-spinner>
+                <h3>Uploading file...</h3>
+              </ng-container>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading your files...</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="error" class="error-container">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <p>{{ error }}</p>
+        <button mat-raised-button color="primary" (click)="loadFiles()">Try Again</button>
+      </div>
+
+      <!-- Files Table -->
+      <mat-card *ngIf="!loading && !error" class="files-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>folder</mat-icon>
+            Your Files ({{ files.length }})
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div *ngIf="files.length === 0" class="empty-state">
+            <mat-icon>cloud_off</mat-icon>
+            <p>No files uploaded yet</p>
+            <p>Upload your first file to get started</p>
+          </div>
+
+          <div *ngIf="files.length > 0" class="files-table-container">
+            <table mat-table [dataSource]="files" class="files-table">
+              <!-- Name Column -->
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>Name</th>
+                <td mat-cell *matCellDef="let file" class="name-cell">
+                  <div class="file-name-container">
+                    <mat-icon class="file-icon">{{ getFileIcon(file.mimetype) }}</mat-icon>
+                    <div class="file-name" [matTooltip]="file.filename">
+                      {{ file.filename }}
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Size Column -->
+              <ng-container matColumnDef="size">
+                <th mat-header-cell *matHeaderCellDef>Size</th>
+                <td mat-cell *matCellDef="let file">
+                  {{ formatFileSize(file.filesize) }}
+                </td>
+              </ng-container>
+
+              <!-- Type Column -->
+              <ng-container matColumnDef="type">
+                <th mat-header-cell *matHeaderCellDef>Type</th>
+                <td mat-cell *matCellDef="let file">
+                  <span class="file-type">{{ file.mimetype || 'Unknown' }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Modified Column -->
+              <ng-container matColumnDef="modified">
+                <th mat-header-cell *matHeaderCellDef>Modified</th>
+                <td mat-cell *matCellDef="let file">
+                  {{ formatDate(file.timemodified) }}
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Actions</th>
+                <td mat-cell *matCellDef="let file">
+                  <div class="actions-container">
+                    <button
+                      mat-icon-button
+                      [matTooltip]="'Preview ' + file.filename"
+                      (click)="previewFile(file)"
+                      [disabled]="!canPreview(file.mimetype)"
+                      class="action-button"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+
+                    <button
+                      mat-icon-button
+                      [matTooltip]="'Download ' + file.filename"
+                      (click)="downloadFile(file)"
+                      class="action-button"
+                    >
+                      <mat-icon>download</mat-icon>
+                    </button>
+
+                    <button
+                      mat-icon-button
+                      [matTooltip]="'Delete ' + file.filename"
+                      (click)="deleteFile(file)"
+                      class="action-button delete-button"
+                    >
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="file-row"></tr>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div> 

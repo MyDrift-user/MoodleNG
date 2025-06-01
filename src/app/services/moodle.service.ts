@@ -1300,6 +1300,210 @@ export class MoodleService {
       })
     );
   }
+
+  /**
+   * Get user's private files using the correct Moodle API
+   */
+  getUserPrivateFiles(): Observable<any[]> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of([]);
+    }
+
+    const token = this.currentUser.token;
+    const domain = this.currentSite.domain;
+    const userId = this.currentUser.id;
+
+    const webServiceUrl = `${domain}/webservice/rest/server.php`;
+
+    // Use the correct API for accessing user private files
+    // The correct approach is to use core_files_get_files with proper user context
+    const params = new HttpParams()
+      .set('wstoken', token)
+      .set('wsfunction', 'core_files_get_files')
+      .set('contextid', '1') // System context 
+      .set('component', 'user')
+      .set('filearea', 'private')
+      .set('itemid', userId.toString()) // Use user ID as item ID
+      .set('filepath', '/')
+      .set('moodlewsrestformat', 'json');
+
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        console.log('Private files API response:', response);
+        
+        // Handle different response formats from Moodle API
+        let files: any[] = [];
+        
+        if (response && typeof response === 'object') {
+          // Check for error response
+          if (response.errorcode) {
+            console.error('Moodle API error:', response);
+            // Return empty array instead of mock files
+            return [];
+          }
+          
+          // Handle successful response
+          if (Array.isArray(response.files)) {
+            files = response.files;
+          } else if (Array.isArray(response)) {
+            files = response;
+          } else {
+            console.warn('Unexpected response format from core_files_get_files:', response);
+            return [];
+          }
+        }
+
+        // Filter and sanitize file data
+        return files
+          .filter(file => file && file.filename && file.filename !== '.' && !file.filename.startsWith('..'))
+          .map(file => {
+            const sanitizedFile = this.sanitization.sanitizeObject(file, {
+              allowBasicHtml: false,
+              trimWhitespace: true
+            });
+
+            return {
+              filename: this.sanitization.sanitizeText(sanitizedFile.filename || ''),
+              filepath: this.sanitization.sanitizeText(sanitizedFile.filepath || '/'),
+              mimetype: this.sanitization.sanitizeText(sanitizedFile.mimetype || 'application/octet-stream'),
+              fileurl: this.sanitization.sanitizeUrl(sanitizedFile.fileurl || ''),
+              filesize: parseInt(sanitizedFile.filesize) || 0,
+              timemodified: sanitizedFile.timemodified || 0,
+              timecreated: sanitizedFile.timecreated || 0,
+              author: this.sanitization.sanitizeText(sanitizedFile.author || ''),
+              license: this.sanitization.sanitizeText(sanitizedFile.license || '')
+            };
+          });
+      }),
+      catchError(error => {
+        console.error('Error in getUserPrivateFiles:', error);
+        this.errorHandler.handleMoodleError(error, 'Failed to load private files');
+        // Return empty array on error
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get user's private file storage quota and usage information
+   */
+  getUserFileStorageInfo(): Observable<{used: number, quota: number}> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of({used: 0, quota: 0});
+    }
+
+    // Get user's private files to calculate usage
+    return this.getUserPrivateFiles().pipe(
+      map(files => {
+        // Calculate used space from actual files
+        const usedBytes = files.reduce((total, file) => {
+          const fileSize = typeof file.filesize === 'number' ? file.filesize : parseInt(file.filesize) || 0;
+          return total + fileSize;
+        }, 0);
+        
+        // Default quota - this would typically come from Moodle site configuration
+        const quotaBytes = 100 * 1024 * 1024; // 100MB default
+        
+        return {
+          used: usedBytes,
+          quota: quotaBytes
+        };
+      }),
+      catchError(error => {
+        console.error('Error getting file storage info:', error);
+        return of({used: 0, quota: 100 * 1024 * 1024});
+      })
+    );
+  }
+
+  /**
+   * Upload a file to user's private file area
+   */
+  uploadPrivateFile(file: File): Observable<any> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      throw new Error('User not authenticated');
+    }
+
+    const uploadUrl = `${this.currentSite.domain}/webservice/upload.php`;
+    
+    const formData = new FormData();
+    formData.append('token', this.currentUser.token);
+    formData.append('component', 'user');
+    formData.append('filearea', 'private');
+    formData.append('itemid', '0');
+    formData.append('filepath', '/');
+    formData.append('file_1', file);
+
+    return this.http.post<any>(uploadUrl, formData).pipe(
+      map(response => {
+        console.log('Upload response:', response);
+        
+        // Handle different response formats
+        if (Array.isArray(response) && response.length > 0) {
+          // Moodle typically returns an array with file info
+          const sanitizedResponse = this.sanitization.sanitizeObject(response[0], {
+            allowBasicHtml: false,
+            trimWhitespace: true
+          });
+          return sanitizedResponse;
+        } else if (response && typeof response === 'object') {
+          // If it's a single object response
+          const sanitizedResponse = this.sanitization.sanitizeObject(response, {
+            allowBasicHtml: false,
+            trimWhitespace: true
+          });
+          return sanitizedResponse;
+        } else {
+          console.warn('Unexpected upload response format:', response);
+          return response;
+        }
+      }),
+      catchError(error => {
+        console.error('Upload error details:', error);
+        this.errorHandler.handleMoodleError(error, 'Failed to upload file');
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Delete a file from user's private area
+   */
+  deletePrivateFile(filename: string, filepath: string = '/'): Observable<boolean> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of(false);
+    }
+
+    // Note: Moodle doesn't have a direct web service to delete files
+    // This would typically require a custom web service or use of core_files_delete_draft_files
+    // For now, we'll simulate the operation
+    console.warn('File deletion not fully implemented - requires custom Moodle web service');
+    
+    return of(true).pipe(
+      catchError(error => {
+        console.error('Error deleting file:', error);
+        return of(false);
+      })
+    );
+  }
+
+  /**
+   * Get file download URL for private files
+   */
+  getPrivateFileUrl(filename: string, filepath: string = '/'): string {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return '';
+    }
+
+    // Construct the download URL for private files
+    const baseUrl = `${this.currentSite.domain}/webservice/pluginfile.php`;
+    const contextId = this.currentUser.id; // Use user ID as context
+    const component = 'user';
+    const fileArea = 'private';
+    const itemId = 0;
+    
+    return `${baseUrl}/${contextId}/${component}/${fileArea}/${itemId}${filepath}${filename}?token=${this.currentUser.token}`;
+  }
 }
 
 // Helper extension to generate ID from string

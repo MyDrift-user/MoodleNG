@@ -1,0 +1,461 @@
+.file-storage-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #303030;
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+  .app-title {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.upload-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  min-width: 120px;
+  border-radius: 21px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+
+  mat-icon {
+    margin-right: 4px;
+  }
+}
+
+.content-wrapper {
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  flex: 1;
+  background-color: #303030;
+  padding: 0 16px;
+}
+
+.content-container {
+  width: 100%;
+  max-width: 1200px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.storage-info-card {
+  background-color: #424242;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+
+  mat-card-header {
+    padding: 16px 16px 0 16px;
+  }
+
+  mat-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 18px;
+    font-weight: 500;
+
+    mat-icon {
+      color: #7986cb;
+    }
+  }
+
+  mat-card-content {
+    padding: 16px;
+  }
+
+  .storage-details {
+    .storage-text {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .storage-bar {
+      height: 8px;
+      border-radius: 4px;
+    }
+  }
+}
+
+.upload-area {
+  background-color: #424242;
+  border-radius: 12px;
+  border: 2px dashed rgba(121, 134, 203, 0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    border-color: rgba(121, 134, 203, 0.8);
+    background-color: rgba(121, 134, 203, 0.05);
+  }
+
+  &.uploading {
+    border-color: #7986cb;
+    background-color: rgba(121, 134, 203, 0.1);
+  }
+
+  mat-card-content {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .upload-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+
+    .upload-icon {
+      font-size: 48px;
+      height: 48px;
+      width: 48px;
+      color: rgba(121, 134, 203, 0.7);
+    }
+
+    .upload-text {
+      h3 {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 18px;
+        font-weight: 500;
+      }
+
+      p {
+        margin: 8px 0 0 0;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+.files-card {
+  background-color: #424242;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+
+  mat-card-header {
+    padding: 16px 16px 0 16px;
+  }
+
+  mat-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 18px;
+    font-weight: 500;
+
+    mat-icon {
+      color: #7986cb;
+    }
+  }
+
+  mat-card-content {
+    padding: 0 16px 16px 16px;
+  }
+}
+
+.files-table-container {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+.files-table {
+  width: 100%;
+  background-color: transparent;
+
+  .mat-mdc-header-cell {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .mat-mdc-cell {
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .file-row {
+    &:hover {
+      background-color: rgba(121, 134, 203, 0.1);
+    }
+  }
+
+  .name-cell {
+    .file-name-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .file-icon {
+        color: #7986cb;
+        font-size: 20px;
+        height: 20px;
+        width: 20px;
+      }
+
+      .file-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 200px;
+      }
+    }
+  }
+
+  .file-type {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(121, 134, 203, 0.2);
+    padding: 4px 8px;
+    border-radius: 12px;
+    display: inline-block;
+  }
+
+  .actions-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    min-width: 120px;
+
+    .action-button {
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+      color: rgba(255, 255, 255, 0.8);
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        color: #fff;
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      &.delete-button:hover:not(:disabled) {
+        color: #f44336;
+        background-color: rgba(244, 67, 54, 0.1);
+      }
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+}
+
+.loading-container,
+.error-container,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  background-color: rgba(66, 66, 66, 0.5);
+  padding: 32px;
+  margin: 24px 0;
+
+  p {
+    margin: 16px 0;
+    font-size: 16px;
+  }
+
+  mat-icon {
+    font-size: 48px;
+    height: 48px;
+    width: 48px;
+    margin-bottom: 16px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+}
+
+.error-container {
+  background-color: rgba(244, 67, 54, 0.1);
+
+  .error-icon {
+    color: #f44336;
+  }
+
+  p {
+    color: #f44336;
+  }
+
+  button {
+    margin-top: 16px;
+  }
+}
+
+.empty-state {
+  mat-icon {
+    color: rgba(121, 134, 203, 0.5);
+  }
+}
+
+// Snackbar styles
+::ng-deep {
+  .success-snackbar {
+    background-color: #4caf50 !important;
+    color: white !important;
+  }
+
+  .error-snackbar {
+    background-color: #f44336 !important;
+    color: white !important;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .content-container {
+    padding: 16px;
+  }
+
+  .upload-area {
+    min-height: 150px;
+
+    .upload-content {
+      .upload-icon {
+        font-size: 36px;
+        height: 36px;
+        width: 36px;
+      }
+
+      .upload-text {
+        h3 {
+          font-size: 16px;
+        }
+
+        p {
+          font-size: 13px;
+        }
+      }
+    }
+  }
+
+  .files-table {
+    .name-cell {
+      .file-name-container {
+        .file-name {
+          max-width: 120px;
+        }
+      }
+    }
+
+    .actions-container {
+      flex-direction: column;
+      gap: 2px;
+    }
+  }
+
+  .upload-button {
+    min-width: 100px;
+    
+    .mat-button-wrapper {
+      font-size: 14px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .content-container {
+    padding: 12px;
+    gap: 16px;
+  }
+
+  .storage-info-card,
+  .files-card {
+    mat-card-header {
+      padding: 12px 12px 0 12px;
+    }
+
+    mat-card-content {
+      padding: 12px;
+    }
+
+    mat-card-title {
+      font-size: 16px;
+    }
+  }
+
+  // Hide some columns on small screens
+  .files-table {
+    .mat-column-type,
+    .mat-column-modified {
+      display: none;
+    }
+  }
+}
+
+// Material table overrides for dark theme
+::ng-deep {
+  .mat-mdc-table {
+    .mdc-data-table__header-cell {
+      color: rgba(255, 255, 255, 0.8);
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .mdc-data-table__cell {
+      color: rgba(255, 255, 255, 0.9);
+      border-bottom-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .mdc-data-table__row:hover .mdc-data-table__cell {
+      background-color: rgba(121, 134, 203, 0.1);
+    }
+  }
+}
+
+// Global snackbar styles
+:host ::ng-deep {
+  .info-snackbar {
+    .mdc-snackbar__surface {
+      background-color: #2196f3 !important;
+      color: white !important;
+    }
+  }
+
+  .success-snackbar {
+    .mdc-snackbar__surface {
+      background-color: #4caf50 !important;
+      color: white !important;
+    }
+  }
+
+  .error-snackbar {
+    .mdc-snackbar__surface {
+      background-color: #f44336 !important;
+      color: white !important;
+    }
+  }
+} 
