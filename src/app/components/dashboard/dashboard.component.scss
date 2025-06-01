@@ -1,7 +1,7 @@
 .dashboard-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   overflow: hidden;
   background-color: #303030;
 
@@ -145,6 +145,7 @@
   flex: 1;
   background-color: #303030;
   padding: 0 16px;
+  min-height: 0;
 }
 
 .content-container {
@@ -155,6 +156,8 @@
   border-radius: 0 0 8px 8px;
   margin: 0 auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-height: fit-content;
+  height: auto;
 }
 
 .header {
