@@ -174,8 +174,136 @@
                           </button>
                         </div>
                       </div>
+                      
+                      <!-- Assignment Details -->
+                      <div class="assignment-details" *ngIf="content.dueDate || content.grade || content.maxAttempts">
+                        <div class="assignment-info-grid">
+                          <div *ngIf="content.dueDate" class="info-item">
+                            <mat-icon>schedule</mat-icon>
+                            <span class="info-label">Due:</span>
+                            <span class="info-value">{{ content.dueDate | date:'medium' }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.grade" class="info-item">
+                            <mat-icon>grade</mat-icon>
+                            <span class="info-label">Max Grade:</span>
+                            <span class="info-value">{{ content.grade }} points</span>
+                          </div>
+                          
+                          <div *ngIf="content.maxAttempts && content.maxAttempts !== -1" class="info-item">
+                            <mat-icon>repeat</mat-icon>
+                            <span class="info-label">Attempts:</span>
+                            <span class="info-value">{{ content.maxAttempts }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.maxAttempts === -1" class="info-item">
+                            <mat-icon>all_inclusive</mat-icon>
+                            <span class="info-label">Attempts:</span>
+                            <span class="info-value">Unlimited</span>
+                          </div>
+                          
+                          <div *ngIf="content.maxFileSubmissions" class="info-item">
+                            <mat-icon>attach_file</mat-icon>
+                            <span class="info-label">Max Files:</span>
+                            <span class="info-value">{{ content.maxFileSubmissions }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.maxSubmissionSizeBytes" class="info-item">
+                            <mat-icon>storage</mat-icon>
+                            <span class="info-label">Max Size:</span>
+                            <span class="info-value">{{ formatFileSize(content.maxSubmissionSizeBytes) }}</span>
+                          </div>
+                        </div>
+                        
+                        <!-- Assignment flags -->
+                        <div class="assignment-flags" *ngIf="content.teamSubmission || content.blindMarking || content.requireSubmissionStatement">
+                          <mat-chip-listbox>
+                            <mat-chip *ngIf="content.teamSubmission" class="flag-chip">
+                              <mat-icon matChipAvatar>group</mat-icon>
+                              Team Submission
+                            </mat-chip>
+                            <mat-chip *ngIf="content.blindMarking" class="flag-chip">
+                              <mat-icon matChipAvatar>visibility_off</mat-icon>
+                              Blind Marking
+                            </mat-chip>
+                            <mat-chip *ngIf="content.requireSubmissionStatement" class="flag-chip">
+                              <mat-icon matChipAvatar>rule</mat-icon>
+                              Statement Required
+                            </mat-chip>
+                          </mat-chip-listbox>
+                        </div>
+                      </div>
+                      
+                      <!-- Submission Status -->
+                      <div class="submission-status">
+                        <h4>Submission Status</h4>
+                        <div class="status-info-grid">
+                          <div class="status-item">
+                            <mat-icon>{{ getSubmissionStatusIcon(content.submissionStatus) }}</mat-icon>
+                            <span class="status-label">Status:</span>
+                            <span class="status-value" [ngClass]="getSubmissionStatusClass(content.submissionStatus)">
+                              {{ getSubmissionStatusLabel(content.submissionStatus) }}
+                            </span>
+                          </div>
+                          
+                          <div *ngIf="content.submissionGradingStatus" class="status-item">
+                            <mat-icon>{{ getGradingStatusIcon(content.submissionGradingStatus) }}</mat-icon>
+                            <span class="status-label">Grading:</span>
+                            <span class="status-value" [ngClass]="getGradingStatusClass(content.submissionGradingStatus)">
+                              {{ getGradingStatusLabel(content.submissionGradingStatus) }}
+                            </span>
+                          </div>
+                          
+                          <div *ngIf="content.submissionTimeModified" class="status-item">
+                            <mat-icon>update</mat-icon>
+                            <span class="status-label">Last Modified:</span>
+                            <span class="status-value">{{ content.submissionTimeModified | date:'medium' }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.submissionGrade !== undefined && content.submissionGrade !== null" class="status-item">
+                            <mat-icon>grade</mat-icon>
+                            <span class="status-label">Grade:</span>
+                            <span class="status-value grade-received">{{ content.submissionGrade }} / {{ content.grade }}</span>
+                          </div>
+                        </div>
+                        
+                        <!-- Submitted Files -->
+                        <div *ngIf="content.submissionFiles && content.submissionFiles.length > 0" class="submitted-files">
+                          <h5>Submitted Files:</h5>
+                          <div class="files-list">
+                            <div *ngFor="let file of content.submissionFiles" class="submitted-file">
+                              <mat-icon>{{ getFileIcon(file.mimetype) }}</mat-icon>
+                              <span class="file-name">{{ file.filename }}</span>
+                              <span class="file-size">({{ formatFileSize(file.filesize) }})</span>
+                              <button mat-icon-button color="accent" (click)="openInNewTab(file.fileurl)" matTooltip="Download File">
+                                <mat-icon>download</mat-icon>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <!-- Submitted Text -->
+                        <div *ngIf="content.submissionText" class="submitted-text">
+                          <h5>Submitted Text:</h5>
+                          <div class="text-submission" [innerHTML]="sanitizeHtml(content.submissionText)"></div>
+                        </div>
+                        
+                        <!-- Submission Comments -->
+                        <div *ngIf="content.submissionComments" class="submission-comments">
+                          <h5>Comments:</h5>
+                          <div class="comments-content" [innerHTML]="sanitizeHtml(content.submissionComments)"></div>
+                        </div>
+                        
+                        <!-- Feedback -->
+                        <div *ngIf="content.submissionFeedback" class="submission-feedback">
+                          <h5>Feedback:</h5>
+                          <div class="feedback-content" [innerHTML]="sanitizeHtml(content.submissionFeedback)"></div>
+                        </div>
+                      </div>
+                      
                       <div
                         *ngIf="content.content"
+                        class="text-container"
                         [innerHTML]="sanitizeHtml(content.content)"
                       ></div>
                     </div>
@@ -204,8 +332,136 @@
                           </button>
                         </div>
                       </div>
+                      
+                      <!-- Assignment Details (same as above) -->
+                      <div class="assignment-details" *ngIf="content.dueDate || content.grade || content.maxAttempts">
+                        <div class="assignment-info-grid">
+                          <div *ngIf="content.dueDate" class="info-item">
+                            <mat-icon>schedule</mat-icon>
+                            <span class="info-label">Due:</span>
+                            <span class="info-value">{{ content.dueDate | date:'medium' }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.grade" class="info-item">
+                            <mat-icon>grade</mat-icon>
+                            <span class="info-label">Max Grade:</span>
+                            <span class="info-value">{{ content.grade }} points</span>
+                          </div>
+                          
+                          <div *ngIf="content.maxAttempts && content.maxAttempts !== -1" class="info-item">
+                            <mat-icon>repeat</mat-icon>
+                            <span class="info-label">Attempts:</span>
+                            <span class="info-value">{{ content.maxAttempts }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.maxAttempts === -1" class="info-item">
+                            <mat-icon>all_inclusive</mat-icon>
+                            <span class="info-label">Attempts:</span>
+                            <span class="info-value">Unlimited</span>
+                          </div>
+                          
+                          <div *ngIf="content.maxFileSubmissions" class="info-item">
+                            <mat-icon>attach_file</mat-icon>
+                            <span class="info-label">Max Files:</span>
+                            <span class="info-value">{{ content.maxFileSubmissions }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.maxSubmissionSizeBytes" class="info-item">
+                            <mat-icon>storage</mat-icon>
+                            <span class="info-label">Max Size:</span>
+                            <span class="info-value">{{ formatFileSize(content.maxSubmissionSizeBytes) }}</span>
+                          </div>
+                        </div>
+                        
+                        <!-- Assignment flags -->
+                        <div class="assignment-flags" *ngIf="content.teamSubmission || content.blindMarking || content.requireSubmissionStatement">
+                          <mat-chip-listbox>
+                            <mat-chip *ngIf="content.teamSubmission" class="flag-chip">
+                              <mat-icon matChipAvatar>group</mat-icon>
+                              Team Submission
+                            </mat-chip>
+                            <mat-chip *ngIf="content.blindMarking" class="flag-chip">
+                              <mat-icon matChipAvatar>visibility_off</mat-icon>
+                              Blind Marking
+                            </mat-chip>
+                            <mat-chip *ngIf="content.requireSubmissionStatement" class="flag-chip">
+                              <mat-icon matChipAvatar>rule</mat-icon>
+                              Statement Required
+                            </mat-chip>
+                          </mat-chip-listbox>
+                        </div>
+                      </div>
+                      
+                      <!-- Submission Status -->
+                      <div class="submission-status">
+                        <h4>Submission Status</h4>
+                        <div class="status-info-grid">
+                          <div class="status-item">
+                            <mat-icon>{{ getSubmissionStatusIcon(content.submissionStatus) }}</mat-icon>
+                            <span class="status-label">Status:</span>
+                            <span class="status-value" [ngClass]="getSubmissionStatusClass(content.submissionStatus)">
+                              {{ getSubmissionStatusLabel(content.submissionStatus) }}
+                            </span>
+                          </div>
+                          
+                          <div *ngIf="content.submissionGradingStatus" class="status-item">
+                            <mat-icon>{{ getGradingStatusIcon(content.submissionGradingStatus) }}</mat-icon>
+                            <span class="status-label">Grading:</span>
+                            <span class="status-value" [ngClass]="getGradingStatusClass(content.submissionGradingStatus)">
+                              {{ getGradingStatusLabel(content.submissionGradingStatus) }}
+                            </span>
+                          </div>
+                          
+                          <div *ngIf="content.submissionTimeModified" class="status-item">
+                            <mat-icon>update</mat-icon>
+                            <span class="status-label">Last Modified:</span>
+                            <span class="status-value">{{ content.submissionTimeModified | date:'medium' }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.submissionGrade !== undefined && content.submissionGrade !== null" class="status-item">
+                            <mat-icon>grade</mat-icon>
+                            <span class="status-label">Grade:</span>
+                            <span class="status-value grade-received">{{ content.submissionGrade }} / {{ content.grade }}</span>
+                          </div>
+                        </div>
+                        
+                        <!-- Submitted Files -->
+                        <div *ngIf="content.submissionFiles && content.submissionFiles.length > 0" class="submitted-files">
+                          <h5>Submitted Files:</h5>
+                          <div class="files-list">
+                            <div *ngFor="let file of content.submissionFiles" class="submitted-file">
+                              <mat-icon>{{ getFileIcon(file.mimetype) }}</mat-icon>
+                              <span class="file-name">{{ file.filename }}</span>
+                              <span class="file-size">({{ formatFileSize(file.filesize) }})</span>
+                              <button mat-icon-button color="accent" (click)="openInNewTab(file.fileurl)" matTooltip="Download File">
+                                <mat-icon>download</mat-icon>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <!-- Submitted Text -->
+                        <div *ngIf="content.submissionText" class="submitted-text">
+                          <h5>Submitted Text:</h5>
+                          <div class="text-submission" [innerHTML]="sanitizeHtml(content.submissionText)"></div>
+                        </div>
+                        
+                        <!-- Submission Comments -->
+                        <div *ngIf="content.submissionComments" class="submission-comments">
+                          <h5>Comments:</h5>
+                          <div class="comments-content" [innerHTML]="sanitizeHtml(content.submissionComments)"></div>
+                        </div>
+                        
+                        <!-- Feedback -->
+                        <div *ngIf="content.submissionFeedback" class="submission-feedback">
+                          <h5>Feedback:</h5>
+                          <div class="feedback-content" [innerHTML]="sanitizeHtml(content.submissionFeedback)"></div>
+                        </div>
+                      </div>
+                      
                       <div
                         *ngIf="content.content"
+                        class="text-container"
                         [innerHTML]="sanitizeHtml(content.content)"
                       ></div>
                     </div>
@@ -234,8 +490,146 @@
                           </button>
                         </div>
                       </div>
+                      
+                      <!-- Quiz Details -->
+                      <div class="quiz-details" *ngIf="content.timeLimit || content.attempts || content.grade || content.sumGrades">
+                        <div class="quiz-info-grid">
+                          <div *ngIf="content.timeLimit" class="info-item">
+                            <mat-icon>timer</mat-icon>
+                            <span class="info-label">Time Limit:</span>
+                            <span class="info-value">{{ formatDuration(content.timeLimit) }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.attempts" class="info-item">
+                            <mat-icon>repeat</mat-icon>
+                            <span class="info-label">Attempts:</span>
+                            <span class="info-value">{{ content.attempts }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.grade" class="info-item">
+                            <mat-icon>grade</mat-icon>
+                            <span class="info-label">Max Grade:</span>
+                            <span class="info-value">{{ content.grade }} points</span>
+                          </div>
+                          
+                          <div *ngIf="content.sumGrades && content.sumGrades !== content.grade" class="info-item">
+                            <mat-icon>calculate</mat-icon>
+                            <span class="info-label">Total Questions:</span>
+                            <span class="info-value">{{ content.sumGrades }} points</span>
+                          </div>
+                          
+                          <div *ngIf="content.questionsPerPage" class="info-item">
+                            <mat-icon>view_agenda</mat-icon>
+                            <span class="info-label">Questions/Page:</span>
+                            <span class="info-value">{{ content.questionsPerPage }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.timeOpen" class="info-item">
+                            <mat-icon>event_available</mat-icon>
+                            <span class="info-label">Opens:</span>
+                            <span class="info-value">{{ content.timeOpen | date:'medium' }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.timeClose" class="info-item">
+                            <mat-icon>event_busy</mat-icon>
+                            <span class="info-label">Closes:</span>
+                            <span class="info-value">{{ content.timeClose | date:'medium' }}</span>
+                          </div>
+                        </div>
+                        
+                        <!-- Quiz flags -->
+                        <div class="quiz-flags" *ngIf="content.hasQuestions || content.hasFeedback || content.overdueHandling === 'autosubmit'">
+                          <mat-chip-listbox>
+                            <mat-chip *ngIf="content.hasQuestions" class="flag-chip positive">
+                              <mat-icon matChipAvatar>quiz</mat-icon>
+                              Has Questions
+                            </mat-chip>
+                            <mat-chip *ngIf="content.hasFeedback" class="flag-chip positive">
+                              <mat-icon matChipAvatar>feedback</mat-icon>
+                              Has Feedback
+                            </mat-chip>
+                            <mat-chip *ngIf="content.overdueHandling === 'autosubmit'" class="flag-chip warning">
+                              <mat-icon matChipAvatar>schedule_send</mat-icon>
+                              Auto Submit
+                            </mat-chip>
+                            <mat-chip *ngIf="content.browsersecurity && content.browsersecurity !== '-'" class="flag-chip info">
+                              <mat-icon matChipAvatar>security</mat-icon>
+                              Secure Browser
+                            </mat-chip>
+                          </mat-chip-listbox>
+                        </div>
+                      </div>
+                      
+                      <!-- Quiz Attempts -->
+                      <div class="quiz-attempts">
+                        <h4>Quiz Attempts</h4>
+                        <div class="attempts-summary">
+                          <div class="summary-item">
+                            <mat-icon>repeat</mat-icon>
+                            <span class="summary-label">Attempts Used:</span>
+                            <span class="summary-value">{{ content.attemptsUsed }} / {{ content.attempts === 0 ? '∞' : content.attempts }}</span>
+                          </div>
+                          
+                          <div *ngIf="content.bestAttemptGrade !== undefined" class="summary-item">
+                            <mat-icon>star</mat-icon>
+                            <span class="summary-label">Best Grade:</span>
+                            <span class="summary-value grade-received">{{ content.bestAttemptGrade }} / {{ content.grade }}</span>
+                          </div>
+                          
+                          <div class="summary-item">
+                            <mat-icon>{{ getAttemptStatusIcon(content.lastAttemptState) }}</mat-icon>
+                            <span class="summary-label">Status:</span>
+                            <span class="summary-value" [ngClass]="getAttemptStatusClass(content.lastAttemptState)">
+                              {{ getAttemptStatusLabel(content.lastAttemptState) }}
+                            </span>
+                          </div>
+                          
+                          <div class="summary-item">
+                            <mat-icon>{{ content.canAttempt ? 'check_circle' : 'block' }}</mat-icon>
+                            <span class="summary-label">Can Retry:</span>
+                            <span class="summary-value" [ngClass]="content.canAttempt ? 'can-attempt' : 'cannot-attempt'">
+                              {{ content.canAttempt ? 'Yes' : 'No' }}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <!-- Individual Attempts -->
+                        <div *ngIf="content.quizAttempts && content.quizAttempts.length > 0" class="attempts-list">
+                          <h5>Attempt History:</h5>
+                          <div class="attempts-table">
+                            <div class="attempt-header">
+                              <span class="attempt-number">Attempt</span>
+                              <span class="attempt-state">Status</span>
+                              <span class="attempt-started">Started</span>
+                              <span class="attempt-finished">Finished</span>
+                              <span class="attempt-grade">Grade</span>
+                            </div>
+                            
+                            <div *ngFor="let attempt of content.quizAttempts" class="attempt-row">
+                              <span class="attempt-number">#{{ attempt.attempt }}</span>
+                              <span class="attempt-state" [ngClass]="getAttemptStatusClass(attempt.state)">
+                                {{ getAttemptStatusLabel(attempt.state) }}
+                              </span>
+                              <span class="attempt-started">{{ attempt.timestart | date:'short' }}</span>
+                              <span class="attempt-finished">
+                                {{ attempt.timefinish ? (attempt.timefinish | date:'short') : '-' }}
+                              </span>
+                              <span class="attempt-grade">
+                                {{ attempt.grade !== null && attempt.grade !== undefined ? (attempt.grade + ' / ' + content.grade) : '-' }}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <!-- No attempts message -->
+                        <div *ngIf="!content.quizAttempts || content.quizAttempts.length === 0" class="no-attempts">
+                          <p>No attempts yet. You can start your first attempt by clicking "Open Quiz" above.</p>
+                        </div>
+                      </div>
+                      
                       <div
                         *ngIf="content.content"
+                        class="text-container"
                         [innerHTML]="sanitizeHtml(content.content)"
                       ></div>
                     </div>

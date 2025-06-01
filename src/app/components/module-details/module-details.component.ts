@@ -872,4 +872,141 @@ export class ModuleDetailsComponent implements OnInit {
   isNaN(value: any): boolean {
     return Number.isNaN(value);
   }
+
+  // Format file size in bytes to human-readable format
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  // Format time duration in seconds to human-readable format
+  formatDuration(seconds: number): string {
+    if (seconds < 60) return `${seconds} seconds`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes`;
+    
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours} hours`;
+  }
+
+  // Assignment submission status helpers
+  getSubmissionStatusIcon(status?: string): string {
+    switch (status) {
+      case 'submitted':
+        return 'check_circle';
+      case 'draft':
+        return 'edit';
+      case 'reopened':
+        return 'refresh';
+      case 'new':
+      default:
+        return 'assignment';
+    }
+  }
+
+  getSubmissionStatusClass(status?: string): string {
+    switch (status) {
+      case 'submitted':
+        return 'status-submitted';
+      case 'draft':
+        return 'status-draft';
+      case 'reopened':
+        return 'status-reopened';
+      case 'new':
+      default:
+        return 'status-new';
+    }
+  }
+
+  getSubmissionStatusLabel(status?: string): string {
+    switch (status) {
+      case 'submitted':
+        return 'Submitted';
+      case 'draft':
+        return 'Draft';
+      case 'reopened':
+        return 'Reopened';
+      case 'new':
+        return 'Not Started';
+      default:
+        return status || 'Unknown';
+    }
+  }
+
+  // Grading status helpers
+  getGradingStatusIcon(status?: string): string {
+    switch (status) {
+      case 'graded':
+        return 'grade';
+      case 'notgraded':
+      default:
+        return 'pending';
+    }
+  }
+
+  getGradingStatusClass(status?: string): string {
+    switch (status) {
+      case 'graded':
+        return 'grading-complete';
+      case 'notgraded':
+      default:
+        return 'grading-pending';
+    }
+  }
+
+  getGradingStatusLabel(status?: string): string {
+    switch (status) {
+      case 'graded':
+        return 'Graded';
+      case 'notgraded':
+        return 'Not Graded';
+      default:
+        return status || 'Unknown';
+    }
+  }
+
+  // Quiz attempt status helpers
+  getAttemptStatusIcon(status?: string): string {
+    switch (status) {
+      case 'finished':
+        return 'check_circle';
+      case 'inprogress':
+        return 'play_circle_filled';
+      case 'abandoned':
+        return 'cancel';
+      default:
+        return 'help_outline';
+    }
+  }
+
+  getAttemptStatusClass(status?: string): string {
+    switch (status) {
+      case 'finished':
+        return 'attempt-finished';
+      case 'inprogress':
+        return 'attempt-inprogress';
+      case 'abandoned':
+        return 'attempt-abandoned';
+      default:
+        return 'attempt-unknown';
+    }
+  }
+
+  getAttemptStatusLabel(status?: string): string {
+    switch (status) {
+      case 'finished':
+        return 'Finished';
+      case 'inprogress':
+        return 'In Progress';
+      case 'abandoned':
+        return 'Abandoned';
+      default:
+        return status || 'Unknown';
+    }
+  }
 }

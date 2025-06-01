@@ -8,6 +8,8 @@ import {
   MoodleContent,
   MoodleLoginResponse,
   MoodleCourseResult,
+  AssignmentSubmissionFile,
+  QuizAttempt,
 } from '../models/moodle.models';
 import { ErrorHandlerService } from './error-handler.service';
 import { SanitizationService } from './sanitization.service';
@@ -276,11 +278,84 @@ export class MoodleService {
       .set('courseid', courseId.toString())
       .set('moodlewsrestformat', 'json');
 
-    return this.http.get<any[]>(webServiceUrl, { params }).pipe(
-      map(sections => {
+    // Fetch base content and enhanced details in parallel
+    return forkJoin({
+      baseContent: this.http.get<any[]>(webServiceUrl, { params }),
+      assignments: this.getAssignmentDetails(courseId),
+      quizzes: this.getQuizDetails(courseId)
+    }).pipe(
+      switchMap(({ baseContent, assignments, quizzes }) => {
+        // Create lookup maps for enhanced data
+        const assignmentMap = new Map(assignments.map((a: any) => [a.cmid, a]));
+        const quizMap = new Map(quizzes.map((q: any) => [q.coursemodule, q]));
+
+        // Collect all assignment and quiz IDs for individual API calls
+        const assignmentApiCalls: Observable<any>[] = [];
+        const quizApiCalls: Observable<any>[] = [];
+        const assignmentIds: number[] = [];
+        const quizIds: number[] = [];
+
+        // First pass: collect all assignment and quiz IDs
+        baseContent.forEach(section => {
+          if (section.modules) {
+            section.modules.forEach((module: any) => {
+              if (module.modname === 'assign') {
+                const assignmentDetails = assignmentMap.get(module.id);
+                if (assignmentDetails) {
+                  assignmentIds.push(assignmentDetails.id);
+                  assignmentApiCalls.push(
+                    this.getAssignmentSubmission(assignmentDetails.id).pipe(
+                      map(result => ({ moduleId: module.id, assignmentId: assignmentDetails.id, data: result }))
+                    )
+                  );
+                }
+              } else if (module.modname === 'quiz') {
+                const quizDetails = quizMap.get(module.id);
+                if (quizDetails) {
+                  quizIds.push(quizDetails.id);
+                  quizApiCalls.push(
+                    this.getQuizAttemptsForQuiz(quizDetails.id).pipe(
+                      map(result => ({ moduleId: module.id, quizId: quizDetails.id, data: result }))
+                    )
+                  );
+                }
+              }
+            });
+          }
+        });
+
+        // Make all individual API calls
+        const allApiCalls = [...assignmentApiCalls, ...quizApiCalls];
+        
+        if (allApiCalls.length === 0) {
+          // No assignments or quizzes, process normally
+          return of({ baseContent, assignments, quizzes, submissionData: [], quizAttemptData: [] });
+        }
+
+        return forkJoin(allApiCalls).pipe(
+          map(results => {
+            const submissionData = results.filter(r => 'assignmentId' in r);
+            const quizAttemptData = results.filter(r => 'quizId' in r);
+            return { baseContent, assignments, quizzes, submissionData, quizAttemptData };
+          }),
+          catchError(error => {
+            console.warn('Some individual API calls failed, continuing with basic data:', error);
+            return of({ baseContent, assignments, quizzes, submissionData: [], quizAttemptData: [] });
+          })
+        );
+      }),
+      map(({ baseContent, assignments, quizzes, submissionData, quizAttemptData }) => {
+        // Create lookup maps for enhanced data
+        const assignmentMap = new Map(assignments.map((a: any) => [a.cmid, a]));
+        const quizMap = new Map(quizzes.map((q: any) => [q.coursemodule, q]));
+        
+        // Create lookup maps for submission and attempt data
+        const submissionMap = new Map(submissionData.map((s: any) => [s.moduleId, s.data]));
+        const quizAttemptsMap = new Map(quizAttemptData.map((q: any) => [q.moduleId, q.data]));
+
         // Flatten all sections and modules into our content format
         const allContents: MoodleContent[] = [];
-        sections.forEach(section => {
+        baseContent.forEach(section => {
           // Sanitize section data
           const sanitizedSection = this.sanitization.sanitizeObject(section, {
             allowBasicHtml: true,
@@ -369,6 +444,89 @@ export class MoodleService {
                       `${this.currentSite.domain}/mod/assign/view.php?id=${sanitizedModule.id}`
                     );
                   }
+                  
+                  // Merge assignment details
+                  const assignmentDetails: any = assignmentMap.get(sanitizedModule.id);
+                  if (assignmentDetails) {
+                    baseContent.dueDate = assignmentDetails.duedate ? new Date(assignmentDetails.duedate * 1000) : undefined;
+                    baseContent.allowSubmissionsFromDate = assignmentDetails.allowsubmissionsfromdate ? new Date(assignmentDetails.allowsubmissionsfromdate * 1000) : undefined;
+                    baseContent.cutoffDate = assignmentDetails.cutoffdate ? new Date(assignmentDetails.cutoffdate * 1000) : undefined;
+                    baseContent.gradingDueDate = assignmentDetails.gradingduedate ? new Date(assignmentDetails.gradingduedate * 1000) : undefined;
+                    baseContent.grade = assignmentDetails.grade;
+                    baseContent.maxAttempts = assignmentDetails.maxattempts;
+                    baseContent.teamSubmission = assignmentDetails.teamsubmission === 1;
+                    baseContent.blindMarking = assignmentDetails.blindmarking === 1;
+                    baseContent.requireSubmissionStatement = assignmentDetails.requiresubmissionstatement === 1;
+                    
+                    // Extract submission configuration
+                    const fileConfig = assignmentDetails.configs?.find((c: any) => c.plugin === 'file' && c.name === 'maxfilesubmissions');
+                    if (fileConfig) {
+                      baseContent.maxFileSubmissions = parseInt(fileConfig.value);
+                    }
+                    
+                    const sizeConfig = assignmentDetails.configs?.find((c: any) => c.plugin === 'file' && c.name === 'maxsubmissionsizebytes');
+                    if (sizeConfig) {
+                      baseContent.maxSubmissionSizeBytes = parseInt(sizeConfig.value);
+                    }
+                    
+                    const typesConfig = assignmentDetails.configs?.find((c: any) => c.plugin === 'file' && c.name === 'filetypeslist');
+                    if (typesConfig) {
+                      baseContent.fileTypesAllowed = typesConfig.value;
+                    }
+                  }
+                  
+                  // Always set hasSubmitted to false as default to show the submission status section
+                  baseContent.hasSubmitted = false;
+                  baseContent.submissionStatus = 'new';
+                  baseContent.submissionGradingStatus = 'notgraded';
+                  
+                  // Merge submission status if available
+                  const submissionData = submissionMap.get(sanitizedModule.id);
+                  if (submissionData && submissionData.lastattempt) {
+                    const submission = submissionData.lastattempt.submission;
+                    const grade = submissionData.lastattempt.grade;
+                    
+                    if (submission) {
+                      baseContent.submissionStatus = submission.status || 'new';
+                      baseContent.hasSubmitted = submission.status === 'submitted';
+                      baseContent.submissionTimeModified = submission.timemodified ? new Date(submission.timemodified * 1000) : undefined;
+                      baseContent.submissionAttemptNumber = submission.attemptnumber;
+                      
+                      // Process submitted files
+                      if (submission.plugins) {
+                        const filePlugin = submission.plugins.find((p: any) => p.type === 'file');
+                        if (filePlugin && filePlugin.fileareas) {
+                          const submissionFiles = filePlugin.fileareas.find((fa: any) => fa.area === 'submission_files');
+                          if (submissionFiles && submissionFiles.files) {
+                            baseContent.submissionFiles = submissionFiles.files.map((file: any) => ({
+                              filename: file.filename,
+                              filepath: file.filepath,
+                              filesize: file.filesize,
+                              fileurl: file.fileurl,
+                              mimetype: file.mimetype,
+                              timemodified: new Date(file.timemodified * 1000)
+                            }));
+                          }
+                        }
+                        
+                        // Process text submission
+                        const textPlugin = submission.plugins.find((p: any) => p.type === 'onlinetext');
+                        if (textPlugin && textPlugin.editorfields) {
+                          const textField = textPlugin.editorfields.find((ef: any) => ef.name === 'onlinetext_editor');
+                          if (textField) {
+                            baseContent.submissionText = textField.text;
+                          }
+                        }
+                      }
+                    }
+                    
+                    if (grade) {
+                      baseContent.submissionGradingStatus = grade.grade !== null ? 'graded' : 'notgraded';
+                      baseContent.submissionGrade = grade.grade;
+                      baseContent.submissionFeedback = grade.feedbackcomments;
+                    }
+                  }
+                  
                   allContents.push(baseContent);
                   break;
 
@@ -381,6 +539,60 @@ export class MoodleService {
                       `${this.currentSite.domain}/mod/quiz/view.php?id=${sanitizedModule.id}`
                     );
                   }
+                  
+                  // Merge quiz details
+                  const quizDetails: any = quizMap.get(sanitizedModule.id);
+                  if (quizDetails) {
+                    baseContent.timeOpen = quizDetails.timeopen ? new Date(quizDetails.timeopen * 1000) : undefined;
+                    baseContent.timeClose = quizDetails.timeclose ? new Date(quizDetails.timeclose * 1000) : undefined;
+                    baseContent.timeLimit = quizDetails.timelimit;
+                    baseContent.attempts = quizDetails.attempts;
+                    baseContent.gradeMethod = quizDetails.grademethod;
+                    baseContent.questionsPerPage = quizDetails.questionsperpage;
+                    baseContent.sumGrades = quizDetails.sumgrades;
+                    baseContent.grade = quizDetails.grade;
+                    baseContent.hasQuestions = quizDetails.hasquestions === 1;
+                    baseContent.hasFeedback = quizDetails.hasfeedback === 1;
+                    baseContent.overdueHandling = quizDetails.overduehandling;
+                    baseContent.graceperiod = quizDetails.graceperiod;
+                    baseContent.browsersecurity = quizDetails.browsersecurity;
+                    
+                    // Set default values
+                    baseContent.attemptsUsed = 0;
+                    baseContent.canAttempt = true;
+                    baseContent.quizAttempts = [];
+                    
+                    // Merge quiz attempts if available
+                    const attempts = quizAttemptsMap.get(sanitizedModule.id) || [];
+                    if (attempts.length > 0) {
+                      baseContent.quizAttempts = attempts.map((attempt: any) => ({
+                        id: attempt.id,
+                        attempt: attempt.attempt,
+                        uniqueid: attempt.uniqueid,
+                        layout: attempt.layout,
+                        currentpage: attempt.currentpage,
+                        preview: attempt.preview === 1,
+                        state: attempt.state,
+                        timestart: new Date(attempt.timestart * 1000),
+                        timefinish: attempt.timefinish ? new Date(attempt.timefinish * 1000) : undefined,
+                        timemodified: new Date(attempt.timemodified * 1000),
+                        timecheckstate: attempt.timecheckstate ? new Date(attempt.timecheckstate * 1000) : undefined,
+                        sumgrades: attempt.sumgrades,
+                        grade: attempt.grade,
+                        gradednotificationsenttime: attempt.gradednotificationsenttime ? new Date(attempt.gradednotificationsenttime * 1000) : undefined
+                      }));
+                      
+                      baseContent.attemptsUsed = attempts.length;
+                      const validGrades = attempts.filter((a: any) => a.grade !== null && a.grade !== undefined).map((a: any) => a.grade);
+                      if (validGrades.length > 0) {
+                        baseContent.bestAttemptGrade = Math.max(...validGrades);
+                      }
+                      baseContent.lastAttemptState = attempts[attempts.length - 1]?.state;
+                      baseContent.canAttempt = ((baseContent.attempts || 0) === 0 || (baseContent.attemptsUsed || 0) < (baseContent.attempts || 0)) && 
+                                              baseContent.lastAttemptState !== 'inprogress';
+                    }
+                  }
+                  
                   allContents.push(baseContent);
                   break;
 
@@ -1416,6 +1628,198 @@ export class MoodleService {
     const itemId = 0;
     
     return `${baseUrl}/${contextId}/${component}/${fileArea}/${itemId}${filepath}${filename}?token=${this.currentUser.token}`;
+  }
+
+  /**
+   * Get assignment details for a course
+   */
+  private getAssignmentDetails(courseId: number): Observable<any[]> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of([]);
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_assign_get_assignments')
+      .set('courseids[0]', courseId.toString())
+      .set('moodlewsrestformat', 'json');
+
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        // Extract assignments from the response structure
+        if (response.courses && response.courses.length > 0) {
+          return response.courses[0].assignments || [];
+        }
+        return [];
+      }),
+      catchError(error => {
+        console.warn('Failed to load assignment details:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get quiz details for a course
+   */
+  private getQuizDetails(courseId: number): Observable<any[]> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of([]);
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_quiz_get_quizzes_by_courses')
+      .set('courseids[0]', courseId.toString())
+      .set('moodlewsrestformat', 'json');
+
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        // Extract quizzes from the response structure
+        return response.quizzes || [];
+      }),
+      catchError(error => {
+        console.warn('Failed to load quiz details:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get assignment submissions for a course
+   */
+  private getAssignmentSubmissions(courseId: number): Observable<any[]> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of([]);
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_assign_get_submissions')
+      .set('assignmentids[0]', '0') // Get all assignments first, then we'll filter
+      .set('status', '')
+      .set('since', '0')
+      .set('before', '0')
+      .set('moodlewsrestformat', 'json');
+
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        console.log('Assignment submissions response:', response);
+        // The response structure may vary depending on Moodle version
+        if (response && response.assignments) {
+          return response.assignments;
+        }
+        return [];
+      }),
+      catchError(error => {
+        console.warn('Failed to load assignment submissions (this is normal if the API is not available):', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get quiz attempts for a course - using alternative approach
+   */
+  private getQuizAttempts(courseId: number): Observable<any[]> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of([]);
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    // Try to get quiz attempts using mod_quiz_get_user_attempts
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_quiz_get_user_attempts')
+      .set('quizid', '0') // We'll need to call this for each quiz individually
+      .set('userid', this.currentUser.id.toString())
+      .set('status', 'all')
+      .set('includepreviews', '0')
+      .set('moodlewsrestformat', 'json');
+
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        console.log('Quiz attempts response:', response);
+        if (response && response.attempts) {
+          return response.attempts;
+        }
+        return [];
+      }),
+      catchError(error => {
+        console.warn('Failed to load quiz attempts (this is normal if the API is not available):', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get individual assignment submission - called for specific assignments
+   */
+  private getAssignmentSubmission(assignmentId: number): Observable<any> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of(null);
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_assign_get_submission_status')
+      .set('assignid', assignmentId.toString())
+      .set('userid', this.currentUser.id.toString())
+      .set('moodlewsrestformat', 'json');
+
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        console.log('Individual assignment submission response:', response);
+        return response;
+      }),
+      catchError(error => {
+        console.warn('Failed to load individual assignment submission:', error);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * Get individual quiz attempts - called for specific quizzes
+   */
+  private getQuizAttemptsForQuiz(quizId: number): Observable<any[]> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      return of([]);
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_quiz_get_user_attempts')
+      .set('quizid', quizId.toString())
+      .set('userid', this.currentUser.id.toString())
+      .set('status', 'all')
+      .set('includepreviews', '0')
+      .set('moodlewsrestformat', 'json');
+
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        console.log('Quiz attempts for quiz', quizId, ':', response);
+        if (response && response.attempts) {
+          return response.attempts;
+        }
+        return [];
+      }),
+      catchError(error => {
+        console.warn('Failed to load quiz attempts for quiz', quizId, ':', error);
+        return of([]);
+      })
+    );
   }
 }
 

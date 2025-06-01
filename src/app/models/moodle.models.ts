@@ -51,6 +51,85 @@ export interface MoodleContent {
   noviewlink?: boolean; // Whether to show view link
   summary?: string; // Summary for sections
   summaryformat?: number; // Summary format for sections
+  
+  // Enhanced Assignment fields
+  dueDate?: Date; // Assignment due date
+  allowSubmissionsFromDate?: Date; // When submissions are allowed from
+  cutoffDate?: Date; // Cut-off date for submissions
+  gradingDueDate?: Date; // When grading is due
+  grade?: number; // Maximum grade for assignment
+  maxAttempts?: number; // Maximum number of attempts (-1 for unlimited)
+  teamSubmission?: boolean; // Whether team submission is enabled
+  blindMarking?: boolean; // Whether blind marking is enabled
+  requireSubmissionStatement?: boolean; // Whether submission statement is required
+  maxFileSubmissions?: number; // Maximum number of files that can be submitted
+  maxSubmissionSizeBytes?: number; // Maximum size of submission in bytes
+  fileTypesAllowed?: string; // Allowed file types for submission
+  
+  // Assignment submission status
+  submissionStatus?: string; // 'new', 'draft', 'submitted', 'reopened'
+  submissionGradingStatus?: string; // 'graded', 'notgraded'
+  hasSubmitted?: boolean; // Whether user has submitted
+  submissionTimeModified?: Date; // When submission was last modified
+  submissionFiles?: AssignmentSubmissionFile[]; // Files submitted
+  submissionText?: string; // Text submission content
+  submissionComments?: string; // Submission comments
+  submissionGrade?: number; // Grade received for submission
+  submissionFeedback?: string; // Feedback from instructor
+  submissionAttemptNumber?: number; // Current attempt number
+  
+  // Enhanced Quiz fields
+  timeOpen?: Date; // When quiz opens
+  timeClose?: Date; // When quiz closes
+  timeLimit?: number; // Time limit in seconds
+  attempts?: number; // Number of attempts allowed
+  gradeMethod?: number; // Grading method (1=highest, 2=average, 3=first, 4=last)
+  questionsPerPage?: number; // Questions per page
+  sumGrades?: number; // Sum of all question grades
+  hasQuestions?: boolean; // Whether quiz has questions
+  hasFeedback?: boolean; // Whether quiz has feedback
+  overdueHandling?: string; // How to handle overdue attempts
+  graceperiod?: number; // Grace period in seconds
+  browsersecurity?: string; // Browser security requirements
+  
+  // Quiz attempt information
+  quizAttempts?: QuizAttempt[]; // User's quiz attempts
+  bestAttemptGrade?: number; // Best grade achieved
+  attemptsUsed?: number; // Number of attempts used
+  canAttempt?: boolean; // Whether user can make another attempt
+  lastAttemptState?: string; // State of last attempt ('finished', 'inprogress', 'abandoned')
+  
+  // Common metadata
+  introFormat?: number; // Format of intro text
+  introFiles?: any[]; // Files attached to intro
+}
+
+// Interface for assignment submission files
+export interface AssignmentSubmissionFile {
+  filename: string;
+  filepath: string;
+  filesize: number;
+  fileurl: string;
+  mimetype: string;
+  timemodified: Date;
+}
+
+// Interface for quiz attempts
+export interface QuizAttempt {
+  id: number;
+  attempt: number; // Attempt number (1, 2, 3, etc.)
+  uniqueid: number; // Unique attempt ID
+  layout: string; // Question layout
+  currentpage: number; // Current page
+  preview: boolean; // Whether this is a preview
+  state: string; // 'inprogress', 'finished', 'abandoned'
+  timestart: Date; // When attempt started
+  timefinish?: Date; // When attempt finished
+  timemodified: Date; // When attempt was last modified
+  timecheckstate?: Date; // Time check state
+  sumgrades?: number; // Sum of grades for this attempt
+  grade?: number; // Final grade for this attempt (after scaling)
+  gradednotificationsenttime?: Date; // When grade notification was sent
 }
 
 export interface MoodleLoginResponse {
