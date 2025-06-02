@@ -406,13 +406,16 @@ export class ModuleDetailsComponent implements OnInit {
         if (!content.fileUrl) return;
 
         try {
-          // Get the file name from the URL
-          const fileName = this.getFileNameFromUrl(content.fileUrl);
+          // Generate proper filename with extension
+          const fileName = this.generateProperFileName(
+            content.name || 'file',
+            content.fileUrl
+          );
           // Fetch the file
           const response = await fetch(content.fileUrl);
           const blob = await response.blob();
-          // Add to zip with a sanitized filename
-          zip.file(this.sanitizeFileName(`${content.name || fileName}`), blob);
+          // Add to zip with proper filename including extension
+          zip.file(fileName, blob);
 
           // Update progress
           filesProcessed++;
@@ -494,6 +497,56 @@ export class ModuleDetailsComponent implements OnInit {
     }
   }
 
+  // Helper method to get file extension from URL
+  private getFileExtension(url: string): string {
+    try {
+      // First try to get extension from URL
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/');
+      const lastPart = pathParts[pathParts.length - 1];
+      const lastDotIndex = lastPart.lastIndexOf('.');
+      
+      if (lastDotIndex > 0 && lastDotIndex < lastPart.length - 1) {
+        return lastPart.substring(lastDotIndex);
+      }
+    } catch (e) {
+      // URL parsing failed
+    }
+
+    return '';
+  }
+
+  // Helper method to generate proper filename with extension
+  private generateProperFileName(contentName: string, fileUrl: string): string {
+    // Clean the content name
+    const cleanContentName = contentName.trim();
+    
+    // Check if content name already has an extension
+    const hasExtension = /\.[a-zA-Z0-9]{1,6}$/.test(cleanContentName);
+    
+    if (hasExtension) {
+      // Content name already has extension, just sanitize and return
+      return this.sanitizeFileName(cleanContentName);
+    }
+    
+    // Content name doesn't have extension, try to get it from URL
+    const extension = this.getFileExtension(fileUrl);
+    
+    if (extension) {
+      return this.sanitizeFileName(`${cleanContentName}${extension}`);
+    }
+    
+    // Fallback: try to get filename from URL and use that as a base
+    const urlFileName = this.getFileNameFromUrl(fileUrl);
+    if (urlFileName !== 'file' && urlFileName.includes('.')) {
+      // URL has a good filename with extension, prefer that
+      return this.sanitizeFileName(urlFileName);
+    }
+    
+    // Last resort: use content name as-is (might not have extension)
+    return this.sanitizeFileName(cleanContentName);
+  }
+
   // Helper method to sanitize filenames
   private sanitizeFileName(name: string): string {
     // Remove any characters that aren't safe for filenames
@@ -569,16 +622,18 @@ export class ModuleDetailsComponent implements OnInit {
           if (!sectionId || !sectionFolders[sectionId]) {
             // If we can't find the section, put it in the root of the zip
             console.log(`Couldn't find section for content ${content.name}, adding to root`);
-            const fileName = this.sanitizeFileName(
-              content.name || this.getFileNameFromUrl(content.fileUrl)
+            const fileName = this.generateProperFileName(
+              content.name || 'file',
+              content.fileUrl
             );
             const response = await fetch(content.fileUrl);
             const blob = await response.blob();
             zip.file(fileName, blob);
           } else {
-            // Get the file name from the URL or content name
-            const fileName = this.sanitizeFileName(
-              content.name || this.getFileNameFromUrl(content.fileUrl)
+            // Generate proper filename with extension
+            const fileName = this.generateProperFileName(
+              content.name || 'file',
+              content.fileUrl
             );
 
             // Fetch the file
