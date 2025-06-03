@@ -140,7 +140,7 @@ mat-form-field {
 .security-info {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   margin-top: 20px;
   padding: 8px 12px;
   background-color: rgba(76, 175, 80, 0.1);
@@ -149,10 +149,11 @@ mat-form-field {
   color: theme.$text-secondary-dark;
 
   .security-icon {
-    margin-right: 8px;
     font-size: 16px;
     width: 16px;
     height: 16px;
+    margin-right: 8px;
+    flex-shrink: 0;
     color: #4caf50;
   }
 
