@@ -733,20 +733,18 @@ export class MoodleService {
     const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}token=${this.currentUser.token}`;
   }
-
   /**
-   * Formats the domain to ensure it has the correct protocol
+   * Formats the domain to ensure it has the correct protocol (always HTTPS)
    */
   private formatDomain(domain: string): string {
-    // Remove trailing slashes
-    domain = domain.replace(/\/+$/, '');
+    // Enforce HTTPS protocol for security
+    // Trim whitespace and convert to lowercase
+    const sanitized = domain.trim().toLowerCase();
 
-    // Add https:// if no protocol is specified
-    if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
-      domain = `https://${domain}`;
-    }
+    // Extract domain using a forgiving regex
+    const match = sanitized.match(/(?:https?:\/\/)?(?:www\.)?([a-z0-9.-]+\.[a-z]{2,})/i);
 
-    return domain;
+    return match ? `https://${match[1]}` : '';
   }
 
   /**

@@ -29,12 +29,11 @@
       </button>
 
       <!-- Dropdown Menu -->
-      <mat-menu #userMenu="matMenu" class="user-dropdown-menu">
-        <button mat-menu-item routerLink="/api-explorer">
+      <mat-menu #userMenu="matMenu" class="user-dropdown-menu">        <button mat-menu-item routerLink="/api-explorer">
           <mat-icon>code</mat-icon>
           <span>API Explorer</span>
         </button>
-        <button mat-menu-item routerLink="/file-storage">
+        <button mat-menu-item disabled matTooltip="This feature is currently unavailable">
           <mat-icon>cloud</mat-icon>
           <span>File Storage</span>
         </button>
