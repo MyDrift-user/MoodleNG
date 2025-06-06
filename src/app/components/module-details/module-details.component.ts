@@ -378,11 +378,9 @@ export class ModuleDetailsComponent implements OnInit {
 
     // Set loading state and initialize progress for this section
     this.downloadingSections[sectionId] = true;
-    this.downloadSectionProgress[sectionId] = 0;
-
-    // Get all downloadable files in this section
+    this.downloadSectionProgress[sectionId] = 0;    // Get all downloadable files in this section (including URLs for .lnk files)
     const downloadableContents = this.groupedContents[sectionId].filter(
-      content => content.fileUrl && content.type !== 'label' && content.type !== 'url'
+      content => content.fileUrl && content.type !== 'label'
     );
 
     if (downloadableContents.length === 0) {
@@ -400,22 +398,29 @@ export class ModuleDetailsComponent implements OnInit {
     const totalFiles = downloadableContents.length;
     let filesProcessed = 0;
 
-    try {
-      // Add files to the zip
+    try {      // Add files to the zip
       const downloadPromises = downloadableContents.map(async content => {
         if (!content.fileUrl) return;
 
         try {
-          // Generate proper filename with extension
-          const fileName = this.generateProperFileName(
-            content.name || 'file',
-            content.fileUrl
-          );
-          // Fetch the file
-          const response = await fetch(content.fileUrl);
-          const blob = await response.blob();
-          // Add to zip with proper filename including extension
-          zip.file(fileName, blob);
+          // Handle URL content types differently
+          if (content.type === 'url') {
+            // Create a .url file for links
+            const fileName = this.sanitizeFileName(content.name || 'link') + '.url';
+            const linkBlob = this.createWindowsLinkFile(content.fileUrl, content.name || 'link');
+            zip.file(fileName, linkBlob);
+          } else {
+            // Generate proper filename with extension for regular files
+            const fileName = this.generateProperFileName(
+              content.name || 'file',
+              content.fileUrl
+            );
+            // Fetch the file
+            const response = await fetch(content.fileUrl);
+            const blob = await response.blob();
+            // Add to zip with proper filename including extension
+            zip.file(fileName, blob);
+          }
 
           // Update progress
           filesProcessed++;
@@ -546,11 +551,19 @@ export class ModuleDetailsComponent implements OnInit {
     // Last resort: use content name as-is (might not have extension)
     return this.sanitizeFileName(cleanContentName);
   }
-
   // Helper method to sanitize filenames
   private sanitizeFileName(name: string): string {
     // Remove any characters that aren't safe for filenames
     return name.replace(/[\\/:*?"<>|]/g, '_').substring(0, 200);
+  }
+
+  // Helper method to create Windows .lnk file content for URLs
+  private createWindowsLinkFile(url: string, name: string): Blob {
+    // Create a Windows .lnk file content
+    // This is a simplified approach that creates a .url file (Internet Shortcut) instead of a true .lnk file
+    // .url files are more universally supported and work on Windows
+    const linkContent = `[InternetShortcut]\r\nURL=${url}\r\n`;
+    return new Blob([linkContent], { type: 'text/plain' });
   }
 
   // Download all files from all sections in the module
@@ -567,13 +580,11 @@ export class ModuleDetailsComponent implements OnInit {
     const allDownloadableContents: MoodleContent[] = [];
 
     // Map to store which section each content belongs to
-    const contentSectionMap = new Map<number, number>();
-
-    // Collect downloadable files from each section and track their section
+    const contentSectionMap = new Map<number, number>();    // Collect downloadable files from each section and track their section (including URLs)
     for (const section of this.sections) {
       const sectionContents = this.groupedContents[section.id] || [];
       const downloadableContents = sectionContents.filter(
-        content => content.fileUrl && content.type !== 'label' && content.type !== 'url'
+        content => content.fileUrl && content.type !== 'label'
       );
 
       // Add to overall collection and map each content to its section
@@ -617,31 +628,46 @@ export class ModuleDetailsComponent implements OnInit {
 
         try {
           // Find which section this content belongs to using our map
-          const sectionId = contentSectionMap.get(content.id);
-
-          if (!sectionId || !sectionFolders[sectionId]) {
+          const sectionId = contentSectionMap.get(content.id);          if (!sectionId || !sectionFolders[sectionId]) {
             // If we can't find the section, put it in the root of the zip
             console.log(`Couldn't find section for content ${content.name}, adding to root`);
-            const fileName = this.generateProperFileName(
-              content.name || 'file',
-              content.fileUrl
-            );
-            const response = await fetch(content.fileUrl);
-            const blob = await response.blob();
-            zip.file(fileName, blob);
+            
+            if (content.type === 'url') {
+              // Create a .url file for links at root level
+              const fileName = this.sanitizeFileName(content.name || 'link') + '.url';
+              const linkBlob = this.createWindowsLinkFile(content.fileUrl, content.name || 'link');
+              zip.file(fileName, linkBlob);
+            } else {
+              const fileName = this.generateProperFileName(
+                content.name || 'file',
+                content.fileUrl
+              );
+              const response = await fetch(content.fileUrl);
+              const blob = await response.blob();
+              zip.file(fileName, blob);
+            }
           } else {
-            // Generate proper filename with extension
-            const fileName = this.generateProperFileName(
-              content.name || 'file',
-              content.fileUrl
-            );
+            if (content.type === 'url') {
+              // Create a .url file for links
+              const fileName = this.sanitizeFileName(content.name || 'link') + '.url';
+              const linkBlob = this.createWindowsLinkFile(content.fileUrl, content.name || 'link');
+              
+              // Add to the appropriate section folder
+              sectionFolders[sectionId].file(fileName, linkBlob);
+            } else {
+              // Generate proper filename with extension
+              const fileName = this.generateProperFileName(
+                content.name || 'file',
+                content.fileUrl
+              );
 
-            // Fetch the file
-            const response = await fetch(content.fileUrl);
-            const blob = await response.blob();
+              // Fetch the file
+              const response = await fetch(content.fileUrl);
+              const blob = await response.blob();
 
-            // Add to the appropriate section folder
-            sectionFolders[sectionId].file(fileName, blob);
+              // Add to the appropriate section folder
+              sectionFolders[sectionId].file(fileName, blob);
+            }
           }
 
           // Update progress
