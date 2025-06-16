@@ -507,8 +507,18 @@
                         </h3>
                         <div class="actions-container">
                           <button
-                            mat-icon-button
+                            mat-raised-button
                             color="primary"
+                            (click)="startQuiz(content)"
+                            matTooltip="Start Quiz"
+                            class="start-quiz-btn"
+                          >
+                            <mat-icon>play_arrow</mat-icon>
+                            Start Quiz
+                          </button>
+                          <button
+                            mat-icon-button
+                            color="accent"
                             (click)="
                               openInNewTab(
                                 (moodleService.getCurrentSite()?.domain || '') +
@@ -516,7 +526,7 @@
                                   content.id
                               )
                             "
-                            matTooltip="Open Quiz"
+                            matTooltip="Open in Moodle"
                           >
                             <mat-icon>open_in_new</mat-icon>
                           </button>

@@ -10,6 +10,14 @@ import {
   MoodleCourseResult,
   AssignmentSubmissionFile,
   QuizAttempt,
+  QuizQuestion,
+  QuizAttemptData,
+  QuizAccessInfo,
+  QuizStartResponse,
+  QuizSubmitResponse,
+  QuizSaveResponse,
+  QuizTimer,
+  QuizState,
 } from '../models/moodle.models';
 import { ErrorHandlerService } from './error-handler.service';
 import { SanitizationService } from './sanitization.service';
@@ -543,6 +551,7 @@ export class MoodleService {
                   // Merge quiz details
                   const quizDetails: any = quizMap.get(sanitizedModule.id);
                   if (quizDetails) {
+                    baseContent.quizId = quizDetails.id; // Store the actual quiz ID
                     baseContent.timeOpen = quizDetails.timeopen ? new Date(quizDetails.timeopen * 1000) : undefined;
                     baseContent.timeClose = quizDetails.timeclose ? new Date(quizDetails.timeclose * 1000) : undefined;
                     baseContent.timeLimit = quizDetails.timelimit;
@@ -1789,8 +1798,9 @@ export class MoodleService {
   /**
    * Get individual quiz attempts - called for specific quizzes
    */
-  private getQuizAttemptsForQuiz(quizId: number): Observable<any[]> {
+  public getQuizAttemptsForQuiz(quizId: number): Observable<any[]> {
     if (!this.currentUser?.token || !this.currentSite?.domain) {
+      console.warn('Cannot get quiz attempts: User not authenticated');
       return of([]);
     }
 
@@ -1805,19 +1815,470 @@ export class MoodleService {
       .set('includepreviews', '0')
       .set('moodlewsrestformat', 'json');
 
+    console.log(`Fetching quiz attempts for quiz ${quizId}, user ${this.currentUser.id}`);
+
     return this.http.get<any>(webServiceUrl, { params }).pipe(
       map(response => {
-        console.log('Quiz attempts for quiz', quizId, ':', response);
+        console.log('Quiz attempts response for quiz', quizId, ':', response);
+        
         if (response && response.attempts) {
-          return response.attempts;
+          const attempts = response.attempts;
+          console.log(`Found ${attempts.length} attempts for quiz ${quizId}:`);
+          
+          attempts.forEach((attempt: any, index: number) => {
+            console.log(`  Attempt ${index + 1}:`, {
+              id: attempt.id,
+              state: attempt.state,
+              currentpage: attempt.currentpage,
+              timestart: attempt.timestart,
+              timefinish: attempt.timefinish,
+              timemodified: attempt.timemodified
+            });
+          });
+          
+          const inProgressAttempts = attempts.filter((a: any) => a.state === 'inprogress');
+          if (inProgressAttempts.length > 0) {
+            console.log(`Found ${inProgressAttempts.length} in-progress attempts:`, inProgressAttempts);
+          } else {
+            console.log('No in-progress attempts found');
+          }
+          
+          return attempts;
         }
+        
+        console.log('No attempts found in response for quiz', quizId);
         return [];
       }),
       catchError(error => {
-        console.warn('Failed to load quiz attempts for quiz', quizId, ':', error);
+        console.error('Failed to load quiz attempts for quiz', quizId, ':', error);
+        // Don't throw error, just return empty array to allow new attempt
         return of([]);
       })
     );
+  }
+
+  // Alias for backwards compatibility and clearer naming
+  public getUserQuizAttempts(quizId: number): Observable<any[]> {
+    return this.getQuizAttemptsForQuiz(quizId);
+  }
+
+  /**
+   * Check if user has any in-progress attempts for a quiz
+   */
+  public hasInProgressAttempt(quizId: number): Observable<boolean> {
+    return this.getUserQuizAttempts(quizId).pipe(
+      map(attempts => {
+        const inProgressAttempt = attempts.find(a => a.state === 'inprogress');
+        return !!inProgressAttempt;
+      }),
+      catchError(error => {
+        console.error('Failed to check for in-progress attempts:', error);
+        return of(false);
+      })
+    );
+  }
+
+  /**
+   * Get the current in-progress attempt for a quiz, if any
+   */
+  public getInProgressAttempt(quizId: number): Observable<any | null> {
+    return this.getUserQuizAttempts(quizId).pipe(
+      map(attempts => {
+        const inProgressAttempt = attempts.find(a => a.state === 'inprogress');
+        return inProgressAttempt || null;
+      }),
+      catchError(error => {
+        console.error('Failed to get in-progress attempt:', error);
+        return of(null);
+      })
+    );
+  }
+
+  // ==================== QUIZ TAKING METHODS ====================
+
+  /**
+   * Get quiz access information to check if user can attempt the quiz
+   */
+  getQuizAccessInfo(quizId: number): Observable<QuizAccessInfo> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      throw new Error('User not authenticated');
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_quiz_get_quiz_access_information')
+      .set('quizid', quizId.toString())
+      .set('moodlewsrestformat', 'json');
+
+    return this.http.get<QuizAccessInfo>(webServiceUrl, { params }).pipe(
+      map(response => {
+        console.log('Quiz access info:', response);
+        return response;
+      }),
+      catchError(error => {
+        console.error('Failed to get quiz access info:', error);
+        this.errorHandler.handleMoodleError(error, 'Failed to check quiz access');
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Start a new quiz attempt
+   */
+  startQuizAttempt(quizId: number, forcenew: boolean = false): Observable<QuizStartResponse> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      throw new Error('User not authenticated');
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    let params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_quiz_start_attempt')
+      .set('quizid', quizId.toString())
+      .set('moodlewsrestformat', 'json');
+
+    if (forcenew) {
+      params = params.set('forcenew', '1');
+    }
+
+    return this.http.post<QuizStartResponse>(webServiceUrl, null, { params }).pipe(
+      map(response => {
+        console.log('Quiz attempt started:', response);
+        // Convert timestamps to Date objects
+        if (response.attempt) {
+          response.attempt.timestart = new Date((response.attempt.timestart as any) * 1000);
+          if (response.attempt.timefinish) {
+            response.attempt.timefinish = new Date((response.attempt.timefinish as any) * 1000);
+          }
+          if (response.attempt.timemodified) {
+            response.attempt.timemodified = new Date((response.attempt.timemodified as any) * 1000);
+          }
+          if (response.attempt.timecheckstate) {
+            response.attempt.timecheckstate = new Date((response.attempt.timecheckstate as any) * 1000);
+          }
+        }
+        return response;
+      }),
+      catchError(error => {
+        console.error('Failed to start quiz attempt:', error);
+        this.errorHandler.handleMoodleError(error, 'Failed to start quiz attempt');
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get quiz attempt data including questions
+   */
+  getQuizAttemptData(attemptId: number, page: number = 0): Observable<QuizAttemptData> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      throw new Error('User not authenticated');
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    let params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_quiz_get_attempt_data')
+      .set('attemptid', attemptId.toString())
+      .set('moodlewsrestformat', 'json');
+
+    if (page >= 0) {
+      params = params.set('page', page.toString());
+    }
+
+    return this.http.get<QuizAttemptData>(webServiceUrl, { params }).pipe(
+      map(response => {
+        console.log('Quiz attempt data:', response);
+        
+        // Convert timestamps to Date objects
+        if (response.attempt) {
+          response.attempt.timestart = new Date((response.attempt.timestart as any) * 1000);
+          if (response.attempt.timefinish) {
+            response.attempt.timefinish = new Date((response.attempt.timefinish as any) * 1000);
+          }
+          if (response.attempt.timemodified) {
+            response.attempt.timemodified = new Date((response.attempt.timemodified as any) * 1000);
+          }
+          if (response.attempt.timecheckstate) {
+            response.attempt.timecheckstate = new Date((response.attempt.timecheckstate as any) * 1000);
+          }
+        }
+
+        // Parse questions to extract form data
+        if (response.questions) {
+          response.questions = response.questions.map(question => this.parseQuestionData(question));
+        }
+
+        return response;
+      }),
+      catchError(error => {
+        console.error('Failed to get quiz attempt data:', error);
+        this.errorHandler.handleMoodleError(error, 'Failed to load quiz questions');
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Save quiz attempt answers (auto-save)
+   */
+  saveQuizAttempt(attemptId: number, answers: { [key: string]: any }): Observable<QuizSaveResponse> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      throw new Error('User not authenticated');
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    let params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_quiz_save_attempt')
+      .set('attemptid', attemptId.toString())
+      .set('moodlewsrestformat', 'json');
+
+    // Add answer data to params
+    Object.keys(answers).forEach(key => {
+      params = params.set(key, answers[key]);
+    });
+
+    return this.http.post<QuizSaveResponse>(webServiceUrl, null, { params }).pipe(
+      map(response => {
+        console.log('Quiz attempt saved:', response);
+        return response;
+      }),
+      catchError(error => {
+        console.error('Failed to save quiz attempt:', error);
+        this.errorHandler.handleMoodleError(error, 'Failed to save quiz answers');
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Submit quiz attempt for grading
+   */
+  submitQuizAttempt(attemptId: number, answers: { [key: string]: any }): Observable<QuizSubmitResponse> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      throw new Error('User not authenticated');
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    let params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_quiz_process_attempt')
+      .set('attemptid', attemptId.toString())
+      .set('finishattempt', '1')
+      .set('moodlewsrestformat', 'json');
+
+    // Add answer data to params
+    Object.keys(answers).forEach(key => {
+      params = params.set(key, answers[key]);
+    });
+
+    return this.http.post<QuizSubmitResponse>(webServiceUrl, null, { params }).pipe(
+      map(response => {
+        console.log('Quiz attempt submitted:', response);
+        return response;
+      }),
+      catchError(error => {
+        console.error('Failed to submit quiz attempt:', error);
+        this.errorHandler.handleMoodleError(error, 'Failed to submit quiz');
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Parse question HTML to extract form data and create answer objects
+   */
+  public parseQuestionData(question: QuizQuestion): QuizQuestion {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(question.html, 'text/html');
+    
+    // Extract question text - try multiple selectors for different question types
+    let questionText = '';
+    
+    // Try .formulation .qtext first (standard questions)
+    let questionTextElement = doc.querySelector('.formulation .qtext');
+    if (questionTextElement) {
+      questionText = questionTextElement.textContent?.trim() || '';
+    } else {
+      // For multianswer questions, get the formulation content but preserve structure
+      const formulationElement = doc.querySelector('.formulation');
+      if (formulationElement) {
+        // Clone the element to avoid modifying the original
+        const clone = formulationElement.cloneNode(true) as Element;
+        
+        // Remove scripts and hidden inputs but keep the structure
+        clone.querySelectorAll('script, input[type="hidden"]').forEach(el => el.remove());
+        
+        // Replace input elements with placeholders to show where answers go
+        clone.querySelectorAll('input[type="text"], input[type="number"], textarea, select').forEach(el => {
+          const placeholder = document.createElement('span');
+          placeholder.className = 'answer-placeholder';
+          placeholder.textContent = '_____';
+          placeholder.style.borderBottom = '1px solid #ccc';
+          placeholder.style.minWidth = '60px';
+          placeholder.style.display = 'inline-block';
+          placeholder.style.textAlign = 'center';
+          el.parentNode?.replaceChild(placeholder, el);
+        });
+        
+        // Get the HTML content with placeholders
+        questionText = clone.innerHTML;
+        
+        // Clean up any remaining unwanted elements
+        questionText = questionText
+          .replace(/<label[^>]*class="[^"]*accesshide[^"]*"[^>]*>.*?<\/label>/gi, '') // Remove screen reader labels
+          .replace(/class="[^"]*"/g, '') // Remove class attributes
+          .replace(/id="[^"]*"/g, '') // Remove id attributes
+          .replace(/for="[^"]*"/g, '') // Remove for attributes
+          .trim();
+      }
+    }
+    
+    question.questionText = questionText;
+    
+    // Extract form inputs
+    const inputs = doc.querySelectorAll('input, select, textarea');
+    question.parsedAnswers = [];
+    
+    inputs.forEach(input => {
+      const element = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+      
+      if (element.type === 'hidden' || element.name.includes('sequencecheck') || element.name.includes('flagged')) {
+        return; // Skip hidden fields and system fields
+      }
+      
+      const answer: any = {
+        id: element.id || element.name,
+        name: element.name,
+        type: this.getInputType(element),
+        value: element.value || '',
+        label: this.getInputLabel(doc, element),
+        required: element.hasAttribute('required')
+      };
+      
+      // Handle select options
+      if (element.tagName === 'SELECT') {
+        const selectElement = element as HTMLSelectElement;
+        answer.options = Array.from(selectElement.options).map(option => ({
+          value: option.value,
+          label: option.textContent?.trim() || '',
+          selected: option.selected
+        }));
+      }
+      
+      // Handle radio/checkbox groups
+      if (element.type === 'radio' || element.type === 'checkbox') {
+        const existingAnswer = question.parsedAnswers?.find(a => a.name === element.name);
+        if (existingAnswer) {
+          if (!(existingAnswer as any).options) {
+            (existingAnswer as any).options = [];
+          }
+          (existingAnswer as any).options.push({
+            value: element.value,
+            label: this.getInputLabel(doc, element),
+            selected: (element as HTMLInputElement).checked
+          });
+          return;
+        }
+        
+        answer.options = [{
+          value: element.value,
+          label: this.getInputLabel(doc, element),
+          selected: (element as HTMLInputElement).checked
+        }];
+      }
+      
+      question.parsedAnswers?.push(answer);
+    });
+    
+    return question;
+  }
+
+  /**
+   * Get input type for quiz answer
+   */
+  private getInputType(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): 'radio' | 'checkbox' | 'text' | 'textarea' | 'select' | 'dragdrop' | 'match' {
+    if (element.tagName === 'SELECT') return 'select';
+    if (element.tagName === 'TEXTAREA') return 'textarea';
+    
+    const inputElement = element as HTMLInputElement;
+    switch (inputElement.type) {
+      case 'radio': return 'radio';
+      case 'checkbox': return 'checkbox';
+      case 'text':
+      case 'email':
+      case 'url':
+      case 'number':
+      default: return 'text';
+    }
+  }
+
+  /**
+   * Get label for input element
+   */
+  private getInputLabel(doc: Document, element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): string {
+    // Try to find associated label
+    if (element.id) {
+      const label = doc.querySelector(`label[for="${element.id}"]`);
+      if (label) {
+        return label.textContent?.trim() || '';
+      }
+    }
+    
+    // Try to find parent label
+    const parentLabel = element.closest('label');
+    if (parentLabel) {
+      return parentLabel.textContent?.trim() || '';
+    }
+    
+    // Try to find nearby text
+    const parent = element.parentElement;
+    if (parent) {
+      const text = parent.textContent?.trim() || '';
+      return text.replace(element.value, '').trim();
+    }
+    
+    return element.name || '';
+  }
+
+  /**
+   * Create timer for quiz with time limit
+   */
+  createQuizTimer(timeLimit: number, startTime: Date): QuizTimer {
+    const endTime = new Date(startTime.getTime() + (timeLimit * 1000));
+    const now = new Date();
+    const timeRemaining = Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000));
+    
+    return {
+      timeLimit,
+      timeRemaining,
+      startTime,
+      endTime,
+      isActive: timeRemaining > 0,
+      warningThreshold: 300 // 5 minutes
+    };
+  }
+
+  /**
+   * Update quiz timer
+   */
+  updateQuizTimer(timer: QuizTimer): QuizTimer {
+    const now = new Date();
+    const timeRemaining = Math.max(0, Math.floor((timer.endTime.getTime() - now.getTime()) / 1000));
+    
+    return {
+      ...timer,
+      timeRemaining,
+      isActive: timeRemaining > 0
+    };
   }
 }
 

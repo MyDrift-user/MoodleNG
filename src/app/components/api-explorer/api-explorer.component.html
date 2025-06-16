@@ -14,23 +14,33 @@
                 <h3>API Request</h3>
 
                 <div class="endpoint-selector">
+                  <mat-form-field appearance="outline" class="full-width search-field">
+                    <mat-label>Search Endpoints</mat-label>
+                    <input 
+                      matInput 
+                      [(ngModel)]="searchTerm" 
+                      [ngModelOptions]="{standalone: true}"
+                      (input)="filterEndpoints()"
+                      placeholder="Type to search endpoints..."
+                    />
+                    <mat-icon matSuffix>search</mat-icon>
+                  </mat-form-field>
+
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Select API Endpoint</mat-label>
                     <mat-select formControlName="endpoint">
-                      <mat-option
-                        *ngFor="let category of groupedEndpoints | keyvalue"
-                        [disabled]="true"
-                        class="category-header"
-                      >
-                        {{ category.key | titlecase }}
-                      </mat-option>
-                      <ng-container *ngFor="let category of groupedEndpoints | keyvalue">
-                        <mat-option
-                          *ngFor="let endpoint of category.value"
-                          [value]="endpoint.function"
+                      <ng-container *ngFor="let category of filteredGroupedEndpoints | keyvalue">
+                        <mat-optgroup 
+                          *ngIf="category.value.length > 0" 
+                          [label]="category.key | titlecase"
                         >
-                          {{ endpoint.name }}
-                        </mat-option>
+                          <mat-option
+                            *ngFor="let endpoint of category.value"
+                            [value]="endpoint.function"
+                          >
+                            {{ endpoint.name }}
+                          </mat-option>
+                        </mat-optgroup>
                       </ng-container>
                     </mat-select>
                     <mat-error *ngIf="apiForm.get('endpoint')?.hasError('required')">
@@ -168,6 +178,10 @@
 
           <!-- Response Tab -->
           <mat-tab label="Response" [disabled]="!currentResponse">
+            <ng-template mat-tab-label>
+              <mat-icon>receipt</mat-icon>
+              Response
+            </ng-template>
             <div *ngIf="currentResponse" class="response-container">
               <div class="response-header">
                 <h3>API Response</h3>
@@ -326,6 +340,153 @@
                         <mat-icon>refresh</mat-icon>
                         Reuse
                       </button>
+                    </div>
+                  </div>
+                </mat-expansion-panel>
+              </mat-accordion>
+            </div>
+          </mat-tab>
+
+          <!-- Logs Tab -->
+          <mat-tab label="Logs">
+            <ng-template mat-tab-label>
+              <mat-icon>description</mat-icon>
+              Logs ({{ apiLogger.getLogs().length }})
+            </ng-template>
+            <div class="logs-container">
+              <div class="logs-header">
+                <h3>API Call Logs</h3>
+                <div class="logs-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="exportLogs('json')"
+                    [disabled]="apiLogger.getLogs().length === 0"
+                  >
+                    <mat-icon>download</mat-icon>
+                    Export JSON
+                  </button>
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="exportLogs('csv')"
+                    [disabled]="apiLogger.getLogs().length === 0"
+                  >
+                    <mat-icon>download</mat-icon>
+                    Export CSV
+                  </button>
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="exportLogs('text')"
+                    [disabled]="apiLogger.getLogs().length === 0"
+                  >
+                    <mat-icon>download</mat-icon>
+                    Export Text
+                  </button>
+                  <button
+                    mat-button
+                    color="warn"
+                    (click)="clearLogs()"
+                    [disabled]="apiLogger.getLogs().length === 0"
+                  >
+                    <mat-icon>delete</mat-icon>
+                    Clear Logs
+                  </button>
+                </div>
+              </div>
+
+              <!-- Log Statistics -->
+              <div *ngIf="apiLogger.getLogs().length > 0" class="log-stats">
+                <mat-card appearance="outlined">
+                  <mat-card-header>
+                    <mat-card-title>Statistics</mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="stats-grid">
+                      <div class="stat-item">
+                        <span class="stat-label">Total Calls:</span>
+                        <span class="stat-value">{{ getLogStats().totalCalls }}</span>
+                      </div>
+                      <div class="stat-item">
+                        <span class="stat-label">Successful:</span>
+                        <span class="stat-value success">{{ getLogStats().successfulCalls }}</span>
+                      </div>
+                      <div class="stat-item">
+                        <span class="stat-label">Failed:</span>
+                        <span class="stat-value error">{{ getLogStats().failedCalls }}</span>
+                      </div>
+                      <div class="stat-item">
+                        <span class="stat-label">Avg Duration:</span>
+                        <span class="stat-value">{{ formatDuration(getLogStats().averageDuration) }}</span>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+
+              <div *ngIf="apiLogger.getLogs().length === 0" class="no-logs">
+                <p>No API calls logged yet. Execute some API calls to see logs here.</p>
+              </div>
+
+              <!-- Log Entries -->
+              <mat-accordion *ngIf="apiLogger.getLogs().length > 0" class="logs-list">
+                <mat-expansion-panel *ngFor="let log of apiLogger.getLogs().slice().reverse()" class="log-item">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>
+                      {{ log.endpoint }}
+                    </mat-panel-title>
+                    <mat-panel-description>
+                      <span
+                        [ngClass]="{
+                          success: log.response.status === 'success',
+                          error: log.response.status === 'error',
+                        }"
+                      >
+                        {{ log.response.status }}
+                      </span>
+                      <span class="log-time">{{ formatDatetime(log.timestamp) }}</span>
+                      <span class="log-duration">{{ formatDuration(log.response.duration) }}</span>
+                    </mat-panel-description>
+                  </mat-expansion-panel-header>
+
+                  <div class="log-details">
+                    <div class="log-request">
+                      <h4>Request</h4>
+                      <p><strong>Function:</strong> {{ log.function }}</p>
+                      <p><strong>URL:</strong> {{ log.request.url }}</p>
+                      <p><strong>Method:</strong> {{ log.request.method }}</p>
+                      <div *ngIf="Object.keys(log.parameters).length > 0">
+                        <p><strong>Parameters:</strong></p>
+                        <pre class="parameters-json">{{ log.parameters | json }}</pre>
+                      </div>
+                    </div>
+
+                    <mat-divider></mat-divider>
+
+                    <div class="log-response">
+                      <h4>Response</h4>
+                      <p><strong>Status:</strong> {{ log.response.status }}</p>
+                      <p><strong>Status Code:</strong> {{ log.response.statusCode }}</p>
+                      <p><strong>Duration:</strong> {{ formatDuration(log.response.duration) }}</p>
+
+                      <div *ngIf="log.response.error">
+                        <p><strong>Error:</strong> {{ log.response.error }}</p>
+                      </div>
+
+                      <div *ngIf="log.response.data" class="response-data">
+                        <p><strong>Response Data:</strong></p>
+                        <pre class="response-json">{{ log.response.data | json }}</pre>
+                      </div>
+                    </div>
+
+                    <mat-divider></mat-divider>
+
+                    <div class="log-metadata">
+                      <h4>Metadata</h4>
+                      <p><strong>Session ID:</strong> {{ log.sessionId }}</p>
+                      <p><strong>Timestamp:</strong> {{ log.timestamp.toISOString() }}</p>
+                      <p><strong>User Agent:</strong> {{ log.userAgent }}</p>
                     </div>
                   </div>
                 </mat-expansion-panel>

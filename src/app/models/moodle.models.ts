@@ -79,6 +79,7 @@ export interface MoodleContent {
   submissionAttemptNumber?: number; // Current attempt number
   
   // Enhanced Quiz fields
+  quizId?: number; // The actual quiz ID (different from module ID)
   timeOpen?: Date; // When quiz opens
   timeClose?: Date; // When quiz closes
   timeLimit?: number; // Time limit in seconds
@@ -176,4 +177,107 @@ export interface ResultsGroup {
   category: MoodleCourseResult;
   items: MoodleCourseResult[];
   summary?: MoodleCourseResult;
+}
+
+// Enhanced Quiz interfaces for quiz taking
+export interface QuizQuestion {
+  slot: number;
+  type: string; // 'multichoice', 'shortanswer', 'multianswer', 'truefalse', 'essay', 'match', 'ddwtos', etc.
+  page: number;
+  questionnumber: string;
+  number: number;
+  html: string; // The full HTML content of the question
+  responsefileareas: any[];
+  sequencecheck: number;
+  lastactiontime: number;
+  hasautosavedstep: boolean;
+  flagged: boolean;
+  stateclass: string; // 'notyetanswered', 'complete', 'invalid', etc.
+  status: string; // Human readable status
+  blockedbyprevious: boolean;
+  maxmark: number;
+  settings?: any;
+  
+  // Parsed question data
+  questionText?: string;
+  parsedAnswers?: QuizAnswer[];
+  userAnswer?: any; // Current user's answer
+  questionId?: number;
+  attemptId?: number;
+}
+
+export interface QuizAnswer {
+  id: string;
+  type: 'radio' | 'checkbox' | 'text' | 'textarea' | 'select' | 'dragdrop' | 'match';
+  name: string; // The form field name
+  value?: any; // Current value
+  label?: string; // Display label
+  options?: QuizAnswerOption[]; // For multiple choice
+  required?: boolean;
+  maxLength?: number;
+  placeholder?: string;
+}
+
+export interface QuizAnswerOption {
+  value: string;
+  label: string;
+  selected?: boolean;
+}
+
+export interface QuizAttemptData {
+  attempt: QuizAttempt;
+  messages: string[];
+  nextpage: number;
+  questions: QuizQuestion[];
+  warnings: any[];
+}
+
+export interface QuizAccessInfo {
+  canattempt: boolean;
+  canmanage: boolean;
+  canpreview: boolean;
+  canreviewmyattempts: boolean;
+  canviewreports: boolean;
+  accessrules: string[];
+  activerulenames: string[];
+  preventaccessreasons: string[];
+  warnings: any[];
+}
+
+export interface QuizStartResponse {
+  attempt: QuizAttempt;
+  warnings: any[];
+}
+
+export interface QuizSubmitResponse {
+  state: string;
+  warnings: any[];
+}
+
+export interface QuizSaveResponse {
+  status: string;
+  warnings: any[];
+}
+
+export interface QuizTimer {
+  timeLimit: number; // Total time limit in seconds
+  timeRemaining: number; // Time remaining in seconds
+  startTime: Date;
+  endTime: Date;
+  isActive: boolean;
+  warningThreshold: number; // Seconds before showing warning (default 300 = 5 minutes)
+}
+
+export interface QuizState {
+  quiz: MoodleContent;
+  attempt: QuizAttempt | null;
+  questions: QuizQuestion[];
+  currentPage: number;
+  totalPages: number;
+  timer: QuizTimer | null;
+  accessInfo: QuizAccessInfo | null;
+  isDirty: boolean; // Has unsaved changes
+  isSubmitting: boolean;
+  autoSaveInterval: number; // Seconds between auto-saves
+  lastAutoSave: Date | null;
 }

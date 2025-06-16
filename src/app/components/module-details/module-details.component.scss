@@ -2100,3 +2100,47 @@ audio {
     margin: 0;
   }
 }
+
+/* Quiz button styles */
+.start-quiz-btn {
+  font-weight: 500;
+  margin-right: 8px;
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: white;
+  
+  mat-icon {
+    margin-right: 4px;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+  }
+}
+
+/* Fullscreen dialog styles */
+::ng-deep .fullscreen-dialog {
+  .mat-mdc-dialog-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .mat-mdc-dialog-surface {
+    border-radius: 0 !important;
+  }
+}
+
+/* Success snackbar styles */
+::ng-deep .success-snackbar {
+  background-color: #4caf50 !important;
+  color: white !important;
+  
+  .mat-mdc-snack-bar-action {
+    color: white !important;
+  }
+}

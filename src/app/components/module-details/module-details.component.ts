@@ -26,6 +26,7 @@ import JSZip from 'jszip';
 import { FilePreviewService } from '../../services/file-preview.service';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { QuizTakingComponent } from '../quiz-taking/quiz-taking.component';
 
 // Add interface for JSZip metadata
 interface JSZipMetadata {
@@ -1125,5 +1126,46 @@ export class ModuleDetailsComponent implements OnInit {
       default:
         return status || 'Unknown';
     }
+  }
+
+  // Quiz taking functionality
+  startQuiz(quiz: MoodleContent): void {
+    if (quiz.type !== 'quiz') {
+      this.snackBar.open('This is not a quiz', 'OK', { duration: 3000 });
+      return;
+    }
+
+    // Open quiz taking component in a dialog
+    const dialogRef = this.dialog.open(QuizTakingComponent, {
+      data: { quiz },
+      width: '100vw',
+      height: '100vh',
+      maxWidth: '100vw',
+      maxHeight: '100vh',
+      disableClose: true,
+      panelClass: 'fullscreen-dialog'
+    });
+
+    dialogRef.componentInstance.quiz = quiz;
+    
+    dialogRef.componentInstance.quizCompleted.subscribe((result: any) => {
+      console.log('Quiz completed:', result);
+      this.snackBar.open('Quiz submitted successfully!', 'OK', { 
+        duration: 5000,
+        panelClass: ['success-snackbar']
+      });
+      dialogRef.close();
+      // Refresh module contents to show updated quiz attempts
+      this.loadModuleContents();
+    });
+
+    dialogRef.componentInstance.quizCanceled.subscribe(() => {
+      console.log('Quiz canceled');
+      dialogRef.close();
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      console.log('Quiz dialog closed');
+    });
   }
 }

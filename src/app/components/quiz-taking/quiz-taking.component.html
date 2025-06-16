@@ -1,0 +1,232 @@
+<div class="quiz-taking-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading quiz...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !isLoading" class="error-container">
+    <mat-card class="error-card">
+      <mat-card-content>
+        <div class="error-content">
+          <mat-icon color="warn">error</mat-icon>
+          <h3>Failed to Load Quiz</h3>
+          <p>{{ error }}</p>
+          <button mat-raised-button color="primary" (click)="initializeQuiz()">
+            Retry
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Quiz Interface -->
+  <div *ngIf="quizState && !isLoading && !error" class="quiz-interface">
+    <!-- Quiz Header -->
+    <mat-toolbar class="quiz-header">
+      <div class="quiz-title">
+        <mat-icon>quiz</mat-icon>
+        <span>{{ quiz.name }}</span>
+      </div>
+      
+      <!-- Timer -->
+      <div *ngIf="quizState.timer" class="timer-container" [ngClass]="getTimerClass()">
+        <mat-icon>timer</mat-icon>
+        <span class="timer-text">{{ formatTime(quizState.timer.timeRemaining) }}</span>
+        <mat-progress-bar 
+          mode="determinate" 
+          [value]="(quizState.timer.timeRemaining / quizState.timer.timeLimit) * 100"
+          class="timer-progress">
+        </mat-progress-bar>
+      </div>
+
+      <!-- Auto-save status -->
+      <div class="autosave-status">
+        <mat-icon *ngIf="isSaving" class="saving-icon">sync</mat-icon>
+        <mat-icon *ngIf="!isSaving && lastSaveTime" color="accent">check_circle</mat-icon>
+        <span *ngIf="lastSaveTime" class="save-time">
+          Last saved: {{ lastSaveTime | date:'short' }}
+        </span>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="header-actions">
+        <button mat-icon-button (click)="cancelQuiz()" matTooltip="Cancel Quiz">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </mat-toolbar>
+
+    <!-- Quiz Content -->
+    <div class="quiz-content">
+             <!-- Page Navigation -->
+       <div *ngIf="quizState.totalPages > 1" class="page-navigation">
+         <div class="page-chips">
+           <mat-chip-listbox [value]="currentPageIndex">
+             <mat-chip-option 
+               *ngFor="let page of [].constructor(quizState.totalPages); let i = index"
+               [value]="i"
+               (click)="navigateToPage(i)"
+               [disabled]="!canNavigateToPage(i)">
+               Page {{ i + 1 }}
+             </mat-chip-option>
+           </mat-chip-listbox>
+         </div>
+       </div>
+
+      <!-- Questions Form -->
+      <form [formGroup]="quizForm" class="quiz-form">
+        <div class="questions-container">
+          <mat-card *ngFor="let question of getCurrentPageQuestions(); let i = index" class="question-card">
+            <mat-card-header>
+              <mat-card-title>
+                <div class="question-header">
+                  <span class="question-number">Question {{ question.number }}</span>
+                  <span class="question-points">({{ question.maxmark }} points)</span>
+                  <mat-icon *ngIf="question.flagged" color="warn" class="question-flag">flag</mat-icon>
+                </div>
+              </mat-card-title>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <!-- Question Text -->
+              <div class="question-text" [innerHTML]="sanitizeHtml(question.questionText || '')"></div>
+              
+              <!-- Question Answers -->
+              <div *ngIf="question.parsedAnswers" class="question-answers">
+                <div *ngFor="let answer of question.parsedAnswers" class="answer-container">
+                  
+                  <!-- Text Input -->
+                  <mat-form-field *ngIf="answer.type === 'text'" appearance="outline" class="full-width">
+                    <mat-label>{{ answer.label }}</mat-label>
+                    <input matInput [formControlName]="answer.name" [placeholder]="answer.placeholder || ''">
+                  </mat-form-field>
+                  
+                  <!-- Textarea -->
+                  <mat-form-field *ngIf="answer.type === 'textarea'" appearance="outline" class="full-width">
+                    <mat-label>{{ answer.label }}</mat-label>
+                    <textarea matInput [formControlName]="answer.name" rows="4" [placeholder]="answer.placeholder || ''"></textarea>
+                  </mat-form-field>
+                  
+                  <!-- Select Dropdown -->
+                  <mat-form-field *ngIf="answer.type === 'select'" appearance="outline" class="full-width">
+                    <mat-label>{{ answer.label }}</mat-label>
+                    <mat-select [formControlName]="answer.name">
+                      <mat-option *ngFor="let option of answer.options" [value]="option.value">
+                        {{ option.label }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  
+                  <!-- Radio Buttons -->
+                  <div *ngIf="answer.type === 'radio'" class="radio-group">
+                    <label class="answer-label">{{ answer.label }}</label>
+                    <mat-radio-group [formControlName]="answer.name" class="radio-options">
+                      <mat-radio-button *ngFor="let option of answer.options" [value]="option.value">
+                        {{ option.label }}
+                      </mat-radio-button>
+                    </mat-radio-group>
+                  </div>
+                  
+                  <!-- Checkboxes -->
+                  <div *ngIf="answer.type === 'checkbox'" class="checkbox-group">
+                    <label class="answer-label">{{ answer.label }}</label>
+                    <div class="checkbox-options">
+                      <mat-checkbox 
+                        *ngFor="let option of answer.options" 
+                        [formControlName]="answer.name + '_' + option.value">
+                        {{ option.label }}
+                      </mat-checkbox>
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+              
+              <!-- Raw HTML fallback for complex question types -->
+              <div *ngIf="!question.parsedAnswers || question.parsedAnswers.length === 0" 
+                   class="raw-question-content" 
+                   [innerHTML]="sanitizeHtml(question.html)">
+              </div>
+              
+            </mat-card-content>
+            
+            <mat-card-actions align="end">
+              <button mat-icon-button 
+                      (click)="question.flagged = !question.flagged" 
+                      [color]="question.flagged ? 'warn' : 'default'"
+                      matTooltip="Flag for review">
+                <mat-icon>{{ question.flagged ? 'flag' : 'flag_outlined' }}</mat-icon>
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+      </form>
+
+      <!-- Navigation Controls -->
+      <div class="navigation-controls">
+        <div class="nav-buttons">
+          <button mat-raised-button 
+                  (click)="previousPage()" 
+                  [disabled]="currentPageIndex === 0">
+            <mat-icon>navigate_before</mat-icon>
+            Previous
+          </button>
+          
+          <span class="page-indicator">
+            Page {{ currentPageIndex + 1 }} of {{ quizState.totalPages }}
+          </span>
+          
+          <button mat-raised-button 
+                  (click)="nextPage()" 
+                  [disabled]="currentPageIndex >= quizState.totalPages - 1">
+            Next
+            <mat-icon>navigate_next</mat-icon>
+          </button>
+        </div>
+        
+        <!-- Submit Button -->
+        <div class="submit-controls">
+          <button mat-raised-button 
+                  color="primary" 
+                  (click)="submitQuiz()" 
+                  [disabled]="quizState.isSubmitting">
+            <mat-icon *ngIf="!quizState.isSubmitting">send</mat-icon>
+            <mat-spinner *ngIf="quizState.isSubmitting" diameter="20"></mat-spinner>
+            {{ quizState.isSubmitting ? 'Submitting...' : 'Submit Quiz' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz Info Panel -->
+    <div class="quiz-info-panel">
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title>Quiz Information</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="info-items">
+            <div class="info-item" *ngIf="quiz.timeLimit">
+              <mat-icon>timer</mat-icon>
+              <span>Time Limit: {{ formatTime(quiz.timeLimit) }}</span>
+            </div>
+            <div class="info-item" *ngIf="quiz.attempts">
+              <mat-icon>repeat</mat-icon>
+              <span>Attempts Allowed: {{ quiz.attempts }}</span>
+            </div>
+            <div class="info-item" *ngIf="quiz.grade">
+              <mat-icon>grade</mat-icon>
+              <span>Total Points: {{ quiz.grade }}</span>
+            </div>
+            <div class="info-item">
+              <mat-icon>quiz</mat-icon>
+              <span>Questions: {{ quizState.questions.length }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div> 

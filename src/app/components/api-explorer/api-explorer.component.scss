@@ -23,6 +23,28 @@
 
 .endpoint-selector {
   margin-bottom: 16px;
+
+  .search-field {
+    margin-bottom: 16px;
+  }
+
+  // Style for option groups
+  ::ng-deep .mat-mdc-optgroup-label {
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.87);
+    background-color: rgba(0, 0, 0, 0.04);
+    padding: 8px 16px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  ::ng-deep .mat-mdc-option {
+    padding-left: 32px; // Indent options under groups
+  }
+
+  ::ng-deep .mat-mdc-optgroup .mat-mdc-option {
+    padding-left: 48px; // Extra indent for grouped options
+  }
 }
 
 .endpoint-description {
@@ -224,4 +246,128 @@
   border-top: 1px solid rgba(0, 0, 0, 0.12);
   margin-top: 4px;
   opacity: 1 !important;
+}
+
+// Logs Tab
+.logs-container {
+  padding: 16px;
+}
+
+.logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.logs-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.log-stats {
+  margin-bottom: 24px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.stat-label {
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.stat-value {
+  font-weight: 600;
+  
+  &.success {
+    color: #4caf50;
+  }
+  
+  &.error {
+    color: #f44336;
+  }
+}
+
+.no-logs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 150px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.logs-list {
+  margin-top: 16px;
+}
+
+.log-item {
+  margin-bottom: 8px;
+}
+
+.log-details {
+  padding: 16px;
+}
+
+.log-request,
+.log-response,
+.log-metadata {
+  margin-bottom: 16px;
+}
+
+.log-time {
+  margin-left: 16px;
+  color: rgba(0, 0, 0, 0.54);
+  font-size: 12px;
+}
+
+.log-duration {
+  margin-left: 8px;
+  color: rgba(0, 0, 0, 0.54);
+  font-size: 12px;
+}
+
+.parameters-json,
+.response-json {
+  padding: 12px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+  max-height: 300px;
+  overflow: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  margin: 8px 0;
+  color: inherit;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .logs-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .logs-actions {
+    justify-content: center;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
