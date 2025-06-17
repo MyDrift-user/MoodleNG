@@ -34,12 +34,12 @@
                           *ngIf="category.value.length > 0" 
                           [label]="category.key | titlecase"
                         >
-                          <mat-option
-                            *ngFor="let endpoint of category.value"
-                            [value]="endpoint.function"
-                          >
-                            {{ endpoint.name }}
-                          </mat-option>
+                        <mat-option
+                          *ngFor="let endpoint of category.value"
+                          [value]="endpoint.function"
+                        >
+                          {{ endpoint.name }}
+                        </mat-option>
                         </mat-optgroup>
                       </ng-container>
                     </mat-select>

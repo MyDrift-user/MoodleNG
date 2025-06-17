@@ -212,6 +212,9 @@ export interface QuizAnswer {
   name: string; // The form field name
   value?: any; // Current value
   label?: string; // Display label
+  context?: string; // Context information around the element
+  contextBefore?: string; // Text appearing before the element (for dropdowns)
+  contextAfter?: string; // Text appearing after the element (for dropdowns)
   options?: QuizAnswerOption[]; // For multiple choice
   required?: boolean;
   maxLength?: number;
@@ -221,6 +224,7 @@ export interface QuizAnswer {
 export interface QuizAnswerOption {
   value: string;
   label: string;
+  context?: string; // Context information for this option
   selected?: boolean;
 }
 

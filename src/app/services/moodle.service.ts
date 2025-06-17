@@ -1894,6 +1894,35 @@ export class MoodleService {
     );
   }
 
+  public getAttemptStatus(attemptId: number): Observable<{ state: string; grade?: number }> {
+    if (!this.currentUser?.token || !this.currentSite?.domain) {
+      throw new Error('User not authenticated');
+    }
+
+    const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
+
+    const params = new HttpParams()
+      .set('wstoken', this.currentUser.token)
+      .set('wsfunction', 'mod_quiz_get_attempt_summary')
+      .set('attemptid', attemptId.toString())
+      .set('moodlewsrestformat', 'json');
+
+    return this.http.get<any>(webServiceUrl, { params }).pipe(
+      map(response => {
+        console.log('Attempt status response:', response);
+        return {
+          state: response.state || 'unknown',
+          grade: response.grade
+        };
+      }),
+      catchError(error => {
+        console.error('Failed to get attempt status:', error);
+        // Return a fallback status
+        return of({ state: 'unknown' });
+      })
+    );
+  }
+
   // ==================== QUIZ TAKING METHODS ====================
 
   /**
@@ -1981,6 +2010,7 @@ export class MoodleService {
 
     const webServiceUrl = `${this.currentSite.domain}/webservice/rest/server.php`;
 
+    // First, get the data for the specified page to understand the structure
     let params = new HttpParams()
       .set('wstoken', this.currentUser.token)
       .set('wsfunction', 'mod_quiz_get_attempt_data')
@@ -1991,30 +2021,43 @@ export class MoodleService {
       params = params.set('page', page.toString());
     }
 
-    return this.http.get<QuizAttemptData>(webServiceUrl, { params }).pipe(
-      map(response => {
-        console.log('Quiz attempt data:', response);
-        
-        // Convert timestamps to Date objects
-        if (response.attempt) {
-          response.attempt.timestart = new Date((response.attempt.timestart as any) * 1000);
-          if (response.attempt.timefinish) {
-            response.attempt.timefinish = new Date((response.attempt.timefinish as any) * 1000);
-          }
-          if (response.attempt.timemodified) {
-            response.attempt.timemodified = new Date((response.attempt.timemodified as any) * 1000);
-          }
-          if (response.attempt.timecheckstate) {
-            response.attempt.timecheckstate = new Date((response.attempt.timecheckstate as any) * 1000);
-          }
-        }
+          return this.http.get<QuizAttemptData>(webServiceUrl, { params }).pipe(
+        switchMap(firstPageResponse => {
+          console.log('First page response:', firstPageResponse);
+          
+          // If nextpage is -1, we only have one page or we're on the last page
+          if (firstPageResponse.nextpage === -1 && page === 0) {
+            // Check if there are more pages by trying to get page 1
+            const nextPageParams = new HttpParams()
+              .set('wstoken', this.currentUser?.token || '')
+              .set('wsfunction', 'mod_quiz_get_attempt_data')
+              .set('attemptid', attemptId.toString())
+              .set('page', '1')
+              .set('moodlewsrestformat', 'json');
 
-        // Parse questions to extract form data
-        if (response.questions) {
-          response.questions = response.questions.map(question => this.parseQuestionData(question));
+          return this.http.get<QuizAttemptData>(webServiceUrl, { params: nextPageParams }).pipe(
+            switchMap(secondPageResponse => {
+              // If we get a valid response for page 1, we need to load all pages
+              if (secondPageResponse.questions && secondPageResponse.questions.length > 0) {
+                return this.loadAllQuizPages(attemptId, firstPageResponse);
+              } else {
+                // Only one page, return the first page
+                return of(this.processQuizAttemptData(firstPageResponse));
+              }
+            }),
+            catchError(error => {
+              // If page 1 fails, we only have one page
+              console.log('Only one page available, using first page data');
+              return of(this.processQuizAttemptData(firstPageResponse));
+            })
+          );
+        } else if (page === 0) {
+          // Load all pages starting from page 0
+          return this.loadAllQuizPages(attemptId, firstPageResponse);
+        } else {
+          // Specific page requested
+          return of(this.processQuizAttemptData(firstPageResponse));
         }
-
-        return response;
       }),
       catchError(error => {
         console.error('Failed to get quiz attempt data:', error);
@@ -2022,6 +2065,85 @@ export class MoodleService {
         throw error;
       })
     );
+  }
+
+  private loadAllQuizPages(attemptId: number, firstPageData: QuizAttemptData): Observable<QuizAttemptData> {
+    const webServiceUrl = `${this.currentSite?.domain}/webservice/rest/server.php`;
+    const allQuestions: QuizQuestion[] = firstPageData.questions || [];
+    let currentPage = 1;
+    const maxPages = 50; // Safety limit
+
+    const loadNextPage = (): Observable<QuizAttemptData> => {
+      if (currentPage >= maxPages) {
+        console.log('Reached maximum page limit, stopping');
+        return of(firstPageData);
+      }
+
+      const params = new HttpParams()
+        .set('wstoken', this.currentUser?.token || '')
+        .set('wsfunction', 'mod_quiz_get_attempt_data')
+        .set('attemptid', attemptId.toString())
+        .set('page', currentPage.toString())
+        .set('moodlewsrestformat', 'json');
+
+      return this.http.get<QuizAttemptData>(webServiceUrl, { params }).pipe(
+        switchMap(pageData => {
+          console.log(`Page ${currentPage} loaded with ${pageData.questions?.length || 0} questions`);
+          
+          if (pageData.questions && pageData.questions.length > 0) {
+            // Add questions from this page to our collection
+            allQuestions.push(...pageData.questions);
+            currentPage++;
+            
+            // Continue loading next page
+            return loadNextPage();
+          } else {
+            // No more questions, we're done
+            console.log(`Finished loading all pages. Total questions: ${allQuestions.length}`);
+            return of(firstPageData);
+          }
+        }),
+        catchError(error => {
+          // If we fail to load a page, we're probably done
+          console.log(`Failed to load page ${currentPage}, assuming we're done:`, error);
+          return of(firstPageData);
+        })
+      );
+    };
+
+    // Start loading from page 1 (we already have page 0)
+    return loadNextPage().pipe(
+      map(finalData => {
+        // Combine all questions into the final response
+        return {
+          ...firstPageData,
+          questions: allQuestions
+        };
+      })
+    );
+  }
+
+  private processQuizAttemptData(response: QuizAttemptData): QuizAttemptData {
+    // Convert timestamps to Date objects
+    if (response.attempt) {
+      response.attempt.timestart = new Date((response.attempt.timestart as any) * 1000);
+      if (response.attempt.timefinish) {
+        response.attempt.timefinish = new Date((response.attempt.timefinish as any) * 1000);
+      }
+      if (response.attempt.timemodified) {
+        response.attempt.timemodified = new Date((response.attempt.timemodified as any) * 1000);
+      }
+      if (response.attempt.timecheckstate) {
+        response.attempt.timecheckstate = new Date((response.attempt.timecheckstate as any) * 1000);
+      }
+    }
+
+    // Parse questions to extract form data
+    if (response.questions) {
+      response.questions = response.questions.map(question => this.parseQuestionData(question));
+    }
+
+    return response;
   }
 
   /**
@@ -2061,7 +2183,7 @@ export class MoodleService {
   /**
    * Submit quiz attempt for grading
    */
-  submitQuizAttempt(attemptId: number, answers: { [key: string]: any }): Observable<QuizSubmitResponse> {
+  submitQuizAttempt(attemptId: number, answers: { [key: string]: any }, questions?: QuizQuestion[]): Observable<QuizSubmitResponse> {
     if (!this.currentUser?.token || !this.currentSite?.domain) {
       throw new Error('User not authenticated');
     }
@@ -2073,20 +2195,58 @@ export class MoodleService {
       .set('wsfunction', 'mod_quiz_process_attempt')
       .set('attemptid', attemptId.toString())
       .set('finishattempt', '1')
+      .set('timeup', '0')
       .set('moodlewsrestformat', 'json');
+
+    // Add sequence check numbers for each question if available
+    if (questions) {
+      questions.forEach(question => {
+        const sequenceCheckKey = `q${attemptId}:${question.slot}_:sequencecheck`;
+        params = params.set(sequenceCheckKey, question.sequencecheck.toString());
+      });
+    }
 
     // Add answer data to params
     Object.keys(answers).forEach(key => {
-      params = params.set(key, answers[key]);
+      const value = answers[key];
+      if (Array.isArray(value)) {
+        // Handle checkbox arrays by adding each value separately
+        value.forEach((item, index) => {
+          params = params.set(`${key}[${index}]`, item.toString());
+        });
+      } else {
+        params = params.set(key, value.toString());
+      }
+    });
+
+    console.log('Submitting quiz attempt with params:', {
+      attemptId,
+      answers,
+      questions: questions?.length || 0,
+      finalParams: params.toString()
     });
 
     return this.http.post<QuizSubmitResponse>(webServiceUrl, null, { params }).pipe(
       map(response => {
-        console.log('Quiz attempt submitted:', response);
+        console.log('Quiz attempt submitted successfully:', response);
+        
+        // Check if the response indicates success
+        if (response && (response.state === 'finished' || response.state === 'complete')) {
+          console.log('Quiz submission confirmed as finished');
+        } else {
+          console.warn('Quiz submission may not have completed properly:', response);
+        }
+        
         return response;
       }),
       catchError(error => {
         console.error('Failed to submit quiz attempt:', error);
+        
+        // Log more details about the error
+        if (error.error) {
+          console.error('Error details:', error.error);
+        }
+        
         this.errorHandler.handleMoodleError(error, 'Failed to submit quiz');
         throw error;
       })
@@ -2144,9 +2304,286 @@ export class MoodleService {
     
     question.questionText = questionText;
     
-    // Extract form inputs
-    const inputs = doc.querySelectorAll('input, select, textarea');
+    // Extract form inputs based on question type
     question.parsedAnswers = [];
+    
+    if (question.type === 'match') {
+      // Handle matching questions with table structure
+      this.parseMatchingQuestion(doc, question);
+    } else if (question.type === 'multichoice') {
+      // Handle multiple choice questions with proper radio button parsing
+      this.parseMultipleChoiceQuestion(doc, question);
+    } else if (question.type === 'truefalse') {
+      // Handle true/false questions
+      this.parseTrueFalseQuestion(doc, question);
+    } else {
+      // Handle other question types with generic parsing
+      this.parseGenericQuestion(doc, question);
+    }
+    
+    return question;
+  }
+
+  /**
+   * Get input type for quiz answer
+   */
+  private getInputType(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): 'radio' | 'checkbox' | 'text' | 'textarea' | 'select' | 'dragdrop' | 'match' {
+    if (element.tagName === 'SELECT') return 'select';
+    if (element.tagName === 'TEXTAREA') return 'textarea';
+    
+    const inputElement = element as HTMLInputElement;
+    switch (inputElement.type) {
+      case 'radio': return 'radio';
+      case 'checkbox': return 'checkbox';
+      case 'text':
+      case 'email':
+      case 'url':
+      case 'number':
+      default: return 'text';
+    }
+  }
+
+  /**
+   * Get label for input element
+   */
+  private getInputLabel(doc: Document, element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): string {
+    // Try to find associated label
+    if (element.id) {
+      const label = doc.querySelector(`label[for="${element.id}"]`);
+      if (label) {
+        return label.textContent?.trim() || '';
+      }
+    }
+    
+    // Try to find parent label
+    const parentLabel = element.closest('label');
+    if (parentLabel) {
+      return parentLabel.textContent?.trim() || '';
+    }
+    
+    // Try to find nearby text
+    const parent = element.parentElement;
+    if (parent) {
+      const text = parent.textContent?.trim() || '';
+      return text.replace(element.value, '').trim();
+    }
+    
+    return element.name || '';
+  }
+
+  /**
+   * Get context information around an input element (for radio buttons and other elements)
+   */
+  private getInputContext(doc: Document, element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): string {
+    // Get the parent container that might have contextual information
+    let parent = element.parentElement;
+    let context = '';
+    
+    // Look up to 3 levels for context
+    for (let i = 0; i < 3 && parent; i++) {
+      // Get all text content but remove the input element's own text
+      const clone = parent.cloneNode(true) as Element;
+      // Remove all input elements to get just the text context
+      clone.querySelectorAll('input, select, textarea').forEach(el => el.remove());
+      
+      const text = clone.textContent?.trim() || '';
+      if (text && text.length > 3) { // Only use meaningful text
+        context = text;
+        break;
+      }
+      parent = parent.parentElement;
+    }
+    
+    return context;
+  }
+
+  /**
+   * Get surrounding context for select dropdowns
+   */
+  private getSelectContext(doc: Document, element: HTMLSelectElement): { before: string; after: string } | null {
+    const parent = element.parentElement;
+    if (!parent) return null;
+    
+    const children = Array.from(parent.childNodes);
+    const elementIndex = children.indexOf(element);
+    
+    let before = '';
+    let after = '';
+    
+    // Get text before the select element
+    for (let i = 0; i < elementIndex; i++) {
+      const node = children[i];
+      if (node.nodeType === Node.TEXT_NODE) {
+        before += node.textContent?.trim() + ' ';
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const elem = node as Element;
+        if (!elem.matches('input, select, textarea')) {
+          before += elem.textContent?.trim() + ' ';
+        }
+      }
+    }
+    
+    // Get text after the select element
+    for (let i = elementIndex + 1; i < children.length; i++) {
+      const node = children[i];
+      if (node.nodeType === Node.TEXT_NODE) {
+        after += node.textContent?.trim() + ' ';
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const elem = node as Element;
+        if (!elem.matches('input, select, textarea')) {
+          after += elem.textContent?.trim() + ' ';
+        }
+      }
+    }
+    
+    return {
+      before: before.trim(),
+      after: after.trim()
+    };
+  }
+
+  /**
+   * Parse matching questions (table structure with dropdowns)
+   */
+  private parseMatchingQuestion(doc: Document, question: QuizQuestion): void {
+    const tableRows = doc.querySelectorAll('table.answer tbody tr');
+    
+    tableRows.forEach(row => {
+      const textCell = row.querySelector('td.text');
+      const controlCell = row.querySelector('td.control');
+      
+      if (textCell && controlCell) {
+        const select = controlCell.querySelector('select') as HTMLSelectElement;
+        if (select) {
+          const contextText = textCell.textContent?.trim() || '';
+          
+          const answer: any = {
+            id: select.id || select.name,
+            name: select.name,
+            type: 'select',
+            value: select.value || '',
+            label: contextText, // Use the context text as the label
+            contextBefore: contextText, // Also store as context
+            required: select.hasAttribute('required'),
+            options: Array.from(select.options).map(option => ({
+              value: option.value,
+              label: option.textContent?.trim() || '',
+              selected: option.selected
+            }))
+          };
+          
+          question.parsedAnswers?.push(answer);
+        }
+      }
+    });
+  }
+
+  /**
+   * Parse multiple choice questions (radio buttons)
+   */
+  private parseMultipleChoiceQuestion(doc: Document, question: QuizQuestion): void {
+    const radioInputs = doc.querySelectorAll('input[type="radio"]');
+    const radioGroups = new Map<string, any>();
+    
+    radioInputs.forEach(input => {
+      const radioInput = input as HTMLInputElement;
+      
+      // Skip the clear choice radio button
+      if (radioInput.value === '-1' || radioInput.closest('.qtype_multichoice_clearchoice')) {
+        return;
+      }
+      
+      const groupName = radioInput.name;
+      
+      if (!radioGroups.has(groupName)) {
+        radioGroups.set(groupName, {
+          id: groupName,
+          name: groupName,
+          type: 'radio',
+          value: '',
+          label: '',
+          options: []
+        });
+      }
+      
+      const group = radioGroups.get(groupName);
+      
+      // Get the label for this radio button
+      let optionLabel = '';
+      const labelElement = doc.querySelector(`[id="${radioInput.id}_label"]`);
+      if (labelElement) {
+        // Extract just the text content, removing the answer number
+        const flexFill = labelElement.querySelector('.flex-fill');
+        if (flexFill) {
+          optionLabel = flexFill.textContent?.trim() || '';
+        } else {
+          optionLabel = labelElement.textContent?.trim() || '';
+          // Remove answer numbering like "a. ", "b. ", etc.
+          optionLabel = optionLabel.replace(/^[a-z]\.\s*/i, '');
+        }
+      }
+      
+      group.options.push({
+        value: radioInput.value,
+        label: optionLabel,
+        selected: radioInput.checked
+      });
+      
+      if (radioInput.checked) {
+        group.value = radioInput.value;
+      }
+    });
+    
+    // Add all radio groups to parsed answers
+    radioGroups.forEach(group => {
+      question.parsedAnswers?.push(group);
+    });
+  }
+
+  /**
+   * Parse true/false questions
+   */
+  private parseTrueFalseQuestion(doc: Document, question: QuizQuestion): void {
+    const radioInputs = doc.querySelectorAll('input[type="radio"]');
+    
+    if (radioInputs.length > 0) {
+      const firstRadio = radioInputs[0] as HTMLInputElement;
+      const groupName = firstRadio.name;
+      
+      const answer: any = {
+        id: groupName,
+        name: groupName,
+        type: 'radio',
+        value: '',
+        label: '',
+        options: []
+      };
+      
+      radioInputs.forEach(input => {
+        const radioInput = input as HTMLInputElement;
+        const label = doc.querySelector(`label[for="${radioInput.id}"]`);
+        const optionLabel = label?.textContent?.trim() || radioInput.value;
+        
+        answer.options.push({
+          value: radioInput.value,
+          label: optionLabel,
+          selected: radioInput.checked
+        });
+        
+        if (radioInput.checked) {
+          answer.value = radioInput.value;
+        }
+      });
+      
+      question.parsedAnswers?.push(answer);
+    }
+  }
+
+  /**
+   * Parse generic questions (fallback for other types)
+   */
+  private parseGenericQuestion(doc: Document, question: QuizQuestion): void {
+    const inputs = doc.querySelectorAll('input, select, textarea');
     
     inputs.forEach(input => {
       const element = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
@@ -2198,55 +2635,6 @@ export class MoodleService {
       
       question.parsedAnswers?.push(answer);
     });
-    
-    return question;
-  }
-
-  /**
-   * Get input type for quiz answer
-   */
-  private getInputType(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): 'radio' | 'checkbox' | 'text' | 'textarea' | 'select' | 'dragdrop' | 'match' {
-    if (element.tagName === 'SELECT') return 'select';
-    if (element.tagName === 'TEXTAREA') return 'textarea';
-    
-    const inputElement = element as HTMLInputElement;
-    switch (inputElement.type) {
-      case 'radio': return 'radio';
-      case 'checkbox': return 'checkbox';
-      case 'text':
-      case 'email':
-      case 'url':
-      case 'number':
-      default: return 'text';
-    }
-  }
-
-  /**
-   * Get label for input element
-   */
-  private getInputLabel(doc: Document, element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): string {
-    // Try to find associated label
-    if (element.id) {
-      const label = doc.querySelector(`label[for="${element.id}"]`);
-      if (label) {
-        return label.textContent?.trim() || '';
-      }
-    }
-    
-    // Try to find parent label
-    const parentLabel = element.closest('label');
-    if (parentLabel) {
-      return parentLabel.textContent?.trim() || '';
-    }
-    
-    // Try to find nearby text
-    const parent = element.parentElement;
-    if (parent) {
-      const text = parent.textContent?.trim() || '';
-      return text.replace(element.value, '').trim();
-    }
-    
-    return element.name || '';
   }
 
   /**
