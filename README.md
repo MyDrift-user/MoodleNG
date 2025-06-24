@@ -2,104 +2,33 @@
 
 A custom Angular frontend for Moodle Learning Management System that provides a simplified and modern interface for students to access their courses and learning materials.
 
+# ALPHA STATE
+
+MoodleNG is currently in it's Alpha Stage. The current plan is to study the Moodle Documentation and how to handle it.
+The Entire Project is currently spaghetti code, it is only there so that there is something working. My Focus is as said only the Moodle API **at the time**.
+
+## Roadmap
+
+- [x] Authenticate user & get token
+- [x] Get User Courses
+- [x] Get Course Content
+- [x] Get Course Content details (about Quizes, Assignments, Files & more)
+- [x] Understand how Quiz taking logic works (get Quiz ID, get attempts, start attempt, Get Attempt Info, Get Quiz Content, Finish Quiz, Rejoin quiz)
+- [ ] Upload files
+- [ ] Upload files & hand in assignments
+
+- [ ] Refractor Backend -> Python + FastAPI
+- [ ] Refractor Frontend -> Custom Frontend Design
+
 ## Features
 
 - **Custom Login**: Connect to any Moodle instance by specifying the domain and your credentials
 - **Course Dashboard**: View all your enrolled courses sorted by last accessed
 - **Content Viewer**: Access course materials including text, files, images, and videos
+  - **Previews**: Preview Office Files, PDFs, Images and more directly in your browser without downloading anything.
+  - **Zip Download**: Instead of downloading every file of a course seperately let MoodleNG download all of them at once with a single Press of a button.
 - **Responsive Design**: Works on desktop and mobile devices
-- **Material Design**: Modern and intuitive user interface
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v20+)
-- npm (v10+)
-- A valid Moodle instance with API access enabled
-
-### Prerequisites
-
-- Node.js (v20+)
-- npm (v10+)
-- A valid Moodle instance with API access enabled
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/MoodleNG.git
-   cd MoodleNG
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-   ```bash
-   npm start
-   ```
-   
-   Alternatively, use the proxy configuration to avoid CORS issues:
-   ```bash
-   npm run start:proxy
-   ```
-   Note: You'll need to update the `proxy.conf.json` file with your Moodle instance URL.
-
-4. Open your browser and navigate to `http://localhost:4200`
-
-## Building for Production
-
-To create a production build:
-
-```bash
-npm run build
-```
-
-The build artifacts will be stored in the `dist/` directory.
-
-## Docker Deployment
-
-You can easily deploy this application using Docker Compose.
-
-### Prerequisites
-- Docker
-- Docker Compose
-- A separate Moodle instance with API access enabled
-
-### Deployment Steps
-
-1. Build and start the container:
-   ```bash
-   docker-compose up -d
-   ```
-
-2. To stop the container:
-   ```bash
-   docker-compose down
-   ```
-
-The Angular application will be accessible at http://localhost and will connect to your configured Moodle instance.
-
-## Moodle API Requirements
-
-This application requires the following Moodle Web Service APIs to be enabled on the target Moodle instance:
-
-- `core_webservice_get_site_info`: To retrieve user and site information
-- `core_enrol_get_users_courses`: To get the user's enrolled courses
-- `core_course_get_contents`: To fetch course content
-
-Make sure your Moodle administrator has enabled these services and has set up the mobile app service correctly.
-
-## Architecture
-
-The application follows a modular architecture with the following components:
-
-- **Login Component**: Handles authentication with Moodle instances
-- **Dashboard Component**: Lists all courses/modules sorted by last accessed
-- **Module Details Component**: Displays module contents with specialized viewers for different content types
+- **Quizes & Assignments**: Take Quizes and hand in Assignments.
 
 ## Contributing
 
